@@ -283,7 +283,7 @@ void startGame(){
 		}
 	}
 }
-
+/* I'm doing it!*/
 void snakeAdd(){
 	snakeAddID = G8RTOS_GetThreadId();
 while(1){
