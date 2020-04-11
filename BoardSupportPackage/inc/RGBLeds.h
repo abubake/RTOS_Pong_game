@@ -29,7 +29,7 @@ static void LP3943_ColorSet(uint32_t unit, uint32_t PWM_DATA);
  *  */
 void LP3943_LedModeSet(uint32_t unit, uint16_t LED_DATA, uint8_t LS_addy);
 
-
+void LP3943_LedModeSet2(uint16_t color, uint16_t state, uint16_t LED_Number);
 /*
  * Performs needed initializations for RGB LEDs
  */

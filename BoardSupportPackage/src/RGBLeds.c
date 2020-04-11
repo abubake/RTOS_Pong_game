@@ -97,6 +97,72 @@ while((UCB2CTLW0 & 4)); // wait for STOP to send
 }
 
 
+void LP3943_LedModeSet2(uint16_t color, uint16_t state, uint16_t LED_Number)
+{
+    /*
+     * function to control the state of the LEDS
+     * writes to the the LSx register
+     * LED number is hex number that specifies which LEDs to turn on by which
+     * bits are set
+     */
+
+    uint16_t data;
+    uint32_t bits=0;
+    //loop to construct data to be sent to LSx registers
+
+    if ( state==0x01 ){
+        for(int ii=0; ii<16;++ii){
+            //shift data over to see if bit is set
+            data = (LED_Number>>ii) & 0x01;
+            if(data==0x01){             //if bit is set want turn LED on
+                bits |= (0b01 << 2*ii); //0b in LSx reg is on
+            }
+            else{                       //LED off
+                bits |= (0b00 << 2*ii);
+            }
+        }
+    }
+
+    else if( state== 0x10){
+
+    }
+
+
+    //write slave address
+    UCB2I2CSA = (color | 0x60);
+
+    //enable trasmitter and start condition
+    UCB2CTLW0 |= EUSCI_B_CTLW0_TXSTT;
+
+    //wait for start condition to be recieved and buffer to be empty
+    //look at addesess
+    while((UCB2CTLW0 & 2)) ;
+
+    //send register address with auto increment
+    UCB2TXBUF = 0x16;
+
+    //wait for buffer to be empty
+    //
+    while(!(UCB2IFG & 2));
+
+    for(int ii=0;ii<4;++ii){
+
+        //send data 4 times to write to all LSx registers
+        UCB2TXBUF = (bits>>8*ii) & 0xFF;
+
+        //wait for buffer to be empty
+        while(!(UCB2IFG & 2));
+    }
+
+    //write stop condition
+    UCB2CTLW0 |= EUSCI_B_CTLW0_TXSTP;
+
+    //wait for stop condition
+    while((UCB2CTLW0 & 0x4)) ;
+
+}
+
+
 /* STATUS: IN USE
  * Performs needed initializations to use I2C on UCB2
  * Turns all LEDS off, does a required software reset to stop operation; initializing the slave master, I2C mode, clock synch, etc.
