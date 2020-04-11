@@ -1,492 +1,88 @@
-/*
- * RGBLeds.c
- *
- *  Created on: Jan 20, 2020
- *      Author: baker
- */
-#include <driverlib.h>
 #include <RGBLeds.h>
-#include "helpers.h"
-#include "stdio.h"
+
+void init_RGB_LEDS(){
 
 
-/* LP3943 ColorSet
- * Status: NOT IMPLEMENTED
- * This function will set the frequencies and PWM duty cycle
- * for each register of the specified unit
- * Parameters: Color of the LED and which driver it is, and the PWM data
- * Returns: void */
-static void LP3943_ColorSet(uint32_t unit, uint32_t PWM_DATA);
+    //Software reset enable
 
-
-/* Status: IN USE
- * This function will set each of the LEDs to the desired operating mode.
- * The operating modes are on, off.
- * Parameters: unit is whether we are using R,G, or B LP3943, and LED_DATA is the data being sent/ written
- * Returns: Void*/
-void LP3943_LedModeSet(uint32_t unit, uint16_t LED_DATA, uint8_t LS_addy){
-    uint8_t SlaveAddr = 0;
-
-    if (unit == BLUE){
-    SlaveAddr = 0x60; //slave base address (1st LP3943)
-    }
-    else if (unit == GREEN){
-    SlaveAddr = 0x61; //slave base address (2nd LP3943)
-    }
-    else {
-    SlaveAddr = 0x62; //slave base address (3rd LP3943)
-    }
-    UCB2I2CSA = SlaveAddr;
-    UCB2CTLW0 |= 0x0010; // enable transmitter
-    UCB2CTLW0 |= UCTXSTT;
-    while((UCB2CTLW0 & 2));
-    UCB2TXBUF = LS_addy;
-    while(!(UCB2IFG & 2));
-
-/******************************************************************************************************/
-    if(LED_DATA == 3){
-        LED_DATA = 0b00000101;
-    }
-    if(LED_DATA == 5){
-            LED_DATA = 0b00010001;
-        }
-    if(LED_DATA == 6){
-            LED_DATA = 0b00010100;
-        }
-    if(LED_DATA == 7){
-            LED_DATA = 0b00010101;
-        }
-    if(LED_DATA == 9){
-            LED_DATA = 0b01000001;
-        }
-    if(LED_DATA == 0x000A){
-            LED_DATA = 0b01000100;
-        }
-    if(LED_DATA == 0x000B){
-            LED_DATA = 0b01000101;
-        }
-    if(LED_DATA == 0x000C){
-            LED_DATA = 0b01010000;
-        }
-    if(LED_DATA == 0x000D){
-            LED_DATA = 0b01010001;
-        }
-    if(LED_DATA == 0x000E){
-            LED_DATA = 0b01010100;
-        }
-    if(LED_DATA == 0x000F){
-            LED_DATA = 0b01010101;
-        }
-
-    if(LED_DATA == 8){
-        LED_DATA = 0b01000000;
-    }
-    if(LED_DATA == 4){
-        LED_DATA = 0b00010000;
-    }
-    if(LED_DATA == 2){
-            LED_DATA = 0b00000100;
-        }
-/******************************************************************************************************/
-
-UCB2TXBUF = LED_DATA;
-while(!(UCB2IFG & 2)); // wait for data to send
-UCB2CTLW0 |= UCTXSTP;
-while((UCB2CTLW0 & 4)); // wait for STOP to send
-
-}
-
-
-void LP3943_LedModeSet2(uint16_t color, uint16_t state, uint16_t LED_Number)
-{
-    /*
-     * function to control the state of the LEDS
-     * writes to the the LSx register
-     * LED number is hex number that specifies which LEDs to turn on by which
-     * bits are set
-     */
-
-    uint16_t data;
-    uint32_t bits=0;
-    //loop to construct data to be sent to LSx registers
-
-    if ( state==0x01 ){
-        for(int ii=0; ii<16;++ii){
-            //shift data over to see if bit is set
-            data = (LED_Number>>ii) & 0x01;
-            if(data==0x01){             //if bit is set want turn LED on
-                bits |= (0b01 << 2*ii); //0b in LSx reg is on
-            }
-            else{                       //LED off
-                bits |= (0b00 << 2*ii);
-            }
-        }
-    }
-
-    else if( state== 0x10){
-
-    }
-
-
-    //write slave address
-    UCB2I2CSA = (color | 0x60);
-
-    //enable trasmitter and start condition
-    UCB2CTLW0 |= EUSCI_B_CTLW0_TXSTT;
-
-    //wait for start condition to be recieved and buffer to be empty
-    //look at addesess
-    while((UCB2CTLW0 & 2)) ;
-
-    //send register address with auto increment
-    UCB2TXBUF = 0x16;
-
-    //wait for buffer to be empty
-    //
-    while(!(UCB2IFG & 2));
-
-    for(int ii=0;ii<4;++ii){
-
-        //send data 4 times to write to all LSx registers
-        UCB2TXBUF = (bits>>8*ii) & 0xFF;
-
-        //wait for buffer to be empty
-        while(!(UCB2IFG & 2));
-    }
-
-    //write stop condition
-    UCB2CTLW0 |= EUSCI_B_CTLW0_TXSTP;
-
-    //wait for stop condition
-    while((UCB2CTLW0 & 0x4)) ;
-
-}
-
-
-/* STATUS: IN USE
- * Performs needed initializations to use I2C on UCB2
- * Turns all LEDS off, does a required software reset to stop operation; initializing the slave master, I2C mode, clock synch, etc.
- * Set the clock pre-scaler, determining how much the LEDs will update;
- * Set the P3 pins for I2C mode
- * Re-enables operation after initializations are done (coming out of reset mode)
- * Sets all LEDs to be off initially
- * Parameters: NONE
- * Returns: NONE */
-void init_RGBLEDS()
-{
-    uint16_t UNIT_OFF = 0x0000;
     UCB2CTLW0 = UCSWRST;
-    UCB2CTLW0 |= UCSSEL_2 | UCMST | UCMODE_3 | UCSYNC;
-    UCB2BRW = 30; // 8 for 3MHz, 30 for max frequency
-    P3SEL0 |= 0xC0;
-    P3SEL1 &= ~0xC0;
 
+    //Initialize I2C master
+    // I2C mode, Clock sync, SMCLK source, transmitter
+    //meant for a non-multi master system
+
+    UCB2CTLW0 |= (UCMST | UCMODE_3 | UCSYNC | UCSSEL_3 | UCTR);
+
+    //Max clk frequency for the LP3943 is 400kHz
+    //Assumes SMCLK source is DCOCLK wihch is default 3 MHz
+    // 3Mz/8 ->375 kHz (pretty close to max without having to tune DCOCLK frequency)
+    UCB2BRW = 30;
+
+    //Sets the pins as I2C mode
+
+    P3SEL0 |= (BIT7 | BIT6);
+    P3SEL1 &= 0;
+
+    //Bitwise anding of all bits except UCSWRT
+    //no more reset
     UCB2CTLW0 &= ~UCSWRST;
 
-    /* Init all LED's as off */
-    LP3943_LedModeSet(RED, UNIT_OFF, 0x06);
-    LP3943_LedModeSet(GREEN, UNIT_OFF, 0x06);
-    LP3943_LedModeSet(BLUE, UNIT_OFF, 0x06);
-
-    LP3943_LedModeSet(RED, UNIT_OFF, 0x07);
-    LP3943_LedModeSet(GREEN, UNIT_OFF, 0x07);
-    LP3943_LedModeSet(BLUE, UNIT_OFF, 0x07);
-
-    LP3943_LedModeSet(RED, UNIT_OFF, 0x08);
-    LP3943_LedModeSet(GREEN, UNIT_OFF, 0x08);
-    LP3943_LedModeSet(BLUE, UNIT_OFF, 0x08);
-
-    LP3943_LedModeSet(RED, UNIT_OFF, 0x09);
-    LP3943_LedModeSet(GREEN, UNIT_OFF, 0x09);
-    LP3943_LedModeSet(BLUE, UNIT_OFF, 0x09);
-}
-
-/* The following 4 functions turn off all LEDs of a specified color for all 4 LED drivers */
-void REDLED_OFF(){
-    uint16_t UNIT_OFF = 0x0000;
-    LP3943_LedModeSet(RED, UNIT_OFF, 0x06);
-    LP3943_LedModeSet(RED, UNIT_OFF, 0x07);
-    LP3943_LedModeSet(RED, UNIT_OFF, 0x08);
-    LP3943_LedModeSet(RED, UNIT_OFF, 0x09);
-}
-
-void GREENLED_OFF(){
-    uint16_t UNIT_OFF = 0x0000;
-    LP3943_LedModeSet(GREEN, UNIT_OFF, 0x06);
-    LP3943_LedModeSet(GREEN, UNIT_OFF, 0x07);
-    LP3943_LedModeSet(GREEN, UNIT_OFF, 0x08);
-    LP3943_LedModeSet(GREEN, UNIT_OFF, 0x09);
-}
-
-void BLUELED_OFF(){
-    uint16_t UNIT_OFF = 0x0000;
-    LP3943_LedModeSet(BLUE, UNIT_OFF, 0x06);
-    LP3943_LedModeSet(BLUE, UNIT_OFF, 0x07);
-    LP3943_LedModeSet(BLUE, UNIT_OFF, 0x08);
-    LP3943_LedModeSet(BLUE, UNIT_OFF, 0x09);
-}
-
-
-inline void displayLight(uint16_t lightData){
-	if (lightData > 0){
-		if (lightData > 26000){
-			  if (lightData > 42000){
-				  if((lightData > 42000)&&(lightData < 45500)){
-					  number_display(65532, GREEN);
-				  }
-					  else if((lightData < 49000)&&(lightData > 45500)){
-					  number_display(65534, GREEN);
-					  }
-					  else if((lightData > 49000)){
-				  	  number_display(65535, GREEN);
-					  }
-			  }
-
-
-			  else {
-				  if((lightData < 42000)&&(lightData > 38500)){
-				  		number_display(65528, GREEN);
-				  }
-				  		else if((lightData < 42000)&&(lightData > 35500)){
-				  		number_display(65520, GREEN);
-				  		}
-				  		else if((lightData > 31500)&&(lightData < 35500)){
-				  		number_display(65504, GREEN);
-				  		}
-				  		else if((lightData < 31500)&&(lightData > 28000)){
-				  		number_display(65472, GREEN);
-				  		}
-				  		else if((lightData > 26000)&&(lightData < 28000)){
-				  		number_display(65408, GREEN);
-				  		}
-			  }
-		}
-		else{ /* For cases below the halfway threshold */
-
-			if (lightData > 14000){
-				if((lightData > 14000)&&(lightData < 17500)){
-					number_display(63488, GREEN);
-				}
-					else if((lightData > 17500)&&(lightData < 21000)){
-					number_display(64512, GREEN);
-					}
-					else if((lightData > 21000)&&(lightData < 24500)){
-					number_display(65024, GREEN);
-					}
-					else if((lightData > 24500)&&(lightData < 26000)){
-					number_display(65280, GREEN);
-					}
-			}
-			else{
-				if((lightData > 10500)&&(lightData < 14000)){
-					number_display(61440, GREEN); //0xF000
-				}
-					else if((lightData > 7000)&&(lightData < 10500)){
-					number_display(57344, GREEN); //0xE000
-					}
-					else if((lightData > 3500)&&(lightData < 7000)){
-					number_display(49152, GREEN); //0xC000
-					}
-					else if((lightData < 3500)){
-					number_display(32768, GREEN); //0x8000
-					}
-			}
-
-
-		}
-
-		}
-}
-
-inline void displayAcceleration(int16_t acceleration){
-	int16_t data = acceleration;
-	uint16_t color = RED;
-	if(data > 0){
-				if((data > 14000)){
-					number_display(65280, color);
-				}
-					else if((data > 12000)&&(data < 14000)){
-					number_display(32512, color);
-					}
-					else if((data > 10000)&&(data < 12000)){
-					number_display(16128, color);
-					}
-					else if((data > 8000)&&(data < 10000)){
-					number_display(7936, color);
-					}
-					else if((data > 6000)&&(data < 8000)){
-					number_display(3840, color);
-					}
-					else if((data > 4000)&&(data < 6000)){
-					number_display(1792, color);
-					}
-					else if((data > 2000)&&(data < 4000)){
-					number_display(768, color);
-					}
-					else if((data > 0)&&(data < 2000)){
-					number_display(256, color);
-					}
-	}
-	else{
-				/*the negatives */
-				if((data < -14000)){
-					number_display(255, color);
-				}
-					else if((data < -12000)&&(data > -14000)){
-					number_display(254, color);
-					}
-					else if((data < -10000)&&(data > -12000)){
-					number_display(252, color);
-					}
-					else if((data < -8000)&&(data > -10000)){
-					number_display(248, color);
-					}
-					else if((data < -6000)&&(data > -8000)){
-					number_display(240, color);
-					}
-					else if((data < -4000)&&(data > -6000)){
-					number_display(224, color);
-					}
-					else if((data < -2000)&&(data > -4000)){
-					number_display(192, color);
-					}
-					else if((data < 0)&&(data > -2000)){
-					number_display(128, color);
-					}
-			}
-}
-
-
-inline void displayGyro(int16_t gyro){
-	int16_t data = gyro;
-	uint16_t color = BLUE;
-	if(data > 0){
-				if((data > 7000)){
-					number_display(65280, color);
-				}
-					else if((data > 6000)&&(data < 7000)){
-					number_display(32512, color);
-					}
-					else if((data > 5000)&&(data < 6000)){
-					number_display(16128, color);
-					}
-					else if((data > 4000)&&(data < 5000)){
-					number_display(7936, color);
-					}
-					else if((data > 3000)&&(data < 4000)){
-					number_display(3840, color);
-					}
-					else if((data > 2000)&&(data < 3000)){
-					number_display(1792, color);
-					}
-					else if((data > 1000)&&(data < 2000)){
-					number_display(768, color);
-					}
-					else if((data > 0)&&(data < 1000)){
-					number_display(256, color);
-					}
-	}
-	else{
-				/*the negatives */
-				if((data < -7000)){
-					number_display(255, color);
-				}
-					else if((data < -6000)&&(data > -7000)){
-					number_display(254, color);
-					}
-					else if((data < -5000)&&(data > -6000)){
-					number_display(252, color);
-					}
-					else if((data < -4000)&&(data > -5000)){
-					number_display(248, color);
-					}
-					else if((data < -3000)&&(data > -4000)){
-					number_display(240, color);
-					}
-					else if((data < -2000)&&(data > -3000)){
-					number_display(224, color);
-					}
-					else if((data < -1000)&&(data > -2000)){
-					number_display(192, color);
-					}
-					else if((data < 0)&&(data > -1000)){
-					number_display(128, color);
-					}
-			}
-}
-
-/* displays custom daughter-board LED output based off of farenheit temperature ranges, after converting celcius 16 bit value ex.(2643) data to farenheit
- *Parameters: Raw temperature data
- *Returns: Void */
-void LEDTemperatureDisplay(int32_t tempest){
-
-	if (tempest >= 75){
-		if ((tempest >= 75) && (tempest < 78)){
-			number_display(0x001F, RED);
-			number_display(0x00E0, BLUE);
-		}
-		else if ((tempest >= 78) && (tempest < 81)){
-			number_display(0x003F, RED); //issue with 0x005F being displayed instead of 0x003F for the RED, resulting in wrong pattern
-			number_display(0x00C0, BLUE);
-		}
-		else if ((tempest >= 81) && (tempest < 84)){
-			number_display(0x007F, RED);
-			number_display(0x0080, BLUE);
-		}
-		else if ((tempest >= 84) && (tempest < 90)){ // weird case: Occasionally would report unusually high number, so added bound of 90
-			number_display(0x00FF, RED);
-		}
-	}
-	else if(tempest < 75){
-		if ((tempest >= 72) && (tempest < 75)){
-			number_display(0x000F, RED);
-			number_display(0x00F0, BLUE);
-		}
-		else if ((tempest >= 69) && (tempest < 72)){
-			number_display(0x0007, RED); //c is 12
-			number_display(0x00F8, BLUE);
-		}
-		else if ((tempest >= 66) && (tempest < 69)){
-			number_display(0x0003, RED);
-			number_display(0x00FC, BLUE);
-		}
-		else if ((tempest >= 63) && (tempest < 66)){
-			number_display(0x0001, RED);
-			number_display(0x00FE, BLUE);
-		}
-		else if ((tempest >= 60) && (tempest < 63)){
-			number_display(0x00FF, BLUE);
-		}
-	}
+    //Turn them all off
+    LP3943_LedModeSet(BLUE, OFF);
+    LP3943_LedModeSet(GREEN, OFF);
+    LP3943_LedModeSet(RED, OFF);
 
 }
 
-void LEDGyroXCoordDisplay(int32_t xCoord){
-	if (xCoord > 6000){
-		number_display(0xF000, GREEN);
-	}
-	else if((xCoord < 6000) && (xCoord > 4000) ){
-		number_display(0x7000, GREEN);
-	}
-	else if ((xCoord < 4000) && (xCoord > 2000)){
-		number_display(0x3000, GREEN);
-	}
-	else if ((xCoord < 2000) && (xCoord > 500)){
-		number_display(0x1000, GREEN);
-	}
-	else if ((xCoord < 500) && (xCoord > -500)){
-		number_display(0x0000, GREEN);
-	}
-	else if ((xCoord < -500) && (xCoord > -2000)){
-		number_display(0x0800, GREEN);
-	}
-	else if ((xCoord < -2000) && (xCoord > -4000)){
-		number_display(0x0C00, GREEN);
-	}
-	else if ((xCoord < -4000) && (xCoord > -6000)){
-		number_display(0x0E00, GREEN);
-	}
-	else if ((xCoord < -6000) && (xCoord > -8000)){
-		number_display(0x0F00, GREEN);
-	}
+//PWM and PSC are set
+void LP3943_ColorSet(uint8_t unit, uint32_t pwm_data){
+    //PWM_DATA format
+    //PWM1 _ PSC1 _ PWM0 _ PSC0
+
+    //PWM controls the brightness of the LEDs and
+    //PSC controls the blinking of the LEDs
+
+    setSlave(unit);
+    uint8_t cur_reg = PSC0;
+    for(;cur_reg <= PWM1; cur_reg++){
+        LED_write(cur_reg, (uint8_t)pwm_data);
+        pwm_data = pwm_data >> 8;
+    }
+}
+
+//says which color LEDs to put in a certain mode
+void LP3943_LedModeSet(uint8_t unit, uint32_t mode_data){
+    //LED_DATA: the 32 bits are split into 4 8 bytes where each 2 bits represents an LED state
+    //I will SWEEP through each byte, updating 4 LEDs at a time from LED 0->15
+    //setSlave(unit);
+
+    setSlave(unit);
+    uint8_t cur_reg = LS0;
+    for(;cur_reg <= LS3; cur_reg++){
+        LED_write(cur_reg, (uint8_t)(mode_data & 0x000000FF));
+        mode_data = mode_data >> 8;
+    }
+}
+
+//displays 16-bit data on the 16 LEDs
+void LP3943_DataDisplay(uint8_t unit, uint8_t disp_mode, uint16_t data){
+    //takes in data intended to be displayed in binary on the LEDs
+    //made data 32 bits
+
+    LP3943_LedModeSet(unit, OFF);   //turn all LEDs off
+    //bit manipulation to set to mode the data is intended to be displayed in
+
+    if(disp_mode != OFF){
+       uint32_t mode_set = 0;
+       uint8_t i = 0;
+       for(; i < 16; i++){
+            mode_set = mode_set << 2;   //allows setting of each LED bit in LS0 - LS3 (2-bit select)
+            if(data & 0x8000){       //probe MSB
+               //if then LED is supposed to be lit then copy the disp_mode
+               mode_set |= disp_mode;
+            }
+            data  = data << 1;      //shift data over to probe next bit
+        }
+        LP3943_LedModeSet(unit, mode_set);
+    }
 }

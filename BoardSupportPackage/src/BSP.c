@@ -42,7 +42,8 @@ void BSP_InitBoard()
 	BackChannelInit();
 
 	/* Init RGB LEDs */
-	init_RGBLEDS();
+	// Insert your LED init function here
+	init_RGB_LEDS();
 }
 
 

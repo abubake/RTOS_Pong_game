@@ -10,8 +10,7 @@
 #include "G8RTOS.h"
 #include <BSP.h>
 #include <stdlib.h>
-#include "helpers.h" //figure out why this was needed vs. just including driver lib to work
-#include "LCDLib.h"
+#include "LCD.h"
 
 #define THREADS_QUIZ
 

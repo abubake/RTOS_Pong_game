@@ -18,9 +18,9 @@
 #include "BackChannelUart.h"
 #include "ClockSys.h"
 #include "Joystick.h"
-#include "RGBLeds.h"
 // Insert include for LEDs here 
-
+#include "RGB_I2C_Driver.h"
+#include "RGBLeds.h"
 
 
 /********************************** Public Functions **************************************/
