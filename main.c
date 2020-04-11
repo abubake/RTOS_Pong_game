@@ -9,6 +9,8 @@
 #define LABQUIZ_MAIN
 #ifdef LAB4_MAIN
 
+//If I pushed this, you can read it
+
 void main(void)
 	{
 	/* Initializes all the hardware resources on the board and sets the amount of threads and system time to 0 */
