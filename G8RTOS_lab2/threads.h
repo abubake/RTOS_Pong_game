@@ -41,7 +41,7 @@
 	}snake_t;
 
 
-#define TASKS_LAB5
+#define TASKS_LAB4
 #ifdef TASKS_LAB5
 
 /* COMMON THREADS */

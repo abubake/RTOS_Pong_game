@@ -12,7 +12,8 @@
 #include <stdlib.h>
 #include "LCD.h"
 
-#define THREADS_LAB5
+#define THREADS_LAB4
+#ifdef THREADS_LAB5
 
 /* COMMON THREADS */
 
@@ -22,12 +23,23 @@
 	• Update players
 	• Sleep for 20ms (reasonable refresh rate) */
 	void DrawObjects(){
+		/*
+	 	• Should hold arrays of previous players and ball positions
+		• Draw and/or update balls (you’ll need a way to tell whether to draw a new ball, or update its position (i.e. if a new ball has just been created – hence the alive attribute in the Ball_t struct.
+		• Update players
+		• Sleep for 20ms (reasonable refresh rate)
+		 */
+		while(1){
 
+			sleep(20);
+		}
 	}
 
 	/* Responsible for updating the LED array with current scores */
 	void MoveLEDS(){
+		while(1){
 
+		}
 	}
 
 
@@ -35,38 +47,52 @@
 
 	/* Begins the game */
 	void CreateGame(){
+		while(1){
 
+		}
 	}
 
 	/* Adds move ball threads based of certain criteria */
 	void GenerateBall(){
+		while(1){
 
+		}
 	}
 
 	/* Moves a ball */
 	void MoveBall(){
+		while(1){
 
+		}
 	}
 
 	/* Host reading of Joystick data */
 	void ReadJoystickHost(){
+		while(1){
 
+		}
 	}
 
 	/* Fills and sends a UDP packet to the client
 	 * Checks if game is done */
 	void SendDataToClient(){
+		while(1){
 
+		}
 	}
 
 	/* Receive data continually */
 	void RecieveDataFromClient(){
+		while(1){
 
+		}
 	}
 
 	/* Ends the host game */
 	void EndOfGameHost(){
+		while(1){
 
+		}
 	}
 
 
@@ -74,31 +100,39 @@
 
 	/* Sends player info to the host */
 	void JoinGame(){
+		while(1){
 
+		}
 	}
 
 	/* Reads Joystick and adds displacement */
 	void ReadJoystickClient(){
+		while(1){
 
+		}
 	}
 
 	/* Sends the player info to the host */
 	void SendDataToHost(){
+		while(1){
 
+		}
 	}
 
 	/* Receives the data from the host of game state */
 	void RecieveDataFromHost(){
+		while(1){
 
+		}
 	}
 
 	/* Restarts game and waits for host to start new game */
 	void EndOfGameClient(){
+		while(1){
 
+		}
 	}
 
-
-#ifdef THREADS_LAB5
 
 #endif /* THREADS_LAB5 */
 
