@@ -41,7 +41,7 @@
 	}snake_t;
 
 
-#define TASKS_QUIZ
+#define TASKS
 #ifdef TASKS
 
 	/* Counter */
@@ -67,23 +67,5 @@
 
 #endif /* TASKS */
 
-#ifdef TASKS_QUIZ
-
-  void startGame();
-
-  void snakeAdd();
-
-  void snakeSub();
-
-  void idle();
-
-  void Joystick();
-
-  void aperiodicTap();
-
-  /* FUNCTIONS   */
- inline void updateDirection();
-
-#endif /* TASKS_QUIZ */
 
 #endif /* THREADS_H_ */
