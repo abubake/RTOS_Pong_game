@@ -1,6 +1,5 @@
-#ifndef RGBLEDS_H_
-#define RGBLEDS_H_
-
+#ifndef BOARDSUPPORTPACKAGE_DRIVERLIB_RGBLEDS_H_
+#define BOARDSUPPORTPACKAGE_DRIVERLIB_RGBLEDS_H_
 
 #include "RGB_I2C_Driver.h"
 
@@ -25,4 +24,4 @@ void LP3943_ColorSet(uint8_t unit, uint32_t pwm_data);
 void LP3943_LedModeSet(uint8_t unit, uint32_t mode_data);
 
 void LP3943_DataDisplay(uint8_t unit, uint8_t disp_mode, uint16_t data);
-#endif /* RGBLEDS_H_ */
+#endif /* BOARDSUPPORTPACKAGE_DRIVERLIB_RGBLEDS_H_ */

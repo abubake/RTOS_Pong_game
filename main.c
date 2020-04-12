@@ -2,7 +2,7 @@
 #include <driverlib.h>
 #include "G8RTOS.h"
 #include "threads.h"
-#include "LCDLib.h"
+//#include "LCDLib.h"
 #include "time.h"
 #include "stdlib.h"
 

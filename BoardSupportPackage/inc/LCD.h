@@ -19,6 +19,12 @@
 #define MIN_SCREEN_Y     0
 #define SCREEN_SIZE      76800
 
+/* Touch size (derived experimentally)*/
+#define MAX_TOUCH_X     290
+#define MAX_TOUCH_Y     209
+#define MIN_TOUCH_X     50
+#define MIN_TOUCH_Y     26
+
 /* Register details */
 #define SPI_START   (0x70)     /* Start byte for SPI transfer        */
 #define SPI_RD      (0x01)     /* WR bit 1 within start              */
@@ -39,19 +45,20 @@
 #define CHY         0xD0
 
 /* LCD colors */
-#define LCD_WHITE          0xFFFF
-#define LCD_BLACK          0x0000
-#define LCD_BLUE           0x0197
-#define LCD_RED            0xF800
-#define LCD_MAGENTA        0xF81F
-#define LCD_GREEN          0x07E0
-#define LCD_CYAN           0x7FFF
-#define LCD_YELLOW         0xFFE0
-#define LCD_GRAY           0x2104
-#define LCD_PURPLE         0xF11F
-#define LCD_ORANGE         0xFD20
-#define LCD_PINK           0xfdba
-#define LCD_OLIVE          0xdfe4
+#define LCD_BACKGROUNDCOLOR   0x0000
+#define LCD_WHITE             0xFFFF
+#define LCD_BLACK             0x0000
+#define LCD_BLUE              0x0197
+#define LCD_RED               0xF800
+#define LCD_MAGENTA           0xF81F
+#define LCD_GREEN             0x07E0
+#define LCD_CYAN              0x7FFF
+#define LCD_YELLOW            0xFFE0
+#define LCD_GRAY              0x2104
+#define LCD_PURPLE            0xF11F
+#define LCD_ORANGE            0xFD20
+#define LCD_PINK              0xfdba
+#define LCD_OLIVE             0xdfe4
 
 /* ILI 9325 registers definition */
 #define READ_ID_CODE                        0x00
@@ -110,26 +117,19 @@
 
 /************************************ Defines *******************************************/
 
-
 /********************************** Structures ******************************************/
 typedef struct Point {
-    uint16_t x;
-    uint16_t y;
+    int32_t x;
+    int32_t y;
 }Point;
 
-typedef struct rectangle_t{
-	int16_t xDimension;
-	int16_t yDimension;
-	int16_t Xstart;
-	int16_t Xend;
-	int16_t Ystart;
-	int16_t Yend;
-}rectangle_t;
+typedef struct Rect_Size{
+    uint16_t width;
+    uint16_t height;
+}Rect_Size;
 /********************************** Structures ******************************************/
 
 /************************************ Public Functions  *******************************************/
-
-Point myData;
 
 /*******************************************************************************
  * Function Name  : LCD_DrawRectangle
@@ -267,6 +267,17 @@ inline void LCD_Write_Data_Start(void);
 * Attention  : None
 *******************************************************************************/
 inline uint16_t LCD_ReadData();
+inline uint16_t LCD_ReadDataPixel();
+
+/*******************************************************************************
+ * Function Name  : LCD_ReadPixelColor
+ * Description    : Reads color from designated pixel
+ * Input          : a and y coordiante
+ * Output         : None
+ * Return         : Pixel color
+ * Attention      : None
+ *******************************************************************************/
+uint16_t LCD_ReadPixelColor(uint16_t x, uint16_t y);
 
 /*******************************************************************************
 * Function Name  : LCD_WriteReg
@@ -318,7 +329,7 @@ Point TP_ReadXY();
  * Return         : X Coordinate
  * Attention      : None
  *******************************************************************************/
-uint16_t TP_ReadX();
+int32_t TP_ReadX();
 
 /*******************************************************************************
  * Function Name  : TP_ReadY
@@ -328,30 +339,9 @@ uint16_t TP_ReadX();
  * Return         : Y Coordinate
  * Attention      : None
  *******************************************************************************/
-uint16_t TP_ReadY();
+int32_t TP_ReadY();
 
+void LCD_initSPI();
+void LCD_reset();
 /************************************ Public Functions  *******************************************/
-/*******************************************************************************
- * Function Name  : rectangleDisplay
- * Description    : Obtain Y touch coordinate
- * Input          : None
- * Output         : None
- * Return         : Y Coordinate
- * Attention      : None
- *******************************************************************************/
-void rectangleDisplay(uint16_t Color);
-
-
-/************************************ Public Functions  *******************************************/
-/*******************************************************************************
- * Function Name  : rectangleDisplay
- * Description    : Obtain Y touch coordinate
- * Input          : None
- * Output         : None
- * Return         : Y Coordinate
- * Attention      : None
- *******************************************************************************/
-int16_t rectangleVelocity(int16_t accelX);
-
-
 #endif /* LCDLIB_H_ */

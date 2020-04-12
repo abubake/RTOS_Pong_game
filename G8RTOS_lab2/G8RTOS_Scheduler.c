@@ -10,7 +10,6 @@
 #include "G8RTOS_Structures.h"
 #include <DriverLib.h>
 #include "BSP.h"
-//#include "helpers.h"
 
 /*
  * G8RTOS_Start exists in asm

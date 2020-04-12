@@ -427,7 +427,8 @@ static unsigned char const AsciiLib[95][16] = {
 *******************************************************************************/
 void GetASCIICode(unsigned char* pBuffer,unsigned char ASCII)
 {  
-   for(int i = 0; i < 16; i++)
+   int i;
+   for(i = 0; i < 16; i++)
    {
        pBuffer[i] = AsciiLib[(ASCII - 32)][i];
    }
