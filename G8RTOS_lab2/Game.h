@@ -11,9 +11,9 @@
 /*********************************************** Includes ********************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
-#include "../G8RTOS_Lab5/G8RTOS.h"
-#include "cc3100_usage.h"
-#include "LCDLib.h"
+#include "G8RTOS.h"
+//#include "cc3100_usage.h"
+#include "LCD.h"
 /*********************************************** Includes ********************************************************************/
 
 /*********************************************** Externs ********************************************************************/
@@ -267,7 +267,7 @@ void MoveLEDs();
 /*
  * Returns either Host or Client depending on button press
  */
-playerType GetPlayerRole();
+//playerType GetPlayerRole();
 
 /*
  * Draw players given center X center coordinate
@@ -290,6 +290,11 @@ void UpdateBallOnScreen(PrevBall_t * previousBall, Ball_t * currentBall, uint16_
 void InitBoardState();
 
 /*********************************************** Public Functions *********************************************************************/
+
+/*Under Development************/
+void JoystickRead(void);
+void DrawPaddle(void);
+void Idle(void);
 
 
 #endif /* GAME_H_ */

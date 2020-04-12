@@ -83,7 +83,7 @@ void StartContextSwitch();
 int G8RTOS_AddPeriodicEvent(void (*PthreadToAdd)(void), uint32_t period);
 
 
-sched_ErrCode_t G8RTOS_AddAPeriodicEvent(void (*AthreadToAdd)(void), uint16_t priority, IRQn_Type IRQn);
+//sched_ErrCode_t G8RTOS_AddAPeriodicEvent(void (*AthreadToAdd)(void), uint16_t priority, IRQn_Type IRQn);
 
 
 /* Puts the current thread into a sleep state.
