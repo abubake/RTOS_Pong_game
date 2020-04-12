@@ -12,9 +12,97 @@
 #include <stdlib.h>
 #include "LCD.h"
 
-#define THREADS
+#define THREADS_LAB5
 
-#ifdef THREADS
+/* COMMON THREADS */
+
+	/* Should hold arrays of previous players and ball positions
+	• Draw and/or update balls (you’ll need a way to tell whether to draw a new ball,
+	 or update its position (i.e. if a new ball has just been created – hence the alive attribute in the Ball_t struct.
+	• Update players
+	• Sleep for 20ms (reasonable refresh rate) */
+	void DrawObjects(){
+
+	}
+
+	/* Responsible for updating the LED array with current scores */
+	void MoveLEDS(){
+
+	}
+
+
+/* HOST THREADS */
+
+	/* Begins the game */
+	void CreateGame(){
+
+	}
+
+	/* Adds move ball threads based of certain criteria */
+	void GenerateBall(){
+
+	}
+
+	/* Moves a ball */
+	void MoveBall(){
+
+	}
+
+	/* Host reading of Joystick data */
+	void ReadJoystickHost(){
+
+	}
+
+	/* Fills and sends a UDP packet to the client
+	 * Checks if game is done */
+	void SendDataToClient(){
+
+	}
+
+	/* Receive data continually */
+	void RecieveDataFromClient(){
+
+	}
+
+	/* Ends the host game */
+	void EndOfGameHost(){
+
+	}
+
+
+/* CLIENT THREADS */
+
+	/* Sends player info to the host */
+	void JoinGame(){
+
+	}
+
+	/* Reads Joystick and adds displacement */
+	void ReadJoystickClient(){
+
+	}
+
+	/* Sends the player info to the host */
+	void SendDataToHost(){
+
+	}
+
+	/* Receives the data from the host of game state */
+	void RecieveDataFromHost(){
+
+	}
+
+	/* Restarts game and waits for host to start new game */
+	void EndOfGameClient(){
+
+	}
+
+
+#ifdef THREADS_LAB5
+
+#endif /* THREADS_LAB5 */
+
+#ifdef THREADS_LAB4
 
  /* New variables */
  int16_t accelerometerX = 0;
@@ -203,4 +291,4 @@ void LCD_Tap(void){
 }
 
 
-#endif /* THREADS */
+#endif /* THREADS_LAB4 */

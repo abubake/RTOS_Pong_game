@@ -41,8 +41,69 @@
 	}snake_t;
 
 
-#define TASKS
-#ifdef TASKS
+#define TASKS_LAB5
+#ifdef TASKS_LAB5
+
+/* COMMON THREADS */
+
+	/* Should hold arrays of previous players and ball positions
+	• Draw and/or update balls (you’ll need a way to tell whether to draw a new ball,
+	 or update its position (i.e. if a new ball has just been created – hence the alive attribute in the Ball_t struct.
+	• Update players
+	• Sleep for 20ms (reasonable refresh rate) */
+	void DrawObjects();
+
+	/* Responsible for updating the LED array with current scores */
+	void MoveLEDS();
+
+
+/* HOST THREADS */
+
+	/* Begins the game */
+	void CreateGame();
+
+	/* Adds move ball threads based of certain criteria */
+	void GenerateBall();
+
+	/* Moves a ball */
+	void MoveBall();
+
+	/* Host reading of Joystick data */
+	void ReadJoystickHost();
+
+	/* Fills and sends a UDP packet to the client
+	 * Checks if game is done */
+	void SendDataToClient();
+
+	/* Receive data continually */
+	void RecieveDataFromClient();
+
+	/* Ends the host game */
+	void EndOfGameHost();
+
+
+/* CLIENT THREADS */
+
+	/* Sends player info to the host */
+	void JoinGame();
+
+	/* Reads Joystick and adds displacement */
+	void ReadJoystickClient();
+
+	/* Sends the player info to the host */
+	void SendDataToHost();
+
+	/* Receives the data from the host of game state */
+	void RecieveDataFromHost();
+
+	/* Restarts game and waits for host to start new game */
+	void EndOfGameClient();
+
+#endif /* TASKS_LAB5 */
+
+
+
+#ifdef TASKS_LAB4
 
 	/* Counter */
   void Read_Accel();
@@ -65,7 +126,7 @@
   /* A-Periodic Tasks */
   void LCD_Tap();
 
-#endif /* TASKS */
+#endif /* TASKS_LAB4 */
 
 
 #endif /* THREADS_H_ */
