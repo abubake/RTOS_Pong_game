@@ -5,7 +5,7 @@
 //#include "LCDLib.h"
 #include "time.h"
 #include "stdlib.h"
-
+#include "cc3100_usage.h"
 #define LABQUIZ_MAIN
 #ifdef LAB4_MAIN
 
@@ -55,7 +55,6 @@ void main(void)
 	G8RTOS_Init();
 
 	LCD_Init(true);
-
 	/* For the color randomness */
 	srand(time(NULL));
 
