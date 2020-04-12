@@ -1,18 +1,29 @@
-#include "game.h"
+#include "Game.h"
 #include "Joystick.h"
 #include "G8RTOS.h"
+#include <stdlib.h>
 
 SpecificPlayerInfo_t clientToHostInfo;
 
 /* Joystick Info */
 int16_t X_coord;
 int16_t Y_coord;
+int16_t host_X_coord; // Since I have two joystick read functions, shouldn't be an issue since one will be host and
+						//other board won't
+int16_t host_Y_coord;
+
+/*Ball related Info */
+balls_t myBalls[20];
+int NumBalls = 20;
+int ballNumber;
+
 
 /*********************************************** Client Threads *********************************************************************/
 /*
  * Thread for client to join game
  */
 void JoinGame(){
+
 	/* NEED TO SET ALL THESE WITH REAL VALUES */
 	clientToHostInfo.IP_address = getLocalIP();
 	clientToHostInfo.acknowledge = false;
@@ -121,17 +132,18 @@ void CreateGame(){
 	o Should be trying to receive a packet from the client
 	o Should acknowledge client once client has joined
 	• Initialize the board (draw arena, players, and scores)
-	• Add the following threads:
-	o GenerateBall
-	o DrawObjects
-	o ReadJoystickHost
-	o SendDataToClient
-	o ReceiveDataFromClient
-	o MoveLEDs (lower priority)
-	o Idle
-	• Kill self
 	*/
 
+	/* Add these threads. Need better priority definitions */
+	G8RTOS_AddThread(GenerateBall, 200, "GenerateBall");
+	G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
+	G8RTOS_AddThread(ReadJoystickHost, 200, "ReadJoystickHost");
+	G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
+	G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
+	G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+	G8RTOS_AddThread(IdleThread, 200, "Idle");
+
+	G8RTOS_KillSelf();
 }
 
 /*
@@ -139,7 +151,14 @@ void CreateGame(){
  */
 void SendDataToClient(){
 	while(1){
-
+		/*
+		• Fill packet for client
+		• Send packet
+		• Check if game is done
+		o If done, Add EndOfGameHost thread with highest priority
+		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
+		*/
+		sleep(5);
 	}
 }
 
@@ -148,7 +167,17 @@ void SendDataToClient(){
  */
 void ReceiveDataFromClient(){
 	while(1){
-
+		/*
+		• Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
+		o Note: Remember to release and take the semaphore again so you’re still able to send data
+		o Sleeping here for 1ms would avoid a deadlock
+		*/
+		sleep(1);
+		/*
+		• Update the player’s current center with the displacement received from the client
+		• Sleep for 2ms (again found experimentally)
+		*/
+		sleep(2);
 	}
 }
 
@@ -157,6 +186,10 @@ void ReceiveDataFromClient(){
  */
 void GenerateBall(){
 	while(1){
+		/*
+		• Adds another MoveBall thread if the number of balls is less than the max
+		• Sleeps proportional to the number of balls currently in play
+		*/
 
 	}
 }
@@ -166,6 +199,19 @@ void GenerateBall(){
  */
 void ReadJoystickHost(){
 	while(1){
+		/*
+		• You can read the joystick ADC values by calling GetJoystickCoordinates
+		• You’ll need to add a bias to the values (found experimentally) since every joystick is offset by some small amount displacement and noise
+		• Change Self.displacement accordingly (you can experiment with how much you want to scale the ADC value)
+		• Sleep for 10ms
+		*/
+		GetJoystickCoordinates(&host_X_coord, &host_Y_coord); //must wait for its semaphore!
+		sleep(10); // makes game for fair
+
+		/*
+		• Then add the displacement to the bottom player in the list of players (general list that’s sent to the client and used for drawing) i.e. players[0].position += self.displacement
+		• By sleeping before updating the bottom player’s position, it makes the game more fair between client and host
+		*/
 
 	}
 }
@@ -175,7 +221,39 @@ void ReadJoystickHost(){
  */
 void MoveBall(){
 	while(1){
+		/*
+		• Go through array of balls and find one that’s not alive
+		• Once found, initialize random position and X and Y velocities, as well as color and alive attributes
+		• Checking for collision given the current center and the velocity
+		• If collision occurs, adjust velocity and color accordingly
+		• If the ball passes the boundary edge, adjust score, account for the game possibly ending, and kill self
+		• Otherwise, just move the ball in its current direction according to its velocity
+		• Sleep for 35ms
+		*/
+		for (int i = 0; i < NumBalls; i++){
+			if(myBalls[i].alive == false){
 
+				/* Gives a random color */
+				int randNum = (rand() % 3) + 1;
+				if(randNum == 1){
+					myBalls[i].color = LCD_ORANGE;
+				}
+				else if(randNum == 2){
+					myBalls[i].color = LCD_YELLOW;
+				}
+				else{
+					myBalls[i].color = LCD_WHITE;
+				}
+
+				/* Getting a random speed */
+				myBalls[i].speed = (rand() % 3) + 1;
+
+
+				myBalls[i].alive = true;
+				break;
+							}
+		}
+			sleep(35);
 	}
 }
 

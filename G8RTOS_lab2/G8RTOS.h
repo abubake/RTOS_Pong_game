@@ -12,7 +12,6 @@
 #include "G8RTOS_Scheduler.h"
 #include "G8RTOS_Semaphores.h"
 #include "G8RTOS_Structures.h"
-#include "threads.h"
 #include "G8RTOS_IPC.h"
 
 
