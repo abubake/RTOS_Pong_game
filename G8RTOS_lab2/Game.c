@@ -1,7 +1,12 @@
 #include "game.h"
+#include "Joystick.h"
 #include "G8RTOS.h"
 
 SpecificPlayerInfo_t clientToHostInfo;
+
+/* Joystick Info */
+int16_t X_coord;
+int16_t Y_coord;
 
 /*********************************************** Client Threads *********************************************************************/
 /*
@@ -15,7 +20,6 @@ void JoinGame(){
 	clientToHostInfo.joined = false;
 	clientToHostInfo.playerNumber = 0;
 	clientToHostInfo.ready = false;
-
 
 		/*
 		Only thread to run after launching the OS
@@ -32,8 +36,8 @@ void JoinGame(){
 		o Idle (SETUP)
 		• Kill self (SETUP)
 		*/
-	while(1); // feeling cute, might delete later
 	G8RTOS_KillSelf();
+	while(1); // feeling cute, might delete later
 }
 
 /*
@@ -41,6 +45,18 @@ void JoinGame(){
  */
 void ReceiveDataFromHost(){
 	while(1){
+		/*
+		• (?) Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
+		o Note: Remember to release and take the semaphore again so you’re still able to send data
+		o Sleeping here for 1ms would avoid a deadlock
+		*/
+		sleep(1);
+		/*
+		• Empty the received packet
+		• If the game is done, add EndOfGameClient thread with the highest priority
+		• Sleep for 5ms
+		*/
+		sleep(5);
 
 	}
 }
@@ -50,8 +66,9 @@ void ReceiveDataFromHost(){
  */
 void SendDataToHost(){
 	while(1){
-		//send data to host and sleep
+		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
 
+		//SendData(_u8 *data, _u32 IP, _u16 BUF_SIZE);
 		sleep(2);
 	}
 }
@@ -61,7 +78,14 @@ void SendDataToHost(){
  */
 void ReadJoystickClient(){
 	while(1){
-
+		/*
+		• Read joystick and add offset
+		• Add Displacement to Self accordingly
+		• Sleep 10ms
+		*/
+		GetJoystickCoordinates(&X_coord, &Y_coord); //must wait for its semaphore!
+		// need to add offset
+		sleep(10);
 	}
 }
 
@@ -69,9 +93,17 @@ void ReadJoystickClient(){
  * End of game for the client
  */
 void EndOfGameClient(){
-	while(1){
-
-	}
+	/*
+	• Wait for all semaphores to be released
+	• Kill all other threads
+	• Re-initialize semaphores
+	• Clear screen with winner’s color
+	• Wait for host to restart game
+	• Add all threads back and restart game variables
+	• Kill Self
+	*/
+	LCD_Clear(LCD_RED); //should clear with player's color
+	G8RTOS_KillSelf();
 }
 
 /*********************************************** Client Threads *********************************************************************/
@@ -82,9 +114,24 @@ void EndOfGameClient(){
  * Thread for the host to create a game
  */
 void CreateGame(){
-	while(1){
+	/*
+	• Only thread created before launching the OS
+	• Initializes the players
+	• Establish connection with client (use an LED on the Launchpad to indicate Wi-Fi connection)
+	o Should be trying to receive a packet from the client
+	o Should acknowledge client once client has joined
+	• Initialize the board (draw arena, players, and scores)
+	• Add the following threads:
+	o GenerateBall
+	o DrawObjects
+	o ReadJoystickHost
+	o SendDataToClient
+	o ReceiveDataFromClient
+	o MoveLEDs (lower priority)
+	o Idle
+	• Kill self
+	*/
 
-	}
 }
 
 /*

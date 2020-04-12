@@ -1,6 +1,7 @@
 /*
  * G8RTOS_Scheduler.h
  */
+#include "msp.h"
 
 #ifndef G8RTOS_SCHEDULER_H_
 #define G8RTOS_SCHEDULER_H_

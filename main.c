@@ -1,10 +1,11 @@
 #include "msp.h"
 #include <driverlib.h>
 #include "G8RTOS.h"
-#include "threads.h"
 #include "LCD.h"
 #include "time.h"
 #include "stdlib.h"
+#include "cc3100_usage.h"
+#include "Game.h"
 
 #define MAIN_LAB5
 #ifdef MAIN_LAB5
@@ -24,7 +25,7 @@ void main(void)
 	//G8RTOS_InitSemaphore(&SPI_READY, 1);
 
 	/* Adds each task individually to the system */
-	//G8RTOS_AddThread(Read_Accel, 150, "ReadAccel");
+	G8RTOS_AddThread(CreateGame, 150, "CreateGame"); //NEEDS real PRI and maybe better name
 	//G8RTOS_AddThread(Idle, 200, "Idle");
 
 	//G8RTOS_AddAPeriodicEvent(LCD_Tap, 3,  PORT4_IRQn);
@@ -55,7 +56,6 @@ void main(void)
 	G8RTOS_Init();
 
 	LCD_Init(true);
-
 	/* For the color randomness */
 	srand(time(NULL));
 
