@@ -2,6 +2,7 @@
 #include "Joystick.h"
 #include "G8RTOS.h"
 #include <stdlib.h>
+#include "LCD.h"
 
 SpecificPlayerInfo_t clientToHostInfo;
 
@@ -354,17 +355,23 @@ void UpdateBallOnScreen(PrevBall_t * previousBall, Ball_t * currentBall, uint16_
  */
 void InitBoardState(){
 	/* White lines to define arena size */
+	G8RTOS_WaitSemaphore(&USING_SPI);
 	LCD_DrawRectangle(1, 40, 1, 239, LCD_WHITE);
+	G8RTOS_SignalSemaphore(&USING_SPI);
+
+	G8RTOS_WaitSemaphore(&USING_SPI);
 	LCD_DrawRectangle(280, 319, 1, 239, LCD_WHITE);
+	G8RTOS_SignalSemaphore(&USING_SPI);
 
 	/* Host Starting Score, in bottom left */
-	//LCD_Text(5, 235, "00", LCD_RED);
-	LCD_Text(5, 235, "00", LCD_RED);
-	/* The initial paddle */
+	G8RTOS_WaitSemaphore(&USING_SPI);
+	LCD_Text(5, 5,"00", PLAYER_RED);
+	G8RTOS_SignalSemaphore(&USING_SPI);
 
-	/* Draws to the left and the right of the paddle center size */
-	LCD_DrawRectangle(160, 192, 230, 235, PLAYER_RED);
-	LCD_DrawRectangle(160, 128, 230, 235, PLAYER_RED);
+	/* The initial paddle */
+	G8RTOS_WaitSemaphore(&USING_SPI);
+	LCD_DrawRectangle(128, 192, 235, 239, PLAYER_RED);
+	G8RTOS_SignalSemaphore(&USING_SPI);
 
 }
 
