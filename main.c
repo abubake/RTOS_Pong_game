@@ -15,6 +15,14 @@ void main(void)
 	/* Initializes all the hardware resources on the board and sets the amount of threads and system time to 0 */
 	G8RTOS_Init();
 
+	/* Initializes the Wifi on the host (Switch if you are Client) */
+	initCC3100(Host);
+	//SendData(_u8 *data, _u32 IP, _u16 BUF_SIZE);
+
+
+	//Host waits to hear from client
+	//BsdUdpServer(_u16 Port, _u8 *data, _u16 BUF_SIZE)
+
 	LCD_Init(true);
 
 	/* For the color randomness */
