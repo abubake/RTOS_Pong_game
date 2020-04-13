@@ -292,7 +292,8 @@ void DrawObjects(){
 	while(1){
 		/*
 		• Should hold arrays of previous players and ball positions
-		• Draw and/or update balls (you’ll need a way to tell whether to draw a new ball, or update its position (i.e. if a new ball has just been created – hence the alive attribute in the Ball_t struct.
+		• Draw and/or update balls (you’ll need a way to tell whether to draw a new ball, or update its position
+		(i.e. if a new ball has just been created – hence the alive attribute in the Ball_t struct.
 		• Update players
 		• Sleep for 20ms (reasonable refresh rate)
 		*/
