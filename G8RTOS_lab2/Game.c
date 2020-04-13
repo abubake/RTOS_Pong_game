@@ -222,8 +222,8 @@ void ReadJoystickHost(){
 void MoveBall(){
 	while(1){
 		/*
-		• Go through array of balls and find one that’s not alive
-		• Once found, initialize random position and X and Y velocities, as well as color and alive attributes
+		• Go through array of balls and find one that’s not alive (DONE)
+		• Once found, initialize random position and X and Y velocities, as well as color and alive attributes (DONE)
 		• Checking for collision given the current center and the velocity
 		• If collision occurs, adjust velocity and color accordingly
 		• If the ball passes the boundary edge, adjust score, account for the game possibly ending, and kill self
@@ -231,23 +231,23 @@ void MoveBall(){
 		• Sleep for 35ms
 		*/
 		for (int i = 0; i < NumBalls; i++){
-			if(myBalls[i].alive == false){
 
-				/* Gives a random color */
-				int randNum = (rand() % 3) + 1;
-				if(randNum == 1){
-					myBalls[i].color = LCD_ORANGE;
-				}
-				else if(randNum == 2){
-					myBalls[i].color = LCD_YELLOW;
-				}
-				else{
-					myBalls[i].color = LCD_WHITE;
-				}
+			if(myBalls[i].alive == false){ // Searching for the first dead ball
+				/* Gives random position */
+				myBalls[i].xPos = (rand() % 10) + 100;
+				myBalls[i].yPos = (rand() % 10) + 100;
 
 				/* Getting a random speed */
-				myBalls[i].speed = (rand() % 3) + 1;
+				myBalls[i].speed = (rand() % 2) + 1;
 
+				/* Gives a random color */
+				int randNum = (rand() % 2) + 1;
+				if(randNum == 1){
+					myBalls[i].color = LCD_BLUE;
+				}
+				else if(randNum == 2){
+					myBalls[i].color = LCD_RED;
+				}
 
 				myBalls[i].alive = true;
 				break;
@@ -261,9 +261,17 @@ void MoveBall(){
  * End of game for the host
  */
 void EndOfGameHost(){
-	while(1){
+		/*
+		• Kill all other threads (you’ll need to make a new function in the scheduler for this)
+		• Re-initialize semaphores
+		• Clear screen with the winner’s color
+		• Print some message that waits for the host’s action to start a new game
+		• Create an aperiodic thread that waits for the host’s button press (the client will just be waiting on the host to start a new game
+		• Once ready, send notification to client, reinitialize the game and objects, add back all the threads, and kill self
+		*/
+		LCD_Clear(LCD_RED);
 
-	}
+
 }
 
 /*********************************************** Host Threads *********************************************************************/
@@ -282,7 +290,14 @@ void IdleThread(){
  */
 void DrawObjects(){
 	while(1){
+		/*
+		• Should hold arrays of previous players and ball positions
+		• Draw and/or update balls (you’ll need a way to tell whether to draw a new ball, or update its position (i.e. if a new ball has just been created – hence the alive attribute in the Ball_t struct.
+		• Update players
+		• Sleep for 20ms (reasonable refresh rate)
+		*/
 
+		sleep(20);
 	}
 }
 
@@ -291,6 +306,9 @@ void DrawObjects(){
  */
 void MoveLEDs(){
 	while(1){
+		/*
+		• Responsible for updating the LED array with current scores
+		*/
 
 	}
 }
