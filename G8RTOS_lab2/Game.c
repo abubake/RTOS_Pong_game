@@ -125,23 +125,27 @@ void EndOfGameClient(){
  * Thread for the host to create a game
  */
 void CreateGame(){
-	/*
+	/* WITH WIFI
 	• Only thread created before launching the OS
 	• Initializes the players
 	• Establish connection with client (use an LED on the Launchpad to indicate Wi-Fi connection)
 	o Should be trying to receive a packet from the client
 	o Should acknowledge client once client has joined
-	• Initialize the board (draw arena, players, and scores)
 	*/
 
-	/* Add these threads. Need better priority definitions */
-	G8RTOS_AddThread(GenerateBall, 200, "GenerateBall");
-	G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
-	G8RTOS_AddThread(ReadJoystickHost, 200, "ReadJoystickHost");
-	G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
-	G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
-	G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
-	G8RTOS_AddThread(IdleThread, 200, "Idle");
+	/* W/O WIFI
+	• Initialize the board (draw arena, players, and scores)
+	*/
+	InitBoardState();
+
+	/* Add these threads. (Need better priority definitions) */
+	//G8RTOS_AddThread(GenerateBall, 200, "GenerateBall");
+	//G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
+	//G8RTOS_AddThread(ReadJoystickHost, 200, "ReadJoystickHost");
+	//G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
+	//G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
+	//G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+	//G8RTOS_AddThread(IdleThread, 200, "Idle");
 
 	G8RTOS_KillSelf();
 }
@@ -315,3 +319,53 @@ void MoveLEDs(){
 }
 
 /*********************************************** Common Threads *********************************************************************/
+
+/*********************************************** Public Functions *********************************************************************/
+/*
+ * Returns either Host or Client depending on button press
+ */
+playerType GetPlayerRole(){
+
+}
+
+/*
+ * Draw players given center X center coordinate
+ */
+void DrawPlayer(GeneralPlayerInfo_t * player){
+
+}
+
+/*
+ * Updates player's paddle based on current and new center
+ */
+void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * outPlayer){
+
+}
+
+/*
+ * Function updates ball position on screen
+ */
+void UpdateBallOnScreen(PrevBall_t * previousBall, Ball_t * currentBall, uint16_t outColor){
+
+}
+
+/*
+ * Initializes and prints initial game state
+ */
+void InitBoardState(){
+	/* White lines to define arena size */
+	LCD_DrawRectangle(1, 40, 1, 239, LCD_WHITE);
+	LCD_DrawRectangle(280, 319, 1, 239, LCD_WHITE);
+
+	/* Host Starting Score, in bottom left */
+	//LCD_Text(5, 235, "00", LCD_RED);
+	LCD_Text(5, 235, "00", LCD_RED);
+	/* The initial paddle */
+
+	/* Draws to the left and the right of the paddle center size */
+	LCD_DrawRectangle(160, 192, 230, 235, PLAYER_RED);
+	LCD_DrawRectangle(160, 128, 230, 235, PLAYER_RED);
+
+}
+
+/*********************************************** Public Functions *********************************************************************/

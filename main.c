@@ -25,9 +25,7 @@ void main(void)
 	//G8RTOS_InitSemaphore(&SPI_READY, 1);
 
 	/* Adds each task individually to the system */
-	G8RTOS_AddThread(CreateGame, 150, "CreateGame"); //NEEDS real PRI and maybe better name
-	//G8RTOS_AddThread(Idle, 200, "Idle");
-
+	G8RTOS_AddThread(CreateGame, 150, "CreateGame"); //NEEDS real PRI and maybe better nam
 	//G8RTOS_AddAPeriodicEvent(LCD_Tap, 3,  PORT4_IRQn);
 
 	//G8RTOS_InitFIFO(BALLFIFO);
