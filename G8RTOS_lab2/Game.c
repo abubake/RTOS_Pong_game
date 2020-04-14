@@ -17,6 +17,7 @@ int16_t host_Y_coord;
 balls_t myBalls[20];
 int NumBalls = 20;
 int ballNumber;
+int curBalls = 0;
 
 
 /*********************************************** Client Threads *********************************************************************/
@@ -140,13 +141,13 @@ void CreateGame(){
 	InitBoardState();
 
 	/* Add these threads. (Need better priority definitions) */
-	//G8RTOS_AddThread(GenerateBall, 200, "GenerateBall");
+	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
 	//G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
 	//G8RTOS_AddThread(ReadJoystickHost, 200, "ReadJoystickHost");
 	//G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
 	//G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
 	//G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
-	//G8RTOS_AddThread(IdleThread, 200, "Idle");
+	G8RTOS_AddThread(IdleThread, 200, "Idle");
 
 	G8RTOS_KillSelf();
 }
@@ -195,7 +196,13 @@ void GenerateBall(){
 		• Adds another MoveBall thread if the number of balls is less than the max
 		• Sleeps proportional to the number of balls currently in play
 		*/
+	    if(curBalls < NumBalls){
+	        curBalls++;
+	        G8RTOS_AddThread(MoveBall, 5, "MoveBall");
 
+	    }
+	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
+	    sleep(curBalls*5000);
 	}
 }
 
@@ -225,40 +232,44 @@ void ReadJoystickHost(){
  * Thread to move a single ball
  */
 void MoveBall(){
+    /*
+    • Go through array of balls and find one that’s not alive (DONE)
+    • Once found, initialize random position and X and Y velocities, as well as color and alive attributes (DONE)
+    • Checking for collision given the current center and the velocity
+    • If collision occurs, adjust velocity and color accordingly
+    • If the ball passes the boundary edge, adjust score, account for the game possibly ending, and kill self
+    • Otherwise, just move the ball in its current direction according to its velocity
+    • Sleep for 35ms
+    */
+
+    //Initialize ball if it was newly made
+    for (int i = 0; i < NumBalls; i++){
+        if(myBalls[i].alive == false){ // Searching for the first dead ball
+            /* Gives random position */
+            myBalls[i].xPos = (rand() % 10) + 100;
+            myBalls[i].yPos = (rand() % 10) + 100;
+
+            /* Getting a random speed */
+            myBalls[i].speed = (rand() % 2) + 1;
+
+            //Ball is initially white
+            myBalls[i].color = LCD_WHITE;
+            myBalls[i].alive = true;
+            break;
+        }
+    }
 	while(1){
-		/*
-		• Go through array of balls and find one that’s not alive (DONE)
-		• Once found, initialize random position and X and Y velocities, as well as color and alive attributes (DONE)
-		• Checking for collision given the current center and the velocity
-		• If collision occurs, adjust velocity and color accordingly
-		• If the ball passes the boundary edge, adjust score, account for the game possibly ending, and kill self
-		• Otherwise, just move the ball in its current direction according to its velocity
-		• Sleep for 35ms
-		*/
-		for (int i = 0; i < NumBalls; i++){
+	    //Check for collision
 
-			if(myBalls[i].alive == false){ // Searching for the first dead ball
-				/* Gives random position */
-				myBalls[i].xPos = (rand() % 10) + 100;
-				myBalls[i].yPos = (rand() % 10) + 100;
+	    //If collision occurred, change color and velocity
 
-				/* Getting a random speed */
-				myBalls[i].speed = (rand() % 2) + 1;
+	    //If ball has passed boundary, adjust score
 
-				/* Gives a random color */
-				int randNum = (rand() % 2) + 1;
-				if(randNum == 1){
-					myBalls[i].color = LCD_BLUE;
-				}
-				else if(randNum == 2){
-					myBalls[i].color = LCD_RED;
-				}
+	    //If score happened, adjust score and killself
+	    //Check if game has ended
 
-				myBalls[i].alive = true;
-				break;
-							}
-		}
-			sleep(35);
+	    //If not killed, move ball to position according to its velocity
+		sleep(35);
 	}
 }
 

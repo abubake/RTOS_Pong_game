@@ -155,7 +155,7 @@ void SysTick_Handler()
 
 	tcb_t *threadPtr = CurrentlyRunningThread;
 	for(uint32_t i=0; i<NumberOfThreads; i++){
-		if(threadPtr->sleepCount >= SystemTime){ //CHANGED from ==
+		if(threadPtr->sleepCount <= SystemTime){ //Was >=
 			threadPtr->asleep = false;
 			threadPtr->sleepCount = 0;
 		}
