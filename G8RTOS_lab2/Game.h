@@ -186,6 +186,15 @@ typedef struct balls_t
 		bool alive;
 		threadId_t threadID;
 		uint16_t color;
+
+		PrevBall_t prevLocs[8];
+		uint8_t locInd;
+
+		int16_t xVel;
+		int16_t yVel;
+
+		bool newBall;
+
 }balls_t;
 /*********************************************** Data Structures ********************************************************************/
 

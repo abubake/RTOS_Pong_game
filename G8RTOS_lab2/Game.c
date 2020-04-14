@@ -14,8 +14,7 @@ int16_t host_X_coord; // Since I have two joystick read functions, shouldn't be 
 int16_t host_Y_coord;
 
 /*Ball related Info */
-balls_t myBalls[20];
-int NumBalls = 20;
+balls_t myBalls[MAX_NUM_OF_BALLS];
 int ballNumber;
 int curBalls = 0;
 
@@ -142,7 +141,7 @@ void CreateGame(){
 
 	/* Add these threads. (Need better priority definitions) */
 	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
-	//G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
+	G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
 	//G8RTOS_AddThread(ReadJoystickHost, 200, "ReadJoystickHost");
 	//G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
 	//G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
@@ -196,13 +195,14 @@ void GenerateBall(){
 		• Adds another MoveBall thread if the number of balls is less than the max
 		• Sleeps proportional to the number of balls currently in play
 		*/
-	    if(curBalls < NumBalls){
+	    if(curBalls < MAX_NUM_OF_BALLS){
 	        curBalls++;
+	        //FIXME RTOS does not seem to enter MoveBall ever
 	        G8RTOS_AddThread(MoveBall, 5, "MoveBall");
 
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
-	    sleep(curBalls*5000);
+	    sleep(curBalls*1000);
 	}
 }
 
@@ -243,7 +243,8 @@ void MoveBall(){
     */
 
     //Initialize ball if it was newly made
-    for (int i = 0; i < NumBalls; i++){
+    uint8_t ind;
+    for (int i = 0; i < MAX_NUM_OF_BALLS; i++){
         if(myBalls[i].alive == false){ // Searching for the first dead ball
             /* Gives random position */
             myBalls[i].xPos = (rand() % 10) + 100;
@@ -251,10 +252,18 @@ void MoveBall(){
 
             /* Getting a random speed */
             myBalls[i].speed = (rand() % 2) + 1;
+            myBalls[i].yVel = (rand() % 2) + 1;
+            myBalls[i].xVel = (rand() % 2) + 1;
 
             //Ball is initially white
             myBalls[i].color = LCD_WHITE;
             myBalls[i].alive = true;
+
+            myBalls[i].locInd = 0;
+            myBalls[i].prevLocs[0].CenterX = myBalls[i].xPos;
+            myBalls[i].prevLocs[0].CenterY = myBalls[i].yPos;
+            myBalls[i].newBall = true;
+            ind = i;
             break;
         }
     }
@@ -262,13 +271,40 @@ void MoveBall(){
 	    //Check for collision
 
 	    //If collision occurred, change color and velocity
+	    //TODO check for collision
+	    bool collision = false;
+	    if(collision){
+	        //TODO Check if collided with wall
+	        bool wall = false;
+	        if(wall){
+	            //If wall is hit, maintain vertical velocity, but reflect horizontally
+	            myBalls[ind].xVel = myBalls[ind].xVel * -1;
+	        }
+	        bool paddle = false;
+	        if(paddle){
+	            //if(redPaddle){
+	            myBalls[ind].color = LCD_RED;
+	            //else{
+	            //myBalls[ind].color = LCD_BLUE;
 
-	    //If ball has passed boundary, adjust score
+	            //TODO implement Minkowski algorithm or other algorithm
+	        }
+	    }
 
-	    //If score happened, adjust score and killself
-	    //Check if game has ended
+	    //TODO If ball has passed boundary, adjust score
+
+	    //TODO If score happened, adjust score and killself
+	    //TODO Check if game has ended
 
 	    //If not killed, move ball to position according to its velocity
+	    myBalls[ind].xPos = myBalls[ind].xPos + myBalls[ind].xVel;
+	    myBalls[ind].yPos = myBalls[ind].yPos + myBalls[ind].yVel;
+
+	    //Save position to positions buffer
+	    myBalls[ind].prevLocs[myBalls[ind].locInd].CenterX = myBalls[ind].xPos;
+	    myBalls[ind].prevLocs[myBalls[ind].locInd].CenterY = myBalls[ind].yPos;
+	    myBalls[ind].locInd = (myBalls[ind].locInd + 1) & 7;  //Increment circular buffer index
+
 		sleep(35);
 	}
 }
@@ -313,6 +349,48 @@ void DrawObjects(){
 		• Update players
 		• Sleep for 20ms (reasonable refresh rate)
 		*/
+
+	    //Update Ball Locations
+	    for(uint8_t i = 0; i < MAX_NUM_OF_BALLS; i++){
+	        //Check if ball is alive
+	        if(myBalls[i].alive){
+	            if(myBalls[i].newBall){
+	                //If a new ball, paint its initial location
+	                int16_t xCoord = myBalls[i].xPos - BALL_SIZE_D2;
+	                int16_t yCoord = myBalls[i].yPos - BALL_SIZE_D2;
+
+	                G8RTOS_WaitSemaphore(&USING_SPI);
+	                //Change to white later
+	                LCD_DrawRectangle(xCoord, xCoord + BALL_SIZE, yCoord, yCoord + BALL_SIZE, LCD_GREEN);
+	                G8RTOS_SignalSemaphore(&USING_SPI);
+
+	                //Not new anymore
+	                myBalls[i].newBall = false;
+	            }
+	            else{
+	                //If not new, look to buffer for previous location
+	                int16_t prevX = myBalls[i].prevLocs[(myBalls[i].locInd - 1) & 7].CenterX - BALL_SIZE_D2;
+	                int16_t prevY = myBalls[i].prevLocs[(myBalls[i].locInd - 1) & 7].CenterY - BALL_SIZE_D2;
+
+
+	                //Paint black over where it was
+                    G8RTOS_WaitSemaphore(&USING_SPI);
+                    LCD_DrawRectangle(prevX, prevX + BALL_SIZE, prevY, prevY + BALL_SIZE, BACK_COLOR);
+                    G8RTOS_SignalSemaphore(&USING_SPI);
+
+	                //Paint where it is now
+                    G8RTOS_WaitSemaphore(&USING_SPI);
+                    //Change to myBalls.color later
+                    LCD_DrawRectangle(myBalls[i].xPos - BALL_SIZE_D2, myBalls[i].xPos + BALL_SIZE_D2, myBalls[i].yPos + BALL_SIZE_D2, myBalls[i].yPos - BALL_SIZE_D2, LCD_GREEN);
+                    G8RTOS_SignalSemaphore(&USING_SPI);
+	            }
+
+
+	        }
+	    }
+
+	    //Update Players
+	    //TODO
 
 		sleep(20);
 	}

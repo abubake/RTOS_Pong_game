@@ -29,7 +29,7 @@ typedef struct tcb_t{
 
     bool isAlive;
     threadId_t threadID;
-    char threadName[MAX_NAME_LENGTH];
+    char * threadName;
     uint16_t priority;
 
     bool asleep;
