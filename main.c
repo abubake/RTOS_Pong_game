@@ -10,8 +10,7 @@
 #define MAIN_LAB5
 #ifdef MAIN_LAB5
 
-void main(void)
-	{
+void main(void){
 	/* Initializes all the hardware resources on the board and sets the amount of threads and system time to 0 */
 	G8RTOS_Init();
 

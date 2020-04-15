@@ -254,21 +254,23 @@ void MoveBall(){
             myBalls[i].yPos = (rand() % MAX_SCREEN_Y - 50) + 25;
 
             /* Getting a random speed */
-            myBalls[i].speed = (rand() % MAX_BALL_SPEED) + 1;
+            //TODO Experimentally determine a good max speed
+            int16_t xMag = (rand() % MAX_BALL_SPEED) + 1;
+            int16_t yMag = (rand() % MAX_BALL_SPEED) + 1;
 
             //Get random x-direction
             if(rand() % 2){
-                myBalls[i].xVel = myBalls[i].speed * -1;
+                myBalls[i].xVel = xMag * -1;
             }
             else{
-                myBalls[i].xVel = myBalls[i].speed;
+                myBalls[i].xVel = xMag;
             }
             //Get random y-direction
             if(rand() % 2){
-                myBalls[i].yVel = myBalls[i].speed * -1;
+                myBalls[i].yVel = yMag * -1;
             }
             else{
-                myBalls[i].yVel = myBalls[i].speed;
+                myBalls[i].yVel = yMag;
             }
 
             //Ball is initially white
@@ -369,6 +371,10 @@ void DrawObjects(){
 		• Update players
 		• Sleep for 20ms (reasonable refresh rate)
 		*/
+
+	    //FIXME Sometimes after a very long time the balls leave a trail behind them, hard to make happen so hard
+	    //      to observe and debug.  Unclear what causes this, but may be a non-issue once we get collisions
+	    //      and scoring/ball suicide working.
 
 	    //Update Ball Locations
 	    for(uint8_t i = 0; i < MAX_NUM_OF_BALLS; i++){

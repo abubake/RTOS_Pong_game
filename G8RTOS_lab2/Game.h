@@ -182,7 +182,9 @@ typedef struct balls_t
 {
 		int16_t xPos;
 		int16_t yPos;
-		int16_t speed;
+        int16_t xVel;
+        int16_t yVel;
+
 		bool alive;
 		threadId_t threadID;
 		uint16_t color;
@@ -190,8 +192,7 @@ typedef struct balls_t
 		PrevBall_t prevLocs[8];
 		uint8_t locInd;
 
-		int16_t xVel;
-		int16_t yVel;
+
 
 		bool newBall;
 
