@@ -200,12 +200,10 @@ void GenerateBall(){
 		*/
 	    if(curBalls < MAX_NUM_OF_BALLS){
 	        curBalls++;
-	        //FIXME RTOS does not seem to enter MoveBall ever
 	        G8RTOS_AddThread(MoveBall, 30, "MoveBall");
-
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
-	    sleep(curBalls*1000);
+	    sleep(curBalls*2000);
 	}
 }
 
@@ -252,13 +250,31 @@ void MoveBall(){
 
         	//• Once found, initialize random position and X and Y velocities, as well as color and alive attributes
             /* Gives random position */
-            myBalls[i].xPos = (rand() % 10) + 100;
-            myBalls[i].yPos = (rand() % 10) + 100;
+
+            //Random x that will be within arena bounds and not too close to a wall
+            myBalls[i].xPos = (rand() % (ARENA_MAX_X - ARENA_MIN_X - 10)) + ARENA_MIN_X + 5;
+            //Random y that won't be too close to the paddles
+            myBalls[i].yPos = (rand() % MAX_SCREEN_Y - 50) + 25;
 
             /* Getting a random speed */
-            myBalls[i].speed = (rand() % 2) + 1;
-            myBalls[i].yVel = (rand() % 2) + 1;
-            myBalls[i].xVel = (rand() % 2) + 1;
+            //TODO Experimentally determine a good max speed
+            int16_t xMag = (rand() % MAX_BALL_SPEED) + 1;
+            int16_t yMag = (rand() % MAX_BALL_SPEED) + 1;
+
+            //Get random x-direction
+            if(rand() % 2){
+                myBalls[i].xVel = xMag * -1;
+            }
+            else{
+                myBalls[i].xVel = xMag;
+            }
+            //Get random y-direction
+            if(rand() % 2){
+                myBalls[i].yVel = yMag * -1;
+            }
+            else{
+                myBalls[i].yVel = yMag;
+            }
 
             //Ball is initially white
             myBalls[i].color = LCD_WHITE;
@@ -338,6 +354,10 @@ void DrawObjects(){
 		• Sleep for 20ms (reasonable refresh rate)
 		*/
 
+	    //FIXME Sometimes after a very long time the balls leave a trail behind them, hard to make happen so hard
+	    //      to observe and debug.  Unclear what causes this, but may be a non-issue once we get collisions
+	    //      and scoring/ball suicide working.
+
 	    //Update Ball Locations
 	    for(uint8_t i = 0; i < MAX_NUM_OF_BALLS; i++){
 	        //Check if ball is alive
@@ -357,9 +377,8 @@ void DrawObjects(){
 	            }
 	            else{
 	                //If not new, look to buffer for previous location
-	                int16_t prevX = myBalls[i].prevLocs[(myBalls[i].locInd - 1) & 7].CenterX - BALL_SIZE_D2;
-	                int16_t prevY = myBalls[i].prevLocs[(myBalls[i].locInd - 1) & 7].CenterY - BALL_SIZE_D2;
-
+	                int16_t prevX = myBalls[i].prevLocs[(myBalls[i].locInd - 2) & 7].CenterX - BALL_SIZE_D2;
+	                int16_t prevY = myBalls[i].prevLocs[(myBalls[i].locInd - 2) & 7].CenterY - BALL_SIZE_D2;
 
 	                //Paint background color over where it was
                     G8RTOS_WaitSemaphore(&USING_SPI);
@@ -367,8 +386,8 @@ void DrawObjects(){
                     G8RTOS_SignalSemaphore(&USING_SPI);
 
 	                //Paint where it is now
-                    G8RTOS_WaitSemaphore(&USING_SPI);
                     //Change to myBalls.color later
+                    G8RTOS_WaitSemaphore(&USING_SPI);
                     LCD_DrawRectangle(myBalls[i].xPos - BALL_SIZE_D2, myBalls[i].xPos + BALL_SIZE_D2, myBalls[i].yPos - BALL_SIZE_D2, myBalls[i].yPos + BALL_SIZE_D2, LCD_GREEN);
                     G8RTOS_SignalSemaphore(&USING_SPI);
 	            }

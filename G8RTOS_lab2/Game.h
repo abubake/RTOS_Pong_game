@@ -41,7 +41,7 @@ semaphore_t USING_SPI; // semaphore for SPI interface using EUSCIB3 with LCD/ To
 #define PADDLE_LEN_D2                (PADDLE_LEN >> 1)
 #define PADDLE_WID                   4
 #define PADDLE_WID_D2                (PADDLE_WID >> 1)
-#define BALL_SIZE                    4
+#define BALL_SIZE                    3
 #define BALL_SIZE_D2                 (BALL_SIZE >> 1)
 
 /* Centers for paddles at the center of the sides */
@@ -182,16 +182,18 @@ typedef struct balls_t
 {	/*The center of ball */
 		int16_t xPos;
 		int16_t yPos;
-		int16_t speed;
+        int16_t xVel;
+        int16_t yVel;
+
 		bool alive;
 		threadId_t threadID;
 		uint16_t color;
 
+		//Technically only needs 1 PrevBall
 		PrevBall_t prevLocs[8];
 		uint8_t locInd;
 
-		int16_t xVel;
-		int16_t yVel;
+
 
 		int16_t width;
 		int16_t height;
