@@ -198,7 +198,7 @@ void GenerateBall(){
 	    if(curBalls < MAX_NUM_OF_BALLS){
 	        curBalls++;
 	        //FIXME RTOS does not seem to enter MoveBall ever
-	        G8RTOS_AddThread(MoveBall, 5, "MoveBall");
+	        G8RTOS_AddThread(MoveBall, 30, "MoveBall");
 
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
@@ -232,20 +232,22 @@ void ReadJoystickHost(){
  * Thread to move a single ball
  */
 void MoveBall(){
-    /*
-    • Go through array of balls and find one that’s not alive (DONE)
-    • Once found, initialize random position and X and Y velocities, as well as color and alive attributes (DONE)
-    • Checking for collision given the current center and the velocity
-    • If collision occurs, adjust velocity and color accordingly
-    • If the ball passes the boundary edge, adjust score, account for the game possibly ending, and kill self
-    • Otherwise, just move the ball in its current direction according to its velocity
-    • Sleep for 35ms
-    */
 
-    //Initialize ball if it was newly made
+	/*
+	• Go through array of balls and find one that’s not alive
+	• Once found, initialize random position and X and Y velocities, as well as color and alive attributes
+	• Checking for collision given the current center and the velocity
+	• If collision occurs, adjust velocity and color accordingly
+	• If the ball passes the boundary edge, adjust score, account for the game possibly ending, and kill self
+	• Otherwise, just move the ball in its current direction according to its velocity
+	• Sleep for 35ms
+	*/
+	//Initialize ball if it was newly made
     uint8_t ind;
     for (int i = 0; i < MAX_NUM_OF_BALLS; i++){
         if(myBalls[i].alive == false){ // Searching for the first dead ball
+
+        	//• Once found, initialize random position and X and Y velocities, as well as color and alive attributes
             /* Gives random position */
             myBalls[i].xPos = (rand() % 10) + 100;
             myBalls[i].yPos = (rand() % 10) + 100;
@@ -267,10 +269,14 @@ void MoveBall(){
             break;
         }
     }
+    	/*
+        • If the ball passes the boundary edge, adjust score, account for the game possibly ending, and kill self
+        • Otherwise, just move the ball in its current direction according to its velocity
+        */
 	while(1){
-	    //Check for collision
+		//• Checking for collision given the current center and the velocity
 
-	    //If collision occurred, change color and velocity
+	    //If collision occurred, change color and velocity accordingly
 	    //TODO check for collision
 	    bool collision = false;
 	    if(collision){
