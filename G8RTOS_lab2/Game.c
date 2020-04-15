@@ -197,12 +197,10 @@ void GenerateBall(){
 		*/
 	    if(curBalls < MAX_NUM_OF_BALLS){
 	        curBalls++;
-	        //FIXME RTOS does not seem to enter MoveBall ever
 	        G8RTOS_AddThread(MoveBall, 30, "MoveBall");
-
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
-	    sleep(curBalls*1000);
+	    sleep(curBalls*2000);
 	}
 }
 
@@ -249,13 +247,29 @@ void MoveBall(){
 
         	//• Once found, initialize random position and X and Y velocities, as well as color and alive attributes
             /* Gives random position */
-            myBalls[i].xPos = (rand() % 10) + 100;
-            myBalls[i].yPos = (rand() % 10) + 100;
+
+            //Random x that will be within arena bounds and not too close to a wall
+            myBalls[i].xPos = (rand() % (ARENA_MAX_X - ARENA_MIN_X - 10)) + ARENA_MIN_X + 5;
+            //Random y that won't be too close to the paddles
+            myBalls[i].yPos = (rand() % MAX_SCREEN_Y - 50) + 25;
 
             /* Getting a random speed */
-            myBalls[i].speed = (rand() % 2) + 1;
-            myBalls[i].yVel = (rand() % 2) + 1;
-            myBalls[i].xVel = (rand() % 2) + 1;
+            myBalls[i].speed = (rand() % MAX_BALL_SPEED) + 1;
+
+            //Get random x-direction
+            if(rand() % 2){
+                myBalls[i].xVel = myBalls[i].speed * -1;
+            }
+            else{
+                myBalls[i].xVel = myBalls[i].speed;
+            }
+            //Get random y-direction
+            if(rand() % 2){
+                myBalls[i].yVel = myBalls[i].speed * -1;
+            }
+            else{
+                myBalls[i].yVel = myBalls[i].speed;
+            }
 
             //Ball is initially white
             myBalls[i].color = LCD_WHITE;
@@ -375,8 +389,8 @@ void DrawObjects(){
 	            }
 	            else{
 	                //If not new, look to buffer for previous location
-	                int16_t prevX = myBalls[i].prevLocs[(myBalls[i].locInd - 1) & 7].CenterX - BALL_SIZE_D2;
-	                int16_t prevY = myBalls[i].prevLocs[(myBalls[i].locInd - 1) & 7].CenterY - BALL_SIZE_D2;
+	                int16_t prevX = myBalls[i].prevLocs[(myBalls[i].locInd - 2) & 7].CenterX - BALL_SIZE_D2;
+	                int16_t prevY = myBalls[i].prevLocs[(myBalls[i].locInd - 2) & 7].CenterY - BALL_SIZE_D2;
 
 
 	                //Paint background color over where it was
