@@ -516,3 +516,36 @@ sched_ErrCode_t G8RTOS_KillSelf(){
 	return NO_ERROR;
 	}
 }
+
+/*
+ * G8RTOS_KillAllOthers()
+ *   Kills all threads other than the current thread
+ */
+sched_ErrCode_t G8RTOS_KillAllOthers(){
+    //Start critical section so the killing is uninterrupted
+    int32_t x = StartCriticalSection();
+    sched_ErrCode_t errorCode = NO_ERROR;
+
+    //Get the ID of the thread NOT to kill
+    threadId_t curThread = G8RTOS_GetThreadId();
+
+    //Iterate through all other threads, looking for living threads with different IDs
+    for(uint16_t i = 0; i < MAX_THREADS; i++){
+        //If alive and has different ID, kill
+        if((threadControlBlocks[i].threadID != curThread) && threadControlBlocks[i].isAlive){
+            //Kill that thread
+            errorCode = G8RTOS_KillThread(threadControlBlocks[i].threadID);
+        }
+        if(errorCode != NO_ERROR){
+            //If errorCode is not NO_ERROR then something went wrong
+            break;
+        }
+    }
+
+
+    EndCriticalSection(x);
+    return errorCode;
+}
+
+
+

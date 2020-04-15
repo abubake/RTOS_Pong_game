@@ -189,6 +189,7 @@ typedef struct balls_t
 		threadId_t threadID;
 		uint16_t color;
 
+		//Technically only needs 1 PrevBall
 		PrevBall_t prevLocs[8];
 		uint8_t locInd;
 

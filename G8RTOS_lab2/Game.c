@@ -398,15 +398,14 @@ void DrawObjects(){
 	                int16_t prevX = myBalls[i].prevLocs[(myBalls[i].locInd - 2) & 7].CenterX - BALL_SIZE_D2;
 	                int16_t prevY = myBalls[i].prevLocs[(myBalls[i].locInd - 2) & 7].CenterY - BALL_SIZE_D2;
 
-
 	                //Paint background color over where it was
                     G8RTOS_WaitSemaphore(&USING_SPI);
                     LCD_DrawRectangle(prevX, prevX + BALL_SIZE, prevY, prevY + BALL_SIZE, BACK_COLOR);
                     G8RTOS_SignalSemaphore(&USING_SPI);
 
 	                //Paint where it is now
-                    G8RTOS_WaitSemaphore(&USING_SPI);
                     //Change to myBalls.color later
+                    G8RTOS_WaitSemaphore(&USING_SPI);
                     LCD_DrawRectangle(myBalls[i].xPos - BALL_SIZE_D2, myBalls[i].xPos + BALL_SIZE_D2, myBalls[i].yPos - BALL_SIZE_D2, myBalls[i].yPos + BALL_SIZE_D2, LCD_GREEN);
                     G8RTOS_SignalSemaphore(&USING_SPI);
 	            }
