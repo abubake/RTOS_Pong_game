@@ -18,6 +18,9 @@ balls_t myBalls[MAX_NUM_OF_BALLS];
 int ballNumber;
 int curBalls = 0;
 
+/* The paddle */
+GeneralPlayerInfo_t paddle;
+
 
 /*********************************************** Client Threads *********************************************************************/
 /*
@@ -274,28 +277,7 @@ void MoveBall(){
         • Otherwise, just move the ball in its current direction according to its velocity
         */
 	while(1){
-		//• Checking for collision given the current center and the velocity
 
-	    //If collision occurred, change color and velocity accordingly
-	    //TODO check for collision
-	    bool collision = false;
-	    if(collision){
-	        //TODO Check if collided with wall
-	        bool wall = false;
-	        if(wall){
-	            //If wall is hit, maintain vertical velocity, but reflect horizontally
-	            myBalls[ind].xVel = myBalls[ind].xVel * -1;
-	        }
-	        bool paddle = false;
-	        if(paddle){
-	            //if(redPaddle){
-	            myBalls[ind].color = LCD_RED;
-	            //else{
-	            //myBalls[ind].color = LCD_BLUE;
-
-	            //TODO implement Minkowski algorithm or other algorithm
-	        }
-	    }
 
 	    //TODO If ball has passed boundary, adjust score
 
@@ -443,6 +425,67 @@ void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * out
  */
 void UpdateBallOnScreen(PrevBall_t * previousBall, Ball_t * currentBall, uint16_t outColor){
 
+}
+/*
+* detects if a collision occurs on a paddle
+*/
+void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle){
+				bool collision = false;
+				/*
+				myBalls[ind].width = 3;
+				myBalls[ind].height = 3;
+				*/
+				myBalls[ind].xPos = 100; //testing values
+				myBalls[ind].yPos = 100;
+//need to define width somewhere
+				int32_t w = 0.5 * (myBalls[ind].width + 64); //paddle width
+				int32_t h = 0.5 * (myBalls[ind].height + 4); //paddle height
+				int32_t dx = myBalls[ind].xPos - paddle.currentCenter;
+				int32_t dy = myBalls[ind].yPos - paddle.currentCenter;
+
+				if (abs(dx) <= w && abs(dy) <= h)
+				{
+				/* collision! */
+				collision = true;
+				int32_t wy = w * dy;
+				int32_t hx = h * dx;
+				if (wy > hx){
+					if (wy > -hx){
+					/* collision at the top */
+					}
+					else{
+					/* on the left */
+					}
+				}
+				else{
+					if (wy > -hx){
+					/* on the right */
+					}
+					else{
+					/* at the bottom */
+					}
+				}
+
+			    //If collision occurred, change color and velocity accordingly
+			    //TODO check for collision
+			    if(collision){
+			        //TODO Check if collided with wall
+			        bool wall = false;
+			        if(wall){
+			            //If wall is hit, maintain vertical velocity, but reflect horizontally
+			            myBalls[ind].xVel = myBalls[ind].xVel * -1;
+			        }
+			        bool paddle = false;
+			        if(paddle){
+			            //if(redPaddle){
+			            myBalls[ind].color = LCD_RED;
+			            //else{
+			            //myBalls[ind].color = LCD_BLUE;
+
+			            //TODO implement Minkowski algorithm or other algorithm
+			        }
+			    }
+				}
 }
 
 /*

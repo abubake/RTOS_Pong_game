@@ -179,7 +179,7 @@ typedef struct
  * Struct of ball information, based upon lab 4 ball struct
  */
 typedef struct balls_t
-{
+{	/*The center of ball */
 		int16_t xPos;
 		int16_t yPos;
 		int16_t speed;
@@ -192,6 +192,9 @@ typedef struct balls_t
 
 		int16_t xVel;
 		int16_t yVel;
+
+		int16_t width;
+		int16_t height;
 
 		bool newBall;
 
@@ -306,6 +309,11 @@ void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * out
  * Function updates ball position on screen
  */
 void UpdateBallOnScreen(PrevBall_t * previousBall, Ball_t * currentBall, uint16_t outColor);
+
+/*
+ * detects if a collision occurs on a paddle
+ */
+void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle);
 
 /*
  * Initializes and prints initial game state
