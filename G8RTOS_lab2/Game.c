@@ -304,7 +304,7 @@ void MoveBall(){
 		int32_t dx = myBalls[ind].xPos - PlayerPaddle.currentCenter; //TODO: Implement paddle position
 		int32_t dy = myBalls[ind].yPos - PlayerPaddle.currentCenter;
 
-		if((myBalls[ind].yPos >= 279)||(myBalls[ind].yPos <= 39)){
+		if((myBalls[ind].xPos >= 273)||(myBalls[ind].xPos <= 45)){ // subtracted 6 and added 6 from actual edges to prevent eroding wall effect
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
 		}
