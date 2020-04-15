@@ -19,7 +19,7 @@ int ballNumber;
 int curBalls = 0;
 
 /* The paddle */
-GeneralPlayerInfo_t paddle;
+GeneralPlayerInfo_t PlayerPaddle;
 
 
 /*********************************************** Client Threads *********************************************************************/
@@ -294,6 +294,59 @@ void MoveBall(){
         */
 	while(1){
 
+		/* WALL COLLISION DETECTION */
+		bool collision = false; //maybe make this global
+		bool wall = false; //both variables get reset
+		bool paddle = false;
+
+		int32_t w = 0.5 * (myBalls[ind].width + 64); //paddle width
+		int32_t h = 0.5 * (myBalls[ind].height + 4); //paddle height
+		int32_t dx = myBalls[ind].xPos - PlayerPaddle.currentCenter; //TODO: Implement paddle position
+		int32_t dy = myBalls[ind].yPos - PlayerPaddle.currentCenter;
+
+		if((myBalls[ind].yPos >= 279)||(myBalls[ind].yPos <= 39)){
+			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
+			wall = true;
+		}
+		else if(abs(dx) <= w && abs(dy) <= h){ //For the paddle
+			collision = true;
+			paddle = true;
+			int32_t wy = w * dy;
+			int32_t hx = h * dx;
+			if (wy > hx)
+			{
+				if (wy > -hx) //TODO: Set flags for paddle & adapt mincowsky to break paddle into 3 parts
+				{
+				/* collision at the top */
+				}
+				else
+				{
+				/* on the left */
+				}
+			}
+			else
+				{
+				if (wy > -hx)
+				{
+				/* on the right */
+				}
+				else
+				{
+				/* at the bottom */
+				}
+			}
+		}
+
+		if(collision){
+			 	if(wall){
+			 		//If wall is hit, maintain vertical velocity, but reflect horizontally
+			 		myBalls[ind].xVel = myBalls[ind].xVel * -1;
+			 	}
+			 	else if(paddle){
+			 		//TODO: Reflect based on three paddle cases
+			 	}
+		}
+
 
 	    //TODO If ball has passed boundary, adjust score
 
@@ -369,7 +422,7 @@ void DrawObjects(){
 
 	                G8RTOS_WaitSemaphore(&USING_SPI);
 	                //Change to white later
-	                LCD_DrawRectangle(xCoord, xCoord + BALL_SIZE-1, yCoord, yCoord + BALL_SIZE-1, LCD_GREEN);
+	                LCD_DrawRectangle(xCoord, xCoord + BALL_SIZE-1, yCoord, yCoord + BALL_SIZE-1, LCD_WHITE); //Changed from green to white
 	                G8RTOS_SignalSemaphore(&USING_SPI);
 
 	                //Not new anymore
@@ -450,12 +503,7 @@ void UpdateBallOnScreen(PrevBall_t * previousBall, Ball_t * currentBall, uint16_
 */
 void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle){
 				bool collision = false;
-				/*
-				myBalls[ind].width = 3;
-				myBalls[ind].height = 3;
-				*/
-				myBalls[ind].xPos = 100; //testing values
-				myBalls[ind].yPos = 100;
+
 //need to define width somewhere
 				int32_t w = 0.5 * (myBalls[ind].width + 64); //paddle width
 				int32_t h = 0.5 * (myBalls[ind].height + 4); //paddle height
