@@ -88,6 +88,10 @@ semaphore_t USING_SPI; // semaphore for SPI interface using EUSCIB3 with LCD/ To
 #define BLUE_LED BIT2
 #define RED_LED BIT0
 
+typedef enum FIFO {
+	    JOYSTICKFIFO = 0
+}fifo_desig;
+
 /* Enums for player colors */
 typedef enum
 {
@@ -101,6 +105,12 @@ typedef enum
     BOTTOM = 0,
     TOP = 1
 }playerPosition;
+
+typedef enum
+{
+	LEFT = 1,
+	RIGHT = 2
+}playerDirection;
 
 /*********************************************** Global Defines ********************************************************************/
 
@@ -129,6 +139,11 @@ typedef struct
     int16_t currentCenter;
     uint16_t color;
     playerPosition position;
+
+    /* Additional params added by Baker for individual play */
+    uint16_t paddleRightEdge; // = currentCenter + 42
+    uint16_t paddleLeftEdge; // = currentCenter - 42
+
 } GeneralPlayerInfo_t;
 
 /*

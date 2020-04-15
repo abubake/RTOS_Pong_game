@@ -3,6 +3,7 @@
 #include "G8RTOS.h"
 #include <stdlib.h>
 #include "LCD.h"
+#include "RGBLeds.h"
 
 SpecificPlayerInfo_t clientToHostInfo;
 
@@ -17,6 +18,11 @@ int16_t host_Y_coord;
 balls_t myBalls[MAX_NUM_OF_BALLS];
 int ballNumber;
 int curBalls = 0;
+
+int HostPoints = 0; // Number of points (i.e. LED's that are on)
+bool pointScored = false;
+bool iterated = false; //for the LEDs
+int displayVal = 1; //No so that first LED comes on correctly
 
 /* The paddle */
 GeneralPlayerInfo_t PlayerPaddle;
@@ -148,7 +154,7 @@ void CreateGame(){
 	//G8RTOS_AddThread(ReadJoystickHost, 200, "ReadJoystickHost");
 	//G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
 	//G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
-	//G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+	G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
 	G8RTOS_AddThread(IdleThread, 254, "Idle");
 
 	G8RTOS_KillSelf();
@@ -203,7 +209,7 @@ void GenerateBall(){
 	        G8RTOS_AddThread(MoveBall, 30, "MoveBall");
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
-	    sleep(curBalls*2000);
+	    sleep(curBalls*4000);
 	}
 }
 
@@ -219,6 +225,14 @@ void ReadJoystickHost(){
 		• Sleep for 10ms
 		*/
 		GetJoystickCoordinates(&host_X_coord, &host_Y_coord); //must wait for its semaphore!
+
+		if(host_X_coord > 1000){ //FIXME: Adjust this so it will work at different speeds
+			//writeFIFO(JOYSTICKFIFO, RIGHT);
+		}
+		else if(host_X_coord < -1000){
+			//writeFIFO(JOYSTICKFIFO, LEFT);
+
+		}
 		sleep(10); // makes game for fair
 
 		/*
@@ -299,42 +313,14 @@ void MoveBall(){
 		bool wall = false; //both variables get reset
 		bool paddle = false;
 
-		int32_t w = 0.5 * (myBalls[ind].width + 64); //paddle width
-		int32_t h = 0.5 * (myBalls[ind].height + 4); //paddle height
-		int32_t dx = myBalls[ind].xPos - PlayerPaddle.currentCenter; //TODO: Implement paddle position
-		int32_t dy = myBalls[ind].yPos - PlayerPaddle.currentCenter;
 
-		if((myBalls[ind].xPos >= 273)||(myBalls[ind].xPos <= 45)){ // subtracted 6 and added 6 from actual edges to prevent eroding wall effect
+		if((myBalls[ind].xPos >= 269)||(myBalls[ind].xPos <= 45)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
-		}
-		else if(abs(dx) <= w && abs(dy) <= h){ //For the paddle
+		} //Checks if low enough on y-axis and between paddle left and right bounds to see if a collision occurs
+		else if((myBalls[ind].yPos >= 230)&&(myBalls[ind].xPos > PlayerPaddle.paddleLeftEdge)&&(myBalls[ind].xPos < PlayerPaddle.paddleRightEdge)){ //42 is (32 + offset) of 10
 			collision = true;
 			paddle = true;
-			int32_t wy = w * dy;
-			int32_t hx = h * dx;
-			if (wy > hx)
-			{
-				if (wy > -hx) //TODO: Set flags for paddle & adapt mincowsky to break paddle into 3 parts
-				{
-				/* collision at the top */
-				}
-				else
-				{
-				/* on the left */
-				}
-			}
-			else
-				{
-				if (wy > -hx)
-				{
-				/* on the right */
-				}
-				else
-				{
-				/* at the bottom */
-				}
-			}
 		}
 
 		if(collision){
@@ -343,8 +329,20 @@ void MoveBall(){
 			 		myBalls[ind].xVel = myBalls[ind].xVel * -1;
 			 	}
 			 	else if(paddle){
-			 		//TODO: Reflect based on three paddle cases
+			 		if(myBalls[ind].xPos < PlayerPaddle.paddleLeftEdge + 30 ){ //On the left side of paddle, ask baker about 30
+			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
+			 			myBalls[ind].xVel = myBalls[ind].xVel * -1; //TODO: Ensure this goes left
+			 		}
+			 		else if(myBalls[ind].xPos > PlayerPaddle.paddleRightEdge - 30){ //On the right of paddle
+			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
+			 			myBalls[ind].xVel = myBalls[ind].xVel * 1; //TODO: Ensure this goes right
+			 		}
+			 		else{ //This is the center of the paddle's area, a space of 24
+			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
+			 		}
+
 			 	}
+
 		}
 
 
@@ -450,8 +448,37 @@ void DrawObjects(){
 	    }
 
 	    //Update Players
-	    //TODO
+	    //TODO: Make it update both players
 
+	    int direction; //readFIFO(JOYSTICKFIFO);  // = ReadFIFO(JOYSTICKFIFO) (Is it going left or right?)
+
+	    if(direction == LEFT){
+	    	G8RTOS_WaitSemaphore(&USING_SPI);
+	    	LCD_DrawRectangle(PlayerPaddle.paddleRightEdge - 10, PlayerPaddle.paddleRightEdge, 239, 235, LCD_BLACK);
+	    	G8RTOS_SignalSemaphore(&USING_SPI);
+	    	G8RTOS_WaitSemaphore(&USING_SPI);
+	    	LCD_DrawRectangle(PlayerPaddle.paddleLeftEdge + 10, PlayerPaddle.paddleLeftEdge, 239, 235, LCD_RED);
+	    	G8RTOS_SignalSemaphore(&USING_SPI);
+	    	PlayerPaddle.currentCenter -= 10;
+	    	PlayerPaddle.paddleRightEdge -= 10;
+	    	PlayerPaddle.paddleLeftEdge -= 10;
+	    		//FIXME: Make the color based on who's paddle it is
+	    }
+	    else if(direction == RIGHT){
+	    	G8RTOS_WaitSemaphore(&USING_SPI);
+	    	LCD_DrawRectangle(PlayerPaddle.paddleLeftEdge, PlayerPaddle.paddleLeftEdge + 10, 239, 235, LCD_BLACK);
+	    	G8RTOS_SignalSemaphore(&USING_SPI);
+	    	G8RTOS_WaitSemaphore(&USING_SPI);
+	    	LCD_DrawRectangle(PlayerPaddle.paddleRightEdge, PlayerPaddle.paddleRightEdge + 10, 239, 235, LCD_RED);
+	    	G8RTOS_SignalSemaphore(&USING_SPI);
+	    	PlayerPaddle.currentCenter += 10;
+	    	PlayerPaddle.paddleRightEdge += 10;
+	    	PlayerPaddle.paddleLeftEdge += 10;
+	    }
+
+
+
+	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
 		sleep(20);
 	}
 }
@@ -464,6 +491,21 @@ void MoveLEDs(){
 		/*
 		• Responsible for updating the LED array with current scores
 		*/
+		if(iterated == false){ //Run the code
+			iterated = true;
+			for(int i=0; i<curBalls; i++){
+				if((myBalls[i].yPos < 3)&&(myBalls[i].prevLocs[i].CenterY >= 3)){
+					pointScored = true;
+				}
+			}
+
+			if(pointScored == true){
+				pointScored = false; //For the next time
+				HostPoints += 1;
+				LP3943_DataDisplay(RED, ON, displayVal); //Display val init'd to 1, so from then on it displays the right val
+				displayVal = displayVal*2 + 1;
+			}
+		}
 
 	}
 }
@@ -499,39 +541,53 @@ void UpdateBallOnScreen(PrevBall_t * previousBall, Ball_t * currentBall, uint16_
 
 }
 /*
-* detects if a collision occurs on a paddle
+* detects if a collision occurs on a paddle [DO NOT USE]
 */
-void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle){
+void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t PlayerPaddle){
 				bool collision = false;
+				bool paddle;
+	int32_t w = 0.5 * (myBalls[ind].width + 64); //paddle width
+	int32_t h = 0.5 * (myBalls[ind].height + 4); //paddle height
+	int32_t dx = myBalls[ind].xPos - PlayerPaddle.currentCenter; //TODO: Implement paddle position
+	int32_t dy = myBalls[ind].yPos - PlayerPaddle.currentCenter;
 
-//need to define width somewhere
-				int32_t w = 0.5 * (myBalls[ind].width + 64); //paddle width
-				int32_t h = 0.5 * (myBalls[ind].height + 4); //paddle height
-				int32_t dx = myBalls[ind].xPos - paddle.currentCenter;
-				int32_t dy = myBalls[ind].yPos - paddle.currentCenter;
+				if(abs(dx) <= w && abs(dy) <= h){ //For the paddle
+							collision = true;
+							paddle = true;
+							int32_t wy = w * dy;
+							int32_t hx = h * dx;
+							if (wy > hx)
+							{
+								if (wy > -hx) //TODO: Set flags for paddle & adapt mincowsky to break paddle into 3 parts
+								{
+								/* collision at the top */
+								myBalls[ind].xVel = myBalls[ind].xVel * -1;
+								myBalls[ind].yVel = myBalls[ind].yVel * -1;
+								}
+								else
+								{
+								/* on the left */
+								myBalls[ind].xVel = myBalls[ind].xVel * -1;
+								myBalls[ind].yVel = myBalls[ind].yVel * -1;
+								}
+							}
+							else
+								{
+								if (wy > -hx)
+								{
+								/* on the right */
+								myBalls[ind].xVel = myBalls[ind].xVel * 1;
+								myBalls[ind].yVel = myBalls[ind].yVel * -1;
+								}
+								else
+								{
+								/* at the bottom */
+								myBalls[ind].xVel = myBalls[ind].xVel * 1;
+								myBalls[ind].yVel = myBalls[ind].yVel * -1;
+								}
+							}
+						}
 
-				if (abs(dx) <= w && abs(dy) <= h)
-				{
-				/* collision! */
-				collision = true;
-				int32_t wy = w * dy;
-				int32_t hx = h * dx;
-				if (wy > hx){
-					if (wy > -hx){
-					/* collision at the top */
-					}
-					else{
-					/* on the left */
-					}
-				}
-				else{
-					if (wy > -hx){
-					/* on the right */
-					}
-					else{
-					/* at the bottom */
-					}
-				}
 
 			    //If collision occurred, change color and velocity accordingly
 			    //TODO check for collision
@@ -552,7 +608,6 @@ void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle){
 			            //TODO implement Minkowski algorithm or other algorithm
 			        }
 			    }
-				}
 }
 
 /*
@@ -577,6 +632,12 @@ void InitBoardState(){
 	G8RTOS_WaitSemaphore(&USING_SPI);
 	LCD_DrawRectangle(128, 192, 235, 239, PLAYER_RED);
 	G8RTOS_SignalSemaphore(&USING_SPI);
+
+	/* Set Center of player paddle */
+	PlayerPaddle.currentCenter = PADDLE_X_CENTER;
+	PlayerPaddle.paddleRightEdge = PlayerPaddle.currentCenter + 42;
+	PlayerPaddle.paddleLeftEdge = PlayerPaddle.currentCenter - 42;
+
 
 }
 
