@@ -111,22 +111,24 @@ static void InitSysTick(uint32_t numCycles)
  */
 void G8RTOS_Scheduler()
 {
-	uint16_t MaxPriority = 255;
-	uint32_t i = 0;
-	tcb_t * bestThreadPtr;
-	tcb_t * tempThreadPtr = CurrentlyRunningThread;
+    uint8_t currentMaxPriority = 255;
+    tcb_t *tempNextThread = CurrentlyRunningThread->Next;
 
-	do{ /* search for highest priority not blocked or sleeping */
-		tempThreadPtr = tempThreadPtr->Next;
-		if (((tempThreadPtr->priority) < MaxPriority)&&((tempThreadPtr->blocked) == 0 )&&((tempThreadPtr->asleep) == false)){
-			MaxPriority = tempThreadPtr->priority;
-			bestThreadPtr = tempThreadPtr;
-			}
-		i++;
-	}
-	while(i <= NumberOfThreads); // Look at all possible threads (CurrentlyRunningThread != tempThreadPtr)
-		CurrentlyRunningThread = bestThreadPtr;
+    //Iterate through the other threads to check for higher priorities
+    for(uint16_t i = 0; i < NumberOfThreads; i++){
+        if((tempNextThread->blocked == 0) && (tempNextThread->asleep == false)){
+            //If not blocked and not asleep, check if has higher priority
+            //If so, set CurrentlyRunningThread
+            if(tempNextThread->priority <= currentMaxPriority){
+                currentMaxPriority = tempNextThread->priority;
+                CurrentlyRunningThread =  tempNextThread;
+            }
+        }
+        //Update temp to check all threads
+        tempNextThread = tempNextThread->Previous;
+    }
 }
+
 
 /*
  * SysTick Handler
@@ -261,10 +263,13 @@ sched_ErrCode_t G8RTOS_AddThread(void (*threadToAdd)(void), uint16_t priority, c
 	}
 
 	NumberOfThreads++; // preinc
+	//Find first dead
 	for(uint32_t addedThread = 0; addedThread < NumberOfThreads; addedThread++){
-
+	    //Check if dead
 		if(threadControlBlocks[addedThread].isAlive == false){
-			if(addedThread == 0){
+		    //Check if only living thread
+			if(NumberOfThreads == 1){
+			    //If it is the only living thread, it points to itself
 				threadControlBlocks[addedThread].Next = &threadControlBlocks[addedThread];
 				threadControlBlocks[addedThread].Previous = &threadControlBlocks[addedThread];
 
@@ -279,14 +284,23 @@ sched_ErrCode_t G8RTOS_AddThread(void (*threadToAdd)(void), uint16_t priority, c
 				return NO_ERROR; // success
 			}
 			else{
-				tcb_t * thread0;
-				thread0 = &threadControlBlocks[0];
+			    //If not the only living thread, needs to be added to linked list
+			    //Find a living thread to link to
+			    for(uint16_t i = 0; i < MAX_THREADS; i++){
+			        if(threadControlBlocks[i].isAlive){
+			            //If found block is alive, link to it as the next
+			            threadControlBlocks[addedThread].Next = &threadControlBlocks[i];
+			            //Make the previous of this thread the former previous of the next
+			            threadControlBlocks[addedThread].Previous = threadControlBlocks[i].Previous;
 
-				thread0->Previous->Next = &threadControlBlocks[addedThread];
-				threadControlBlocks[addedThread].Previous = thread0->Previous;
-				threadControlBlocks[0].Previous = &threadControlBlocks[addedThread];
-				threadControlBlocks[addedThread].Next = &threadControlBlocks[0];
 
+			            //Make this thread the next of the former next threads previous
+			            threadControlBlocks[addedThread].Previous->Next = &threadControlBlocks[addedThread];
+			            //Make this thread the new previous of the found one
+			            threadControlBlocks[i].Previous = &threadControlBlocks[addedThread];
+			            break;
+			        }
+			    }
 
 				threadControlBlocks[addedThread].priority = priority;
 				threadControlBlocks[addedThread].isAlive = true;
@@ -301,7 +315,7 @@ sched_ErrCode_t G8RTOS_AddThread(void (*threadToAdd)(void), uint16_t priority, c
 			}
 		}
 	}
-	NumberOfThreads--;
+	//NumberOfThreads--;
 	EndCriticalSection(x);
 	return THREADS_INCORRECTLY_ALIVE;
 }

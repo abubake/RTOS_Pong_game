@@ -146,7 +146,7 @@ void CreateGame(){
 	//G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
 	//G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
 	//G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
-	G8RTOS_AddThread(IdleThread, 200, "Idle");
+	G8RTOS_AddThread(IdleThread, 254, "Idle");
 
 	G8RTOS_KillSelf();
 }
@@ -367,7 +367,7 @@ void DrawObjects(){
 
 	                G8RTOS_WaitSemaphore(&USING_SPI);
 	                //Change to white later
-	                LCD_DrawRectangle(xCoord, xCoord + BALL_SIZE, yCoord, yCoord + BALL_SIZE, LCD_GREEN);
+	                LCD_DrawRectangle(xCoord, xCoord + BALL_SIZE-1, yCoord, yCoord + BALL_SIZE-1, LCD_GREEN);
 	                G8RTOS_SignalSemaphore(&USING_SPI);
 
 	                //Not new anymore
@@ -379,7 +379,7 @@ void DrawObjects(){
 	                int16_t prevY = myBalls[i].prevLocs[(myBalls[i].locInd - 1) & 7].CenterY - BALL_SIZE_D2;
 
 
-	                //Paint black over where it was
+	                //Paint background color over where it was
                     G8RTOS_WaitSemaphore(&USING_SPI);
                     LCD_DrawRectangle(prevX, prevX + BALL_SIZE, prevY, prevY + BALL_SIZE, BACK_COLOR);
                     G8RTOS_SignalSemaphore(&USING_SPI);
@@ -387,7 +387,7 @@ void DrawObjects(){
 	                //Paint where it is now
                     G8RTOS_WaitSemaphore(&USING_SPI);
                     //Change to myBalls.color later
-                    LCD_DrawRectangle(myBalls[i].xPos - BALL_SIZE_D2, myBalls[i].xPos + BALL_SIZE_D2, myBalls[i].yPos + BALL_SIZE_D2, myBalls[i].yPos - BALL_SIZE_D2, LCD_GREEN);
+                    LCD_DrawRectangle(myBalls[i].xPos - BALL_SIZE_D2, myBalls[i].xPos + BALL_SIZE_D2, myBalls[i].yPos - BALL_SIZE_D2, myBalls[i].yPos + BALL_SIZE_D2, LCD_GREEN);
                     G8RTOS_SignalSemaphore(&USING_SPI);
 	            }
 
