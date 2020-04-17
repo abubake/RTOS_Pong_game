@@ -2,6 +2,8 @@
 #include "Joystick.h"
 #include "G8RTOS.h"
 #include <stdlib.h>
+#include "LCD.h"
+#include "RGBLeds.h"
 
 SpecificPlayerInfo_t clientToHostInfo;
 
@@ -13,10 +15,20 @@ int16_t host_X_coord; // Since I have two joystick read functions, shouldn't be 
 int16_t host_Y_coord;
 
 /*Ball related Info */
-balls_t myBalls[20];
-int NumBalls = 20;
+balls_t myBalls[MAX_NUM_OF_BALLS];
 int ballNumber;
+int curBalls = 0;
 
+int HostPoints = 0; // Number of points (i.e. LED's that are on)
+bool pointScored = false;
+bool iterated = false; //for the LEDs
+int displayVal = 1; //No so that first LED comes on correctly
+
+/* The paddle */
+GeneralPlayerInfo_t PlayerPaddle;
+
+//Game state to be sent from host to client
+GameState_t curGame;
 
 /*********************************************** Client Threads *********************************************************************/
 /*
@@ -125,23 +137,27 @@ void EndOfGameClient(){
  * Thread for the host to create a game
  */
 void CreateGame(){
-	/*
+	/* WITH WIFI
 	• Only thread created before launching the OS
 	• Initializes the players
 	• Establish connection with client (use an LED on the Launchpad to indicate Wi-Fi connection)
 	o Should be trying to receive a packet from the client
 	o Should acknowledge client once client has joined
-	• Initialize the board (draw arena, players, and scores)
 	*/
 
-	/* Add these threads. Need better priority definitions */
-	G8RTOS_AddThread(GenerateBall, 200, "GenerateBall");
+	/* W/O WIFI
+	• Initialize the board (draw arena, players, and scores)
+	*/
+	InitBoardState();
+
+	/* Add these threads. (Need better priority definitions) */
+	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
 	G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
-	G8RTOS_AddThread(ReadJoystickHost, 200, "ReadJoystickHost");
-	G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
-	G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
+	//G8RTOS_AddThread(ReadJoystickHost, 200, "ReadJoystickHost");
+	//G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
+	//G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
 	G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
-	G8RTOS_AddThread(IdleThread, 200, "Idle");
+	G8RTOS_AddThread(IdleThread, 254, "Idle");
 
 	G8RTOS_KillSelf();
 }
@@ -190,7 +206,13 @@ void GenerateBall(){
 		• Adds another MoveBall thread if the number of balls is less than the max
 		• Sleeps proportional to the number of balls currently in play
 		*/
-
+	    if(curBalls < MAX_NUM_OF_BALLS){
+	        curBalls++;
+	        G8RTOS_AddThread(MoveBall, 30, "MoveBall");
+	        curGame.numberOfBalls++;
+	    }
+	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
+	    sleep(curBalls*4000);
 	}
 }
 
@@ -198,6 +220,7 @@ void GenerateBall(){
  * Thread to read host's joystick
  */
 void ReadJoystickHost(){
+    int16_t difference = 0;
 	while(1){
 		/*
 		• You can read the joystick ADC values by calling GetJoystickCoordinates
@@ -206,12 +229,27 @@ void ReadJoystickHost(){
 		• Sleep for 10ms
 		*/
 		GetJoystickCoordinates(&host_X_coord, &host_Y_coord); //must wait for its semaphore!
+
+		if(host_X_coord > 1500){ //FIXME: Adjust this so it will work at different speeds
+			//writeFIFO(JOYSTICKFIFO, RIGHT);
+		    difference = 1;
+		}
+		else if(host_X_coord < -1500){
+			//writeFIFO(JOYSTICKFIFO, LEFT);
+		    difference = -1;
+		}
+		else{
+		    difference = 0;
+		}
+		PlayerPaddle.currentCenter += difference;
 		sleep(10); // makes game for fair
 
-		/*
-		• Then add the displacement to the bottom player in the list of players (general list that’s sent to the client and used for drawing) i.e. players[0].position += self.displacement
-		• By sleeping before updating the bottom player’s position, it makes the game more fair between client and host
-		*/
+        /*
+        • Then add the displacement to the bottom player in the list of players (general list that’s sent to the client and used for drawing) i.e. players[0].position += self.displacement
+        • By sleeping before updating the bottom player’s position, it makes the game more fair between client and host
+        */
+		curGame.players[0].currentCenter += difference;
+
 
 	}
 }
@@ -220,40 +258,144 @@ void ReadJoystickHost(){
  * Thread to move a single ball
  */
 void MoveBall(){
+
+	/*
+	• Go through array of balls and find one that’s not alive
+	• Once found, initialize random position and X and Y velocities, as well as color and alive attributes
+	• Checking for collision given the current center and the velocity
+	• If collision occurs, adjust velocity and color accordingly
+	• If the ball passes the boundary edge, adjust score, account for the game possibly ending, and kill self
+	• Otherwise, just move the ball in its current direction according to its velocity
+	• Sleep for 35ms
+	*/
+	//Initialize ball if it was newly made
+    uint8_t ind;
+    for (int i = 0; i < MAX_NUM_OF_BALLS; i++){
+        if(myBalls[i].alive == false){ // Searching for the first dead ball
+
+        	//• Once found, initialize random position and X and Y velocities, as well as color and alive attributes
+            /* Gives random position */
+
+            //Random x that will be within arena bounds and not too close to a wall
+            myBalls[i].xPos = (rand() % (ARENA_MAX_X - ARENA_MIN_X - 10)) + ARENA_MIN_X + 5;
+            //Random y that won't be too close to the paddles
+            myBalls[i].yPos = (rand() % MAX_SCREEN_Y - 50) + 25;
+
+            /* Getting a random speed */
+            //TODO Experimentally determine a good max speed
+            int16_t xMag = (rand() % MAX_BALL_SPEED) + 1;
+            int16_t yMag = (rand() % MAX_BALL_SPEED) + 1;
+
+            //Get random x-direction
+            if(rand() % 2){
+                myBalls[i].xVel = xMag * -1;
+            }
+            else{
+                myBalls[i].xVel = xMag;
+            }
+            //Get random y-direction
+            if(rand() % 2){
+                myBalls[i].yVel = yMag * -1;
+            }
+            else{
+                myBalls[i].yVel = yMag;
+            }
+
+            //Ball is initially white
+            myBalls[i].color = LCD_WHITE;
+            myBalls[i].alive = true;
+
+            myBalls[i].prevLoc.CenterX = myBalls[i].xPos;
+            myBalls[i].prevLoc.CenterY = myBalls[i].yPos;
+            myBalls[i].newBall = true;
+
+            //Update structure to be sent
+            curGame.balls[i].alive = true;
+            curGame.balls[i].color = LCD_WHITE;
+            curGame.balls[i].xPos = myBalls[i].xPos;
+            curGame.balls[i].yPos = myBalls[i].yPos;
+            curGame.balls[i].prevLoc.CenterX = myBalls[i].xPos;
+            curGame.balls[i].prevLoc.CenterY = myBalls[i].yPos;
+            curGame.balls[i].newBall = true;
+
+            ind = i;
+            break;
+        }
+    }
+    	/*
+        • If the ball passes the boundary edge, adjust score, account for the game possibly ending, and kill self
+        • Otherwise, just move the ball in its current direction according to its velocity
+        */
 	while(1){
-		/*
-		• Go through array of balls and find one that’s not alive (DONE)
-		• Once found, initialize random position and X and Y velocities, as well as color and alive attributes (DONE)
-		• Checking for collision given the current center and the velocity
-		• If collision occurs, adjust velocity and color accordingly
-		• If the ball passes the boundary edge, adjust score, account for the game possibly ending, and kill self
-		• Otherwise, just move the ball in its current direction according to its velocity
-		• Sleep for 35ms
-		*/
-		for (int i = 0; i < NumBalls; i++){
+		/* WALL COLLISION DETECTION */
+		bool collision = false; //maybe make this global
+		bool wall = false; //both variables get reset
+		bool paddle = false;
 
-			if(myBalls[i].alive == false){ // Searching for the first dead ball
-				/* Gives random position */
-				myBalls[i].xPos = (rand() % 10) + 100;
-				myBalls[i].yPos = (rand() % 10) + 100;
-
-				/* Getting a random speed */
-				myBalls[i].speed = (rand() % 2) + 1;
-
-				/* Gives a random color */
-				int randNum = (rand() % 2) + 1;
-				if(randNum == 1){
-					myBalls[i].color = LCD_BLUE;
-				}
-				else if(randNum == 2){
-					myBalls[i].color = LCD_RED;
-				}
-
-				myBalls[i].alive = true;
-				break;
-							}
+		if((myBalls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 3) || (myBalls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 3)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
+			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
+			wall = true;
+		} //Checks if low enough on y-axis and between paddle left and right bounds to see if a collision occurs
+		else if((myBalls[ind].yPos >= 230)&&(myBalls[ind].xPos > PlayerPaddle.paddleLeftEdge)&&(myBalls[ind].xPos < PlayerPaddle.paddleRightEdge)){ //42 is (32 + offset) of 10
+			collision = true;
+			paddle = true;
 		}
-			sleep(35);
+
+		if(collision){
+			 	if(wall){
+			 		//If wall is hit, maintain vertical velocity, but reflect horizontally
+			 		myBalls[ind].xVel = myBalls[ind].xVel * -1;
+			 	}
+			 	else if(paddle){
+			 		if(myBalls[ind].xPos < PlayerPaddle.paddleLeftEdge + 30 ){ //On the left side of paddle, ask baker about 30
+			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
+			 			myBalls[ind].xVel = myBalls[ind].xVel * -1; //TODO: Ensure this goes left
+			 		}
+			 		else if(myBalls[ind].xPos > PlayerPaddle.paddleRightEdge - 30){ //On the right of paddle
+			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
+			 			myBalls[ind].xVel = myBalls[ind].xVel * 1; //TODO: Ensure this goes right
+			 		}
+			 		else{ //This is the center of the paddle's area, a space of 24
+			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
+			 		}
+
+			 	}
+
+		}
+
+
+	    //TODO If ball has passed boundary, adjust score
+
+	    //TODO If score happened, adjust score and killself
+	    //TODO Check if game has ended
+
+
+        //Save old position
+        myBalls[ind].prevLoc.CenterX = myBalls[ind].xPos;
+        myBalls[ind].prevLoc.CenterY = myBalls[ind].yPos;
+
+	    //If not killed, move ball to position according to its velocity
+	    myBalls[ind].xPos = myBalls[ind].xPos + myBalls[ind].xVel;
+	    myBalls[ind].yPos = myBalls[ind].yPos + myBalls[ind].yVel;
+
+	    //If went beyond boundary, adjust so it is on boundary
+	    //I did this to try to stop the balls from eroding walls
+	    if(myBalls[ind].xPos > ARENA_MAX_X - BALL_SIZE){
+	        myBalls[ind].xPos = ARENA_MAX_X - BALL_SIZE;
+	    }
+	    else if(myBalls[ind].xPos < ARENA_MIN_X + BALL_SIZE){
+	        myBalls[ind].xPos = ARENA_MAX_X + BALL_SIZE;
+	    }
+
+	    //Update GameState to be sent
+        curGame.balls[ind].alive = myBalls[ind].alive;
+        curGame.balls[ind].color = myBalls[ind].color;
+        curGame.balls[ind].xPos = myBalls[ind].xPos;
+        curGame.balls[ind].yPos = myBalls[ind].yPos;
+        curGame.balls[ind].prevLoc.CenterX = myBalls[ind].xPos;
+        curGame.balls[ind].prevLoc.CenterY = myBalls[ind].yPos;
+
+		sleep(35);
 	}
 }
 
@@ -298,6 +440,64 @@ void DrawObjects(){
 		• Sleep for 20ms (reasonable refresh rate)
 		*/
 
+	    //FIXME Sometimes after a very long time the balls leave a trail behind them, hard to make happen so hard
+	    //      to observe and debug.  Unclear what causes this, but may be a non-issue once we get collisions
+	    //      and scoring/ball suicide working.
+
+	    //Update Ball Locations
+	    for(uint8_t i = 0; i < MAX_NUM_OF_BALLS; i++){
+	        //Check if ball is alive
+	        if(myBalls[i].alive){
+	            if(myBalls[i].newBall){
+	                //If a new ball, paint its initial location
+	                int16_t xCoord = myBalls[i].xPos;
+	                int16_t yCoord = myBalls[i].yPos;
+
+	                G8RTOS_WaitSemaphore(&USING_SPI);
+	                LCD_DrawRectangle(xCoord - BALL_SIZE_D2, xCoord + BALL_SIZE_D2, yCoord - BALL_SIZE_D2, yCoord + BALL_SIZE_D2, LCD_WHITE);
+	                G8RTOS_SignalSemaphore(&USING_SPI);
+
+	                //Not new anymore
+	                myBalls[i].newBall = false;
+	                curGame.balls[i].newBall = false;
+	            }
+	            else{
+	                //If not a new ball, update its location
+	                UpdateBallOnScreen(&myBalls[i].prevLoc, &myBalls[i], myBalls[i].color);
+	            }
+	        }
+	    }
+
+	    //Update Players
+	    //TODO: Make it update both players
+
+	    int direction; //readFIFO(JOYSTICKFIFO);  // = ReadFIFO(JOYSTICKFIFO) (Is it going left or right?)
+
+	    if(direction == LEFT){
+	    	G8RTOS_WaitSemaphore(&USING_SPI);
+	    	LCD_DrawRectangle(PlayerPaddle.paddleRightEdge - 10, PlayerPaddle.paddleRightEdge, 239, 235, LCD_BLACK);
+	    	G8RTOS_SignalSemaphore(&USING_SPI);
+	    	G8RTOS_WaitSemaphore(&USING_SPI);
+	    	LCD_DrawRectangle(PlayerPaddle.paddleLeftEdge + 10, PlayerPaddle.paddleLeftEdge, 239, 235, LCD_RED);
+	    	G8RTOS_SignalSemaphore(&USING_SPI);
+	    	PlayerPaddle.currentCenter -= 10;
+	    	PlayerPaddle.paddleRightEdge -= 10;
+	    	PlayerPaddle.paddleLeftEdge -= 10;
+	    		//FIXME: Make the color based on who's paddle it is
+	    }
+	    else if(direction == RIGHT){
+	    	G8RTOS_WaitSemaphore(&USING_SPI);
+	    	LCD_DrawRectangle(PlayerPaddle.paddleLeftEdge, PlayerPaddle.paddleLeftEdge + 10, 239, 235, LCD_BLACK);
+	    	G8RTOS_SignalSemaphore(&USING_SPI);
+	    	G8RTOS_WaitSemaphore(&USING_SPI);
+	    	LCD_DrawRectangle(PlayerPaddle.paddleRightEdge, PlayerPaddle.paddleRightEdge + 10, 239, 235, LCD_RED);
+	    	G8RTOS_SignalSemaphore(&USING_SPI);
+	    	PlayerPaddle.currentCenter += 10;
+	    	PlayerPaddle.paddleRightEdge += 10;
+	    	PlayerPaddle.paddleLeftEdge += 10;
+	    }
+
+	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
 		sleep(20);
 	}
 }
@@ -310,8 +510,168 @@ void MoveLEDs(){
 		/*
 		• Responsible for updating the LED array with current scores
 		*/
+		if(iterated == false){ //Run the code
+			iterated = true;
+			for(int i=0; i<curBalls; i++){
+				if((myBalls[i].yPos < 3)&&(myBalls[i].prevLoc.CenterY >= 3)){
+					pointScored = true;
+				}
+			}
+
+			if(pointScored == true){
+				pointScored = false; //For the next time
+				HostPoints += 1;
+				LP3943_DataDisplay(RED, ON, displayVal); //Display val init'd to 1, so from then on it displays the right val
+				displayVal = displayVal*2 + 1;
+			}
+		}
 
 	}
 }
 
 /*********************************************** Common Threads *********************************************************************/
+
+/*********************************************** Public Functions *********************************************************************/
+/*
+ * Returns either Host or Client depending on button press
+ */
+playerType GetPlayerRole(){
+
+}
+
+/*
+ * Draw players given center X center coordinate
+ */
+void DrawPlayer(GeneralPlayerInfo_t * player){
+
+}
+
+/*
+ * Updates player's paddle based on current and new center
+ */
+void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * outPlayer){
+
+}
+
+/*
+ * Function updates ball position on screen
+ *
+ * Changed the Ball_t parameter to balls_t that we made
+ */
+void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall, uint16_t outColor){
+    //If not new, look for previous location
+    int16_t prevX = previousBall->CenterX;
+    int16_t prevY = previousBall->CenterY;
+
+    //Paint background color over where it was
+    G8RTOS_WaitSemaphore(&USING_SPI);
+    LCD_DrawRectangle(prevX- BALL_SIZE_D2, prevX + BALL_SIZE_D2, prevY - BALL_SIZE_D2, prevY + BALL_SIZE_D2, BACK_COLOR);
+    G8RTOS_SignalSemaphore(&USING_SPI);
+
+    //Paint where it is now
+    G8RTOS_WaitSemaphore(&USING_SPI);
+    LCD_DrawRectangle(currentBall->xPos - BALL_SIZE_D2, currentBall-> xPos + BALL_SIZE_D2, currentBall->yPos - BALL_SIZE_D2, currentBall->yPos + BALL_SIZE_D2, outColor);
+    G8RTOS_SignalSemaphore(&USING_SPI);
+}
+/*
+* detects if a collision occurs on a paddle [DO NOT USE]
+*/
+void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t PlayerPaddle){
+				bool collision = false;
+				bool paddle;
+	int32_t w = 0.5 * (myBalls[ind].width + 64); //paddle width
+	int32_t h = 0.5 * (myBalls[ind].height + 4); //paddle height
+	int32_t dx = myBalls[ind].xPos - PlayerPaddle.currentCenter; //TODO: Implement paddle position
+	int32_t dy = myBalls[ind].yPos - PlayerPaddle.currentCenter;
+
+				if(abs(dx) <= w && abs(dy) <= h){ //For the paddle
+							collision = true;
+							paddle = true;
+							int32_t wy = w * dy;
+							int32_t hx = h * dx;
+							if (wy > hx)
+							{
+								if (wy > -hx) //TODO: Set flags for paddle & adapt mincowsky to break paddle into 3 parts
+								{
+								/* collision at the top */
+								myBalls[ind].xVel = myBalls[ind].xVel * -1;
+								myBalls[ind].yVel = myBalls[ind].yVel * -1;
+								}
+								else
+								{
+								/* on the left */
+								myBalls[ind].xVel = myBalls[ind].xVel * -1;
+								myBalls[ind].yVel = myBalls[ind].yVel * -1;
+								}
+							}
+							else
+								{
+								if (wy > -hx)
+								{
+								/* on the right */
+								myBalls[ind].xVel = myBalls[ind].xVel * 1;
+								myBalls[ind].yVel = myBalls[ind].yVel * -1;
+								}
+								else
+								{
+								/* at the bottom */
+								myBalls[ind].xVel = myBalls[ind].xVel * 1;
+								myBalls[ind].yVel = myBalls[ind].yVel * -1;
+								}
+							}
+						}
+
+
+			    //If collision occurred, change color and velocity accordingly
+			    //TODO check for collision
+			    if(collision){
+			        //TODO Check if collided with wall
+			        bool wall = false;
+			        if(wall){
+			            //If wall is hit, maintain vertical velocity, but reflect horizontally
+			            myBalls[ind].xVel = myBalls[ind].xVel * -1;
+			        }
+			        bool paddle = false;
+			        if(paddle){
+			            //if(redPaddle){
+			            myBalls[ind].color = LCD_RED;
+			            //else{
+			            //myBalls[ind].color = LCD_BLUE;
+
+			            //TODO implement Minkowski algorithm or other algorithm
+			        }
+			    }
+}
+
+/*
+ * Initializes and prints initial game state
+ */
+void InitBoardState(){
+	/* White lines to define arena size */
+	G8RTOS_WaitSemaphore(&USING_SPI);
+	LCD_DrawRectangle(1, 40, 1, 239, LCD_WHITE);
+	G8RTOS_SignalSemaphore(&USING_SPI);
+
+	G8RTOS_WaitSemaphore(&USING_SPI);
+	LCD_DrawRectangle(280, 319, 1, 239, LCD_WHITE);
+	G8RTOS_SignalSemaphore(&USING_SPI);
+
+	/* Host Starting Score, in bottom left */
+	G8RTOS_WaitSemaphore(&USING_SPI);
+	LCD_Text(5, 5,"00", PLAYER_RED);
+	G8RTOS_SignalSemaphore(&USING_SPI);
+
+	/* The initial paddle */
+	G8RTOS_WaitSemaphore(&USING_SPI);
+	LCD_DrawRectangle(128, 192, 235, 239, PLAYER_RED);
+	G8RTOS_SignalSemaphore(&USING_SPI);
+
+	/* Set Center of player paddle */
+	PlayerPaddle.currentCenter = PADDLE_X_CENTER;
+	PlayerPaddle.paddleRightEdge = PlayerPaddle.currentCenter + 42;
+	PlayerPaddle.paddleLeftEdge = PlayerPaddle.currentCenter - 42;
+
+
+}
+
+/*********************************************** Public Functions *********************************************************************/

@@ -10,8 +10,7 @@
 #define MAIN_LAB5
 #ifdef MAIN_LAB5
 
-void main(void)
-	{
+void main(void){
 	/* Initializes all the hardware resources on the board and sets the amount of threads and system time to 0 */
 	G8RTOS_Init();
 
@@ -30,15 +29,13 @@ void main(void)
 
  /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 	//G8RTOS_InitSemaphore(&SENSOR_READY, 1);
-	//G8RTOS_InitSemaphore(&SPI_READY, 1);
+	G8RTOS_InitSemaphore(&USING_SPI, 1);
 
 	/* Adds each task individually to the system */
-	G8RTOS_AddThread(CreateGame, 150, "CreateGame"); //NEEDS real PRI and maybe better name
-	//G8RTOS_AddThread(Idle, 200, "Idle");
-
+	G8RTOS_AddThread(CreateGame, 150, "CreateGame"); //NEEDS real PRI and maybe better nam
 	//G8RTOS_AddAPeriodicEvent(LCD_Tap, 3,  PORT4_IRQn);
 
-	//G8RTOS_InitFIFO(BALLFIFO);
+	G8RTOS_InitFIFO(JOYSTICKFIFO);
 	//G8RTOS_InitFIFO(BALLNUMFIFO);
 
 	/* Initializes the Systick to trigger every 1ms and sets the priority for both PendSV and Systick  */

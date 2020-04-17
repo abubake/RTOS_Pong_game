@@ -19,6 +19,7 @@
 /*********************************************** Externs ********************************************************************/
 
 /* Semaphores here */
+semaphore_t USING_SPI; // semaphore for SPI interface using EUSCIB3 with LCD/ Touchpad
 
 /*********************************************** Externs ********************************************************************/
 
@@ -40,7 +41,7 @@
 #define PADDLE_LEN_D2                (PADDLE_LEN >> 1)
 #define PADDLE_WID                   4
 #define PADDLE_WID_D2                (PADDLE_WID >> 1)
-#define BALL_SIZE                    4
+#define BALL_SIZE                    3
 #define BALL_SIZE_D2                 (BALL_SIZE >> 1)
 
 /* Centers for paddles at the center of the sides */
@@ -87,6 +88,10 @@
 #define BLUE_LED BIT2
 #define RED_LED BIT0
 
+typedef enum FIFO {
+	    JOYSTICKFIFO = 0
+}fifo_desig;
+
 /* Enums for player colors */
 typedef enum
 {
@@ -100,6 +105,12 @@ typedef enum
     BOTTOM = 0,
     TOP = 1
 }playerPosition;
+
+typedef enum
+{
+	LEFT = 1,
+	RIGHT = 2
+}playerDirection;
 
 /*********************************************** Global Defines ********************************************************************/
 
@@ -128,6 +139,11 @@ typedef struct
     int16_t currentCenter;
     uint16_t color;
     playerPosition position;
+
+    /* Additional params added by Baker for individual play */
+    uint16_t paddleRightEdge; // = currentCenter + 42
+    uint16_t paddleLeftEdge; // = currentCenter - 42
+
 } GeneralPlayerInfo_t;
 
 /*
@@ -142,22 +158,6 @@ typedef struct
 } Ball_t;
 
 /*
- * Struct to be sent from the host to the client
- */
-typedef struct
-{
-    SpecificPlayerInfo_t player;
-    GeneralPlayerInfo_t players[MAX_NUM_OF_PLAYERS];
-    Ball_t balls[MAX_NUM_OF_BALLS];
-    uint16_t numberOfBalls;
-    bool winner;
-    bool gameDone;
-    uint8_t LEDScores[2];
-    uint8_t overallScores[2];
-} GameState_t;
-#pragma pack ( pop )
-
-/*
  * Struct of all the previous ball locations, only changed by self for drawing!
  */
 typedef struct
@@ -167,6 +167,47 @@ typedef struct
 }PrevBall_t;
 
 /*
+ * Struct of ball information, based upon lab 4 ball struct
+ */
+typedef struct balls_t
+{   /*The center of ball */
+        int16_t xPos;
+        int16_t yPos;
+        int16_t xVel;
+        int16_t yVel;
+
+        bool alive;
+        threadId_t threadID;
+        uint16_t color;
+
+        PrevBall_t prevLoc;
+
+        int16_t width;
+        int16_t height;
+
+        bool newBall;
+
+}balls_t;
+
+/*
+ * Struct to be sent from the host to the client
+ */
+typedef struct
+{
+    SpecificPlayerInfo_t player;
+    GeneralPlayerInfo_t players[MAX_NUM_OF_PLAYERS];
+    balls_t balls[MAX_NUM_OF_BALLS];                     //Nick changed Ball_t to balls_t
+    uint16_t numberOfBalls;
+    bool winner;
+    bool gameDone;
+    uint8_t LEDScores[2];
+    uint8_t overallScores[2];
+} GameState_t;
+#pragma pack ( pop )
+
+
+
+/*
  * Struct of all the previous players locations, only changed by self for drawing
  */
 typedef struct
@@ -174,18 +215,7 @@ typedef struct
     int16_t Center;
 }PrevPlayer_t;
 
-/*
- * Struct of ball information, based upon lab 4 ball struct
- */
-typedef struct balls_t
-{
-		int16_t xPos;
-		int16_t yPos;
-		int16_t speed;
-		bool alive;
-		threadId_t threadID;
-		uint16_t color;
-}balls_t;
+
 /*********************************************** Data Structures ********************************************************************/
 
 
@@ -295,7 +325,12 @@ void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * out
 /*
  * Function updates ball position on screen
  */
-void UpdateBallOnScreen(PrevBall_t * previousBall, Ball_t * currentBall, uint16_t outColor);
+void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall, uint16_t outColor);
+
+/*
+ * detects if a collision occurs on a paddle
+ */
+void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle);
 
 /*
  * Initializes and prints initial game state
