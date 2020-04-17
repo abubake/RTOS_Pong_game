@@ -26,15 +26,14 @@ int displayVal = 1; //No so that first LED comes on correctly
 
 /* The paddle */
 GeneralPlayerInfo_t PlayerPaddle;
-<<<<<<< HEAD
 GeneralPlayerInfo_t ClientPaddle;
 
 //Previous Locations of Players
 PrevPlayer_t prevHostLoc;
 PrevPlayer_t prevClientLoc;
-=======
+
 int direction = 0; //Direction of the paddle
->>>>>>> c7d03245a1af4b1ea88d3f644b6567e00165caa8
+
 
 //Game state to be sent from host to client
 GameState_t curGame;
@@ -239,23 +238,15 @@ void ReadJoystickHost(){
 		*/
 		GetJoystickCoordinates(&host_X_coord, &host_Y_coord); //must wait for its semaphore!
 
-		if(host_X_coord > 1500){ //FIXME: Adjust this so it will work at different speeds
+		if(host_X_coord > 2000){ //FIXME: Adjust this so it will work at different speeds
 			//writeFIFO(JOYSTICKFIFO, RIGHT);
-<<<<<<< HEAD
 		    difference = -1;
-		}
-		else if(host_X_coord < -1500){
-			//writeFIFO(JOYSTICKFIFO, LEFT);
-		    difference = 1;
-=======
-		    difference = 1;
 		    direction = RIGHT; //For testing purposes
 		}
-		else if(host_X_coord < -1500){
+		else if(host_X_coord < -2000){
 			//writeFIFO(JOYSTICKFIFO, LEFT);
-		    difference = -1;
+		    difference = 1;
 		    direction = LEFT;
->>>>>>> c7d03245a1af4b1ea88d3f644b6567e00165caa8
 		}
 		else{
 		    difference = 0;
@@ -268,6 +259,7 @@ void ReadJoystickHost(){
         • By sleeping before updating the bottom player’s position, it makes the game more fair between client and host
         */
 		curGame.players[0].currentCenter += difference;
+		prevHostLoc.Center += difference;
 
 
 	}
@@ -491,11 +483,11 @@ void DrawObjects(){
 	    //TODO: Make it update both players
 	     //readFIFO(JOYSTICKFIFO);  // = ReadFIFO(JOYSTICKFIFO) (Is it going left or right?)
 
-	    //Update Host Location
-	    UpdatePlayerOnScreen()
-
+	    //Update Location of Each Player
+	    //Host
+	    UpdatePlayerOnScreen(&prevHostLoc, &PlayerPaddle);
 	    //Update Client Location
-
+	    UpdatePlayerOnScreen(&prevClientLoc, &ClientPaddle);
 
 	    /*
 	    if(direction == LEFT){
@@ -587,6 +579,60 @@ void DrawPlayer(GeneralPlayerInfo_t * player){
  * Updates player's paddle based on current and new center
  */
 void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * outPlayer){
+    //Find how much the paddle has moved
+    int16_t pixelsMoved = outPlayer->currentCenter - prevPlayerIn->Center;
+    //In current-previous, positive values mean moved rightward
+    //FIXME ADD SEMAPHORES
+    if(outPlayer->position == TOP){
+        if(pixelsMoved > 0){
+            //Moved rightward
+            //Paint background on left side
+            G8RTOS_WaitSemaphore(&USING_SPI);
+            LCD_DrawRectangle(prevPlayerIn->Center - PADDLE_LEN_D2 - PRINT_OFFSET, outPlayer->currentCenter - PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, BACK_COLOR);
+            G8RTOS_SignalSemaphore(&USING_SPI);
+            //Paint color on right side
+            G8RTOS_WaitSemaphore(&USING_SPI);
+            LCD_DrawRectangle(prevPlayerIn->Center + PADDLE_LEN_D2, outPlayer->currentCenter + PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
+            G8RTOS_SignalSemaphore(&USING_SPI);
+        }
+        else if(pixelsMoved < 0){
+            //Moved leftward
+            //Paint black on right
+            G8RTOS_WaitSemaphore(&USING_SPI);
+            LCD_DrawRectangle(outPlayer->currentCenter + PADDLE_LEN_D2, prevPlayerIn->Center + PADDLE_LEN_D2 + PRINT_OFFSET, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, BACK_COLOR);
+            G8RTOS_SignalSemaphore(&USING_SPI);
+            //Paint color on left side
+            G8RTOS_WaitSemaphore(&USING_SPI);
+            LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2, prevPlayerIn->Center - PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
+            G8RTOS_SignalSemaphore(&USING_SPI);
+        }
+    }
+    else if(outPlayer->position == BOTTOM){
+        if(pixelsMoved > 0){
+            //Moved rightward
+            //Paint background on left side
+            G8RTOS_WaitSemaphore(&USING_SPI);
+            LCD_DrawRectangle(prevPlayerIn->Center - PADDLE_LEN_D2 - PRINT_OFFSET, outPlayer->currentCenter - PADDLE_LEN_D2, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, BACK_COLOR);
+            G8RTOS_SignalSemaphore(&USING_SPI);
+            //Paint color on right side
+            G8RTOS_WaitSemaphore(&USING_SPI);
+            LCD_DrawRectangle(prevPlayerIn->Center + PADDLE_LEN_D2, outPlayer->currentCenter + PADDLE_LEN_D2, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, outPlayer->color);
+            G8RTOS_SignalSemaphore(&USING_SPI);
+        }
+        else if(pixelsMoved < 0){
+            //Moved leftward
+            //Paint black on right
+            G8RTOS_WaitSemaphore(&USING_SPI);
+            LCD_DrawRectangle(outPlayer->currentCenter + PADDLE_LEN_D2, prevPlayerIn->Center + PADDLE_LEN_D2 + PRINT_OFFSET, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, BACK_COLOR);
+            G8RTOS_SignalSemaphore(&USING_SPI);
+            //Paint color on left side
+            G8RTOS_WaitSemaphore(&USING_SPI);
+            LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2, prevPlayerIn->Center - PADDLE_LEN_D2, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, outPlayer->color);
+            G8RTOS_SignalSemaphore(&USING_SPI);
+        }
+    }
+
+
 
 }
 
@@ -655,6 +701,8 @@ void InitBoardState(){
     curGame.players[1].position = TOP;
     curGame.players[1].color = PLAYER_BLUE;
 
+    prevHostLoc.Center = PADDLE_X_CENTER;
+    prevClientLoc.Center = PADDLE_X_CENTER;
 }
 
 /*********************************************** Public Functions *********************************************************************/
