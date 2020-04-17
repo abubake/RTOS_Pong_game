@@ -26,6 +26,11 @@ int displayVal = 1; //No so that first LED comes on correctly
 
 /* The paddle */
 GeneralPlayerInfo_t PlayerPaddle;
+GeneralPlayerInfo_t ClientPaddle;
+
+//Previous Locations of Players
+PrevPlayer_t prevHostLoc;
+PrevPlayer_t prevClientLoc;
 
 //Game state to be sent from host to client
 GameState_t curGame;
@@ -153,7 +158,7 @@ void CreateGame(){
 	/* Add these threads. (Need better priority definitions) */
 	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
 	G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
-	//G8RTOS_AddThread(ReadJoystickHost, 200, "ReadJoystickHost");
+	G8RTOS_AddThread(ReadJoystickHost, 201, "ReadJoystickHost");
 	//G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
 	//G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
 	G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
@@ -232,11 +237,11 @@ void ReadJoystickHost(){
 
 		if(host_X_coord > 1500){ //FIXME: Adjust this so it will work at different speeds
 			//writeFIFO(JOYSTICKFIFO, RIGHT);
-		    difference = 1;
+		    difference = -1;
 		}
 		else if(host_X_coord < -1500){
 			//writeFIFO(JOYSTICKFIFO, LEFT);
-		    difference = -1;
+		    difference = 1;
 		}
 		else{
 		    difference = 0;
@@ -277,9 +282,9 @@ void MoveBall(){
             /* Gives random position */
 
             //Random x that will be within arena bounds and not too close to a wall
-            myBalls[i].xPos = (rand() % (ARENA_MAX_X - ARENA_MIN_X - 10)) + ARENA_MIN_X + 5;
+            myBalls[i].xPos = (rand() % (ARENA_MAX_X - ARENA_MIN_X - 20)) + ARENA_MIN_X + 10;
             //Random y that won't be too close to the paddles
-            myBalls[i].yPos = (rand() % MAX_SCREEN_Y - 50) + 25;
+            myBalls[i].yPos = (rand() % MAX_SCREEN_Y - 60) + 30;
 
             /* Getting a random speed */
             //TODO Experimentally determine a good max speed
@@ -473,6 +478,13 @@ void DrawObjects(){
 
 	    int direction; //readFIFO(JOYSTICKFIFO);  // = ReadFIFO(JOYSTICKFIFO) (Is it going left or right?)
 
+	    //Update Host Location
+	    UpdatePlayerOnScreen()
+
+	    //Update Client Location
+
+
+	    /*
 	    if(direction == LEFT){
 	    	G8RTOS_WaitSemaphore(&USING_SPI);
 	    	LCD_DrawRectangle(PlayerPaddle.paddleRightEdge - 10, PlayerPaddle.paddleRightEdge, 239, 235, LCD_BLACK);
@@ -496,6 +508,7 @@ void DrawObjects(){
 	    	PlayerPaddle.paddleRightEdge += 10;
 	    	PlayerPaddle.paddleLeftEdge += 10;
 	    }
+	    */
 
 	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
 		sleep(20);
@@ -543,7 +556,18 @@ playerType GetPlayerRole(){
  * Draw players given center X center coordinate
  */
 void DrawPlayer(GeneralPlayerInfo_t * player){
-
+    if(player->position == TOP){
+        //Draw paddle on top of screen
+        G8RTOS_WaitSemaphore(&USING_SPI);
+        LCD_DrawRectangle(MAX_SCREEN_X/2 - PADDLE_LEN_D2, MAX_SCREEN_X/2 + PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, player->color);
+        G8RTOS_SignalSemaphore(&USING_SPI);
+    }
+    else if(player->position == BOTTOM){
+        //Draw paddle on bottom of screen
+        G8RTOS_WaitSemaphore(&USING_SPI);
+        LCD_DrawRectangle(MAX_SCREEN_X/2 - PADDLE_LEN_D2, MAX_SCREEN_X/2 + PADDLE_LEN_D2, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, player->color);
+        G8RTOS_SignalSemaphore(&USING_SPI);
+    }
 }
 
 /*
@@ -662,15 +686,29 @@ void InitBoardState(){
 	G8RTOS_SignalSemaphore(&USING_SPI);
 
 	/* The initial paddle */
-	G8RTOS_WaitSemaphore(&USING_SPI);
-	LCD_DrawRectangle(128, 192, 235, 239, PLAYER_RED);
-	G8RTOS_SignalSemaphore(&USING_SPI);
+    /* Set Center of player paddle */
+    PlayerPaddle.currentCenter = PADDLE_X_CENTER;
+    PlayerPaddle.paddleRightEdge = PlayerPaddle.currentCenter + 42;
+    PlayerPaddle.paddleLeftEdge = PlayerPaddle.currentCenter - 42;
+    PlayerPaddle.position = BOTTOM;
+    PlayerPaddle.color = PLAYER_RED;
+    DrawPlayer(&PlayerPaddle);
 
-	/* Set Center of player paddle */
-	PlayerPaddle.currentCenter = PADDLE_X_CENTER;
-	PlayerPaddle.paddleRightEdge = PlayerPaddle.currentCenter + 42;
-	PlayerPaddle.paddleLeftEdge = PlayerPaddle.currentCenter - 42;
+    ClientPaddle.currentCenter = PADDLE_X_CENTER;
+    ClientPaddle.position = TOP;
+    ClientPaddle.color = PLAYER_BLUE;
+    DrawPlayer(&ClientPaddle);
 
+    //Save these in game state
+    curGame.players[0].color = PLAYER_RED;
+    curGame.players[0].currentCenter = PADDLE_X_CENTER;
+    curGame.players[0].paddleRightEdge = PlayerPaddle.currentCenter + 42;
+    curGame.players[0].paddleLeftEdge = PlayerPaddle.currentCenter - 42;
+    curGame.players[0].position = BOTTOM;
+
+    curGame.players[1].currentCenter = PADDLE_X_CENTER;
+    curGame.players[1].position = TOP;
+    curGame.players[1].color = PLAYER_BLUE;
 
 }
 
