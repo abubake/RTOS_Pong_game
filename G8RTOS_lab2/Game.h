@@ -204,11 +204,7 @@ typedef struct balls_t
 		threadId_t threadID;
 		uint16_t color;
 
-		//Technically only needs 1 PrevBall
-		PrevBall_t prevLocs[8];
-		uint8_t locInd;
-
-
+		PrevBall_t prevLoc;
 
 		int16_t width;
 		int16_t height;
@@ -325,7 +321,7 @@ void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * out
 /*
  * Function updates ball position on screen
  */
-void UpdateBallOnScreen(PrevBall_t * previousBall, Ball_t * currentBall, uint16_t outColor);
+void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall, uint16_t outColor);
 
 /*
  * detects if a collision occurs on a paddle

@@ -294,9 +294,8 @@ void MoveBall(){
             myBalls[i].color = LCD_WHITE;
             myBalls[i].alive = true;
 
-            myBalls[i].locInd = 0;
-            myBalls[i].prevLocs[0].CenterX = myBalls[i].xPos;
-            myBalls[i].prevLocs[0].CenterY = myBalls[i].yPos;
+            myBalls[i].prevLoc.CenterX = myBalls[i].xPos;
+            myBalls[i].prevLoc.CenterY = myBalls[i].yPos;
             myBalls[i].newBall = true;
             ind = i;
             break;
@@ -307,14 +306,12 @@ void MoveBall(){
         • Otherwise, just move the ball in its current direction according to its velocity
         */
 	while(1){
-
 		/* WALL COLLISION DETECTION */
 		bool collision = false; //maybe make this global
 		bool wall = false; //both variables get reset
 		bool paddle = false;
 
-
-		if((myBalls[ind].xPos >= 269)||(myBalls[ind].xPos <= 45)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
+		if((myBalls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 3) || (myBalls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 3)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
 		} //Checks if low enough on y-axis and between paddle left and right bounds to see if a collision occurs
@@ -351,14 +348,25 @@ void MoveBall(){
 	    //TODO If score happened, adjust score and killself
 	    //TODO Check if game has ended
 
+
+        //Save old position
+        myBalls[ind].prevLoc.CenterX = myBalls[ind].xPos;
+        myBalls[ind].prevLoc.CenterY = myBalls[ind].yPos;
+
 	    //If not killed, move ball to position according to its velocity
 	    myBalls[ind].xPos = myBalls[ind].xPos + myBalls[ind].xVel;
 	    myBalls[ind].yPos = myBalls[ind].yPos + myBalls[ind].yVel;
 
-	    //Save position to positions buffer
-	    myBalls[ind].prevLocs[myBalls[ind].locInd].CenterX = myBalls[ind].xPos;
-	    myBalls[ind].prevLocs[myBalls[ind].locInd].CenterY = myBalls[ind].yPos;
-	    myBalls[ind].locInd = (myBalls[ind].locInd + 1) & 7;  //Increment circular buffer index
+	    //If went beyond boundary, adjust so it is on boundary
+	    //I did this to try to stop the balls from eroding walls
+	    if(myBalls[ind].xPos > ARENA_MAX_X - BALL_SIZE){
+	        myBalls[ind].xPos = ARENA_MAX_X - BALL_SIZE;
+	    }
+	    else if(myBalls[ind].xPos < ARENA_MIN_X + BALL_SIZE){
+	        myBalls[ind].xPos = ARENA_MAX_X + BALL_SIZE;
+	    }
+
+
 
 		sleep(35);
 	}
@@ -415,32 +423,22 @@ void DrawObjects(){
 	        if(myBalls[i].alive){
 	            if(myBalls[i].newBall){
 	                //If a new ball, paint its initial location
-	                int16_t xCoord = myBalls[i].xPos - BALL_SIZE_D2;
-	                int16_t yCoord = myBalls[i].yPos - BALL_SIZE_D2;
+	                int16_t xCoord = myBalls[i].xPos;
+	                int16_t yCoord = myBalls[i].yPos;
 
 	                G8RTOS_WaitSemaphore(&USING_SPI);
-	                //Change to white later
-	                LCD_DrawRectangle(xCoord, xCoord + BALL_SIZE-1, yCoord, yCoord + BALL_SIZE-1, LCD_WHITE); //Changed from green to white
+	                LCD_DrawRectangle(xCoord - BALL_SIZE_D2, xCoord + BALL_SIZE_D2, yCoord - BALL_SIZE_D2, yCoord + BALL_SIZE_D2, LCD_WHITE);
 	                G8RTOS_SignalSemaphore(&USING_SPI);
 
 	                //Not new anymore
 	                myBalls[i].newBall = false;
 	            }
 	            else{
-	                //If not new, look to buffer for previous location
-	                int16_t prevX = myBalls[i].prevLocs[(myBalls[i].locInd - 2) & 7].CenterX - BALL_SIZE_D2;
-	                int16_t prevY = myBalls[i].prevLocs[(myBalls[i].locInd - 2) & 7].CenterY - BALL_SIZE_D2;
 
-	                //Paint background color over where it was
-                    G8RTOS_WaitSemaphore(&USING_SPI);
-                    LCD_DrawRectangle(prevX, prevX + BALL_SIZE, prevY, prevY + BALL_SIZE, BACK_COLOR);
-                    G8RTOS_SignalSemaphore(&USING_SPI);
+	                //If not a new ball, update its location
+	                UpdateBallOnScreen(&myBalls[i].prevLoc, &myBalls[i], myBalls[i].color);
 
-	                //Paint where it is now
-                    //Change to myBalls.color later
-                    G8RTOS_WaitSemaphore(&USING_SPI);
-                    LCD_DrawRectangle(myBalls[i].xPos - BALL_SIZE_D2, myBalls[i].xPos + BALL_SIZE_D2, myBalls[i].yPos - BALL_SIZE_D2, myBalls[i].yPos + BALL_SIZE_D2, LCD_GREEN);
-                    G8RTOS_SignalSemaphore(&USING_SPI);
+
 	            }
 
 
@@ -494,7 +492,7 @@ void MoveLEDs(){
 		if(iterated == false){ //Run the code
 			iterated = true;
 			for(int i=0; i<curBalls; i++){
-				if((myBalls[i].yPos < 3)&&(myBalls[i].prevLocs[i].CenterY >= 3)){
+				if((myBalls[i].yPos < 3)&&(myBalls[i].prevLoc.CenterY >= 3)){
 					pointScored = true;
 				}
 			}
@@ -536,9 +534,23 @@ void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * out
 
 /*
  * Function updates ball position on screen
+ *
+ * Changed the Ball_t parameter to balls_t that we made
  */
-void UpdateBallOnScreen(PrevBall_t * previousBall, Ball_t * currentBall, uint16_t outColor){
+void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall, uint16_t outColor){
+    //If not new, look for previous location
+    int16_t prevX = previousBall->CenterX;
+    int16_t prevY = previousBall->CenterY;
 
+    //Paint background color over where it was
+    G8RTOS_WaitSemaphore(&USING_SPI);
+    LCD_DrawRectangle(prevX- BALL_SIZE_D2, prevX + BALL_SIZE_D2, prevY - BALL_SIZE_D2, prevY + BALL_SIZE_D2, BACK_COLOR);
+    G8RTOS_SignalSemaphore(&USING_SPI);
+
+    //Paint where it is now
+    G8RTOS_WaitSemaphore(&USING_SPI);
+    LCD_DrawRectangle(currentBall->xPos - BALL_SIZE_D2, currentBall-> xPos + BALL_SIZE_D2, currentBall->yPos - BALL_SIZE_D2, currentBall->yPos + BALL_SIZE_D2, outColor);
+    G8RTOS_SignalSemaphore(&USING_SPI);
 }
 /*
 * detects if a collision occurs on a paddle [DO NOT USE]

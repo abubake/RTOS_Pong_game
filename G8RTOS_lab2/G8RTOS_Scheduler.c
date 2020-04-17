@@ -190,21 +190,18 @@ void G8RTOS_Init()
 {
 	/* Turns off the watchdog timer with HOLD and sets a required password to avoid entering reset  */
 	WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
+
     //system time to 0 (holds current time for the whole system)
     SystemTime = 0;
     //# of threads = 0
     NumberOfThreads = 0;
 
-
     uint32_t newVTORTable = 0x20000000;
     memcpy((uint32_t *)newVTORTable, (uint32_t *)SCB->VTOR, 57*4); // 57 interrupt vectors to copy
     SCB->VTOR = newVTORTable;
 
-
     //init all hardware on the board
     BSP_InitBoard();
-
-
 }
 
 /*
