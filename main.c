@@ -5,14 +5,20 @@
 #include "time.h"
 #include "stdlib.h"
 #include "cc3100_usage.h"
+#include "sl_common.h"
 #include "Game.h"
 
 #define MAIN_LAB5
 #ifdef MAIN_LAB5
 
 void main(void){
+
+	/* Setting this to be the host WIFI */
+	initCC3100(Host);
+
 	/* Initializes all the hardware resources on the board and sets the amount of threads and system time to 0 */
 	G8RTOS_Init();
+
 
 	LCD_Init(true);
 
@@ -30,8 +36,6 @@ void main(void){
 	G8RTOS_InitFIFO(JOYSTICKFIFO);
 	//G8RTOS_InitFIFO(BALLNUMFIFO);
 
-	/* Setting this to be the host WIFI */
-	//initCC3100(Host);
 
 	/* Initializes the Systick to trigger every 1ms and sets the priority for both PendSV and Systick  */
 	/* Sets the first thread control block as the current thread, and calls the start_os assembly function */
