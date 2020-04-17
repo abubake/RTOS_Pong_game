@@ -26,6 +26,7 @@ int displayVal = 1; //No so that first LED comes on correctly
 
 /* The paddle */
 GeneralPlayerInfo_t PlayerPaddle;
+int direction = 0; //Direction of the paddle
 
 //Game state to be sent from host to client
 GameState_t curGame;
@@ -233,10 +234,12 @@ void ReadJoystickHost(){
 		if(host_X_coord > 1500){ //FIXME: Adjust this so it will work at different speeds
 			//writeFIFO(JOYSTICKFIFO, RIGHT);
 		    difference = 1;
+		    direction = RIGHT; //For testing purposes
 		}
 		else if(host_X_coord < -1500){
 			//writeFIFO(JOYSTICKFIFO, LEFT);
 		    difference = -1;
+		    direction = LEFT;
 		}
 		else{
 		    difference = 0;
@@ -470,8 +473,7 @@ void DrawObjects(){
 
 	    //Update Players
 	    //TODO: Make it update both players
-
-	    int direction; //readFIFO(JOYSTICKFIFO);  // = ReadFIFO(JOYSTICKFIFO) (Is it going left or right?)
+	     //readFIFO(JOYSTICKFIFO);  // = ReadFIFO(JOYSTICKFIFO) (Is it going left or right?)
 
 	    if(direction == LEFT){
 	    	G8RTOS_WaitSemaphore(&USING_SPI);
@@ -573,75 +575,7 @@ void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall, uint16
     LCD_DrawRectangle(currentBall->xPos - BALL_SIZE_D2, currentBall-> xPos + BALL_SIZE_D2, currentBall->yPos - BALL_SIZE_D2, currentBall->yPos + BALL_SIZE_D2, outColor);
     G8RTOS_SignalSemaphore(&USING_SPI);
 }
-/*
-* detects if a collision occurs on a paddle [DO NOT USE]
-*/
-void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t PlayerPaddle){
-				bool collision = false;
-				bool paddle;
-	int32_t w = 0.5 * (myBalls[ind].width + 64); //paddle width
-	int32_t h = 0.5 * (myBalls[ind].height + 4); //paddle height
-	int32_t dx = myBalls[ind].xPos - PlayerPaddle.currentCenter; //TODO: Implement paddle position
-	int32_t dy = myBalls[ind].yPos - PlayerPaddle.currentCenter;
 
-				if(abs(dx) <= w && abs(dy) <= h){ //For the paddle
-							collision = true;
-							paddle = true;
-							int32_t wy = w * dy;
-							int32_t hx = h * dx;
-							if (wy > hx)
-							{
-								if (wy > -hx) //TODO: Set flags for paddle & adapt mincowsky to break paddle into 3 parts
-								{
-								/* collision at the top */
-								myBalls[ind].xVel = myBalls[ind].xVel * -1;
-								myBalls[ind].yVel = myBalls[ind].yVel * -1;
-								}
-								else
-								{
-								/* on the left */
-								myBalls[ind].xVel = myBalls[ind].xVel * -1;
-								myBalls[ind].yVel = myBalls[ind].yVel * -1;
-								}
-							}
-							else
-								{
-								if (wy > -hx)
-								{
-								/* on the right */
-								myBalls[ind].xVel = myBalls[ind].xVel * 1;
-								myBalls[ind].yVel = myBalls[ind].yVel * -1;
-								}
-								else
-								{
-								/* at the bottom */
-								myBalls[ind].xVel = myBalls[ind].xVel * 1;
-								myBalls[ind].yVel = myBalls[ind].yVel * -1;
-								}
-							}
-						}
-
-
-			    //If collision occurred, change color and velocity accordingly
-			    //TODO check for collision
-			    if(collision){
-			        //TODO Check if collided with wall
-			        bool wall = false;
-			        if(wall){
-			            //If wall is hit, maintain vertical velocity, but reflect horizontally
-			            myBalls[ind].xVel = myBalls[ind].xVel * -1;
-			        }
-			        bool paddle = false;
-			        if(paddle){
-			            //if(redPaddle){
-			            myBalls[ind].color = LCD_RED;
-			            //else{
-			            //myBalls[ind].color = LCD_BLUE;
-
-			            //TODO implement Minkowski algorithm or other algorithm
-			        }
-			    }
-}
 
 /*
  * Initializes and prints initial game state

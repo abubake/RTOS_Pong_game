@@ -30,6 +30,9 @@ void main(void){
 	G8RTOS_InitFIFO(JOYSTICKFIFO);
 	//G8RTOS_InitFIFO(BALLNUMFIFO);
 
+	/* Setting this to be the host WIFI */
+	//initCC3100(Host);
+
 	/* Initializes the Systick to trigger every 1ms and sets the priority for both PendSV and Systick  */
 	/* Sets the first thread control block as the current thread, and calls the start_os assembly function */
 	G8RTOS_Launch();
