@@ -158,22 +158,6 @@ typedef struct
 } Ball_t;
 
 /*
- * Struct to be sent from the host to the client
- */
-typedef struct
-{
-    SpecificPlayerInfo_t player;
-    GeneralPlayerInfo_t players[MAX_NUM_OF_PLAYERS];
-    Ball_t balls[MAX_NUM_OF_BALLS];
-    uint16_t numberOfBalls;
-    bool winner;
-    bool gameDone;
-    uint8_t LEDScores[2];
-    uint8_t overallScores[2];
-} GameState_t;
-#pragma pack ( pop )
-
-/*
  * Struct of all the previous ball locations, only changed by self for drawing!
  */
 typedef struct
@@ -183,6 +167,47 @@ typedef struct
 }PrevBall_t;
 
 /*
+ * Struct of ball information, based upon lab 4 ball struct
+ */
+typedef struct balls_t
+{   /*The center of ball */
+        int16_t xPos;
+        int16_t yPos;
+        int16_t xVel;
+        int16_t yVel;
+
+        bool alive;
+        threadId_t threadID;
+        uint16_t color;
+
+        PrevBall_t prevLoc;
+
+        int16_t width;
+        int16_t height;
+
+        bool newBall;
+
+}balls_t;
+
+/*
+ * Struct to be sent from the host to the client
+ */
+typedef struct
+{
+    SpecificPlayerInfo_t player;
+    GeneralPlayerInfo_t players[MAX_NUM_OF_PLAYERS];
+    balls_t balls[MAX_NUM_OF_BALLS];                     //Nick changed Ball_t to balls_t
+    uint16_t numberOfBalls;
+    bool winner;
+    bool gameDone;
+    uint8_t LEDScores[2];
+    uint8_t overallScores[2];
+} GameState_t;
+#pragma pack ( pop )
+
+
+
+/*
  * Struct of all the previous players locations, only changed by self for drawing
  */
 typedef struct
@@ -190,28 +215,7 @@ typedef struct
     int16_t Center;
 }PrevPlayer_t;
 
-/*
- * Struct of ball information, based upon lab 4 ball struct
- */
-typedef struct balls_t
-{	/*The center of ball */
-		int16_t xPos;
-		int16_t yPos;
-        int16_t xVel;
-        int16_t yVel;
 
-		bool alive;
-		threadId_t threadID;
-		uint16_t color;
-
-		PrevBall_t prevLoc;
-
-		int16_t width;
-		int16_t height;
-
-		bool newBall;
-
-}balls_t;
 /*********************************************** Data Structures ********************************************************************/
 
 

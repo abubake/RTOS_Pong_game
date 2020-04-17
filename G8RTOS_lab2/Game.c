@@ -27,6 +27,8 @@ int displayVal = 1; //No so that first LED comes on correctly
 /* The paddle */
 GeneralPlayerInfo_t PlayerPaddle;
 
+//Game state to be sent from host to client
+GameState_t curGame;
 
 /*********************************************** Client Threads *********************************************************************/
 /*
@@ -207,6 +209,7 @@ void GenerateBall(){
 	    if(curBalls < MAX_NUM_OF_BALLS){
 	        curBalls++;
 	        G8RTOS_AddThread(MoveBall, 30, "MoveBall");
+	        curGame.numberOfBalls++;
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
 	    sleep(curBalls*4000);
@@ -217,6 +220,7 @@ void GenerateBall(){
  * Thread to read host's joystick
  */
 void ReadJoystickHost(){
+    int16_t difference = 0;
 	while(1){
 		/*
 		• You can read the joystick ADC values by calling GetJoystickCoordinates
@@ -226,19 +230,26 @@ void ReadJoystickHost(){
 		*/
 		GetJoystickCoordinates(&host_X_coord, &host_Y_coord); //must wait for its semaphore!
 
-		if(host_X_coord > 1000){ //FIXME: Adjust this so it will work at different speeds
+		if(host_X_coord > 1500){ //FIXME: Adjust this so it will work at different speeds
 			//writeFIFO(JOYSTICKFIFO, RIGHT);
+		    difference = 1;
 		}
-		else if(host_X_coord < -1000){
+		else if(host_X_coord < -1500){
 			//writeFIFO(JOYSTICKFIFO, LEFT);
-
+		    difference = -1;
 		}
+		else{
+		    difference = 0;
+		}
+		PlayerPaddle.currentCenter += difference;
 		sleep(10); // makes game for fair
 
-		/*
-		• Then add the displacement to the bottom player in the list of players (general list that’s sent to the client and used for drawing) i.e. players[0].position += self.displacement
-		• By sleeping before updating the bottom player’s position, it makes the game more fair between client and host
-		*/
+        /*
+        • Then add the displacement to the bottom player in the list of players (general list that’s sent to the client and used for drawing) i.e. players[0].position += self.displacement
+        • By sleeping before updating the bottom player’s position, it makes the game more fair between client and host
+        */
+		curGame.players[0].currentCenter += difference;
+
 
 	}
 }
@@ -297,6 +308,16 @@ void MoveBall(){
             myBalls[i].prevLoc.CenterX = myBalls[i].xPos;
             myBalls[i].prevLoc.CenterY = myBalls[i].yPos;
             myBalls[i].newBall = true;
+
+            //Update structure to be sent
+            curGame.balls[i].alive = true;
+            curGame.balls[i].color = LCD_WHITE;
+            curGame.balls[i].xPos = myBalls[i].xPos;
+            curGame.balls[i].yPos = myBalls[i].yPos;
+            curGame.balls[i].prevLoc.CenterX = myBalls[i].xPos;
+            curGame.balls[i].prevLoc.CenterY = myBalls[i].yPos;
+            curGame.balls[i].newBall = true;
+
             ind = i;
             break;
         }
@@ -366,7 +387,13 @@ void MoveBall(){
 	        myBalls[ind].xPos = ARENA_MAX_X + BALL_SIZE;
 	    }
 
-
+	    //Update GameState to be sent
+        curGame.balls[ind].alive = myBalls[ind].alive;
+        curGame.balls[ind].color = myBalls[ind].color;
+        curGame.balls[ind].xPos = myBalls[ind].xPos;
+        curGame.balls[ind].yPos = myBalls[ind].yPos;
+        curGame.balls[ind].prevLoc.CenterX = myBalls[ind].xPos;
+        curGame.balls[ind].prevLoc.CenterY = myBalls[ind].yPos;
 
 		sleep(35);
 	}
@@ -432,16 +459,12 @@ void DrawObjects(){
 
 	                //Not new anymore
 	                myBalls[i].newBall = false;
+	                curGame.balls[i].newBall = false;
 	            }
 	            else{
-
 	                //If not a new ball, update its location
 	                UpdateBallOnScreen(&myBalls[i].prevLoc, &myBalls[i], myBalls[i].color);
-
-
 	            }
-
-
 	        }
 	    }
 
@@ -473,8 +496,6 @@ void DrawObjects(){
 	    	PlayerPaddle.paddleRightEdge += 10;
 	    	PlayerPaddle.paddleLeftEdge += 10;
 	    }
-
-
 
 	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
 		sleep(20);
