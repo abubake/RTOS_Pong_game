@@ -14,7 +14,7 @@
 void main(void){
 
 	/* Setting this to be the host WIFI */
-	initCC3100(Host);
+	//initCC3100(Host);
 
 	/* Initializes all the hardware resources on the board and sets the amount of threads and system time to 0 */
 	G8RTOS_Init();

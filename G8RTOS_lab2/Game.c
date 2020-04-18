@@ -361,11 +361,12 @@ void MoveBall(){
 		bool wall = false; //both variables get reset
 		bool paddle = false;
 
+		//Check if it collided with a wall
 		if((myBalls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4) || (myBalls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
 		} //Checks if low enough on y-axis and between paddle left and right bounds to see if a collision occurs
-		else if((myBalls[ind].yPos >= 230)&&(myBalls[ind].xPos > PlayerPaddle.currentCenter - PADDLE_WID_D2 - 2)&&(myBalls[ind].xPos < PlayerPaddle.currentCenter + PADDLE_WID_D2 + 2)){ //42 is (32 + offset) of 10
+		else if((myBalls[ind].yPos >= 230)&&(myBalls[ind].xPos > PlayerPaddle.currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < PlayerPaddle.currentCenter + PADDLE_LEN_D2 + 2)){
 			collision = true;
 			paddle = true;
 		}
@@ -377,11 +378,13 @@ void MoveBall(){
 			 	}
 			 	//Can be both paddle and wall
 			 	if(paddle){
-			 	    if(myBalls[ind].yPos > MAX_SCREEN_Y - PADDLE_WID - BALL_SIZE){
+			 	    //Check which paddle it hits
+			 	    if(myBalls[ind].yPos > MAX_SCREEN_Y - PADDLE_WID - BALL_SIZE - 3){
+			 	        //Hit bottom paddle
 			 	        myBalls[ind].color = LCD_RED;
 			 	    }
-			 	    else if(myBalls[ind].yPos < PADDLE_WID + BALL_SIZE){
-			 	        //Collided with top
+			 	    else if(myBalls[ind].yPos < PADDLE_WID + BALL_SIZE + 3){
+			 	        //Collided with top paddle
 			 	        myBalls[ind].color = LCD_BLUE;
 			 	    }
 			 	    //Left Side
@@ -398,65 +401,87 @@ void MoveBall(){
 			 			if(myBalls[ind].xVel < 1){
 			 			   myBalls[ind].xVel = myBalls[ind].xVel * -1;
 			 			}
-
-			 			myBalls[ind].xVel = myBalls[ind].xVel * 1; //TODO: Ensure this goes right
 			 		}
 			 		//Middle
 			 		else{ //This is the center of the paddle's area, a space of 24
 			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
 			 		}
-
 			 	}
-
 		}
 
-
-	    //TODO If ball has passed boundary, adjust score
+	    //If ball has passed boundary, adjust score
+		bool passedBoundary = false;
 		if((myBalls[ind].yPos < ARENA_MIN_Y) || (myBalls[ind].yPos > ARENA_MAX_X)){
 		    if(myBalls[ind].color == LCD_RED){
 		        //Red Ball Scored
-
+		        curBalls--;
+		        curGame.numberOfBalls -= 1;
+		        curGame.LEDScores[0] += 1;
+		        passedBoundary = true;
 		    }
 		    else if(myBalls[ind].color == LCD_BLUE){
 		        //Blue Ball Scored
-
+                curBalls--;
+                curGame.numberOfBalls -= 1;
+		        curGame.LEDScores[1] += 1;
+		        passedBoundary = true;
 		    }
 		    else{
 		        //White Ball fell through- No one scores but ball still is killed
+                curBalls--;
+                curGame.numberOfBalls -= 1;
+		        passedBoundary = true;
+		    }
+		}
+	    //Check if game has ended
+		if(curGame.LEDScores[0] >= POINTS_TO_WIN){
+		    //Bottom player has won
+		    curGame.gameDone = true;        //Not sure what the difference is between gameDone and winner
+		    curGame.winner = true;
+		}
+		else if(curGame.LEDScores[1] >= POINTS_TO_WIN){
+		    //Top player has won
+		    curGame.gameDone = true;
+		    curGame.winner = true;
+		}
 
+		if(passedBoundary){
+		    if(curGame.gameDone == true){
+                //If this was the final point, add ending thread
+                G8RTOS_AddThread(EndOfGameHost, 4, "EndOfGame");
+		    }
+		    else{
+                //Kill this MoveBall
+                myBalls[ind].alive = false;
+                G8RTOS_KillSelf();
 		    }
 
 		}
+		else{
+	        //Save old position
+	        myBalls[ind].prevLoc.CenterX = myBalls[ind].xPos;
+	        myBalls[ind].prevLoc.CenterY = myBalls[ind].yPos;
 
-	    //TODO If score happened, adjust score and killself
-	    //TODO Check if game has ended
+	        //If not killed, move ball to position according to its velocity
+	        myBalls[ind].xPos = myBalls[ind].xPos + myBalls[ind].xVel;
+	        myBalls[ind].yPos = myBalls[ind].yPos + myBalls[ind].yVel;
 
-
-        //Save old position
-        myBalls[ind].prevLoc.CenterX = myBalls[ind].xPos;
-        myBalls[ind].prevLoc.CenterY = myBalls[ind].yPos;
-
-	    //If not killed, move ball to position according to its velocity
-	    myBalls[ind].xPos = myBalls[ind].xPos + myBalls[ind].xVel;
-	    myBalls[ind].yPos = myBalls[ind].yPos + myBalls[ind].yVel;
-
-	    //If went beyond boundary, adjust so it is on boundary
-	    //I did this to try to stop the balls from eroding walls
-	    if(myBalls[ind].xPos > ARENA_MAX_X - BALL_SIZE){
-	        myBalls[ind].xPos = ARENA_MAX_X - BALL_SIZE;
-	    }
-	    else if(myBalls[ind].xPos < ARENA_MIN_X + BALL_SIZE){
-	        myBalls[ind].xPos = ARENA_MAX_X + BALL_SIZE;
-	    }
-
-
-	    //Update GameState to be sent
-        curGame.balls[ind].alive = myBalls[ind].alive;
-        curGame.balls[ind].color = myBalls[ind].color;
-        curGame.balls[ind].xPos = myBalls[ind].xPos;
-        curGame.balls[ind].yPos = myBalls[ind].yPos;
-        curGame.balls[ind].prevLoc.CenterX = myBalls[ind].xPos;
-        curGame.balls[ind].prevLoc.CenterY = myBalls[ind].yPos;
+	        //If went beyond boundary, adjust so it is on boundary
+	        //I did this to try to stop the balls from eroding walls
+	        if(myBalls[ind].xPos > ARENA_MAX_X - BALL_SIZE){
+	            myBalls[ind].xPos = ARENA_MAX_X - BALL_SIZE;
+	        }
+	        else if(myBalls[ind].xPos < ARENA_MIN_X + BALL_SIZE){
+	            myBalls[ind].xPos = ARENA_MAX_X + BALL_SIZE;
+	        }
+	        //Update GameState to be sent
+	        curGame.balls[ind].alive = myBalls[ind].alive;
+	        curGame.balls[ind].color = myBalls[ind].color;
+	        curGame.balls[ind].xPos = myBalls[ind].xPos;
+	        curGame.balls[ind].yPos = myBalls[ind].yPos;
+	        curGame.balls[ind].prevLoc.CenterX = myBalls[ind].xPos;
+	        curGame.balls[ind].prevLoc.CenterY = myBalls[ind].yPos;
+		}
 
 		sleep(35);
 	}
@@ -474,7 +499,28 @@ void EndOfGameHost(){
 		• Create an aperiodic thread that waits for the host’s button press (the client will just be waiting on the host to start a new game
 		• Once ready, send notification to client, reinitialize the game and objects, add back all the threads, and kill self
 		*/
-		LCD_Clear(LCD_RED);
+
+    //TODO Wait for all semaphores to be unblocked?
+
+    G8RTOS_KillAllOthers();
+
+    //TODO Reinitialize semaphores
+
+    //Clear screen with winner's color
+    if(curGame.LEDScores[0] > curGame.LEDScores[1]){
+        //Player 0 won, make screen their color
+        LCD_Clear(curGame.players[0].color);
+    }
+    else if(curGame.LEDScores[0] < curGame.LEDScores[1]){
+        //Player 1 won, make screen their color
+        LCD_Clear(curGame.players[1].color);
+    }
+
+    //TODO Print a message and wait for host's action to start
+
+    //TODO Create aperiodic thread waiting for host's action
+
+    //TODO When ready, notify client, reinitialize game, add threads back, kill self
 
 
 }

@@ -26,6 +26,7 @@ semaphore_t USING_SPI; // semaphore for SPI interface using EUSCIB3 with LCD/ To
 /*********************************************** Global Defines ********************************************************************/
 #define MAX_NUM_OF_PLAYERS  2
 #define MAX_NUM_OF_BALLS    8
+#define POINTS_TO_WIN       16
 
 // This game can actually be played with 4 players... a little bit more challenging, but doable!
 #define NUM_OF_PLAYERS_PLAYING 2
