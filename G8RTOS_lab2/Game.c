@@ -682,6 +682,7 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
     int16_t pixelsMoved = outPlayer->currentCenter - prevPlayerIn->Center;
     //In current-previous, positive values mean moved rightward
     //FIXME ADD SEMAPHORES
+    //FIXME Direction Changes sometimes leaves a small black line behind inside paddle
     if(outPlayer->position == TOP){
         if(pixelsMoved > 0){
             //Moved rightward
@@ -751,9 +752,16 @@ inline void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall,
     G8RTOS_SignalSemaphore(&USING_SPI);
 
     //Paint where it is now
-    G8RTOS_WaitSemaphore(&USING_SPI);
-    LCD_DrawRectangle(currentBall->xPos - BALL_SIZE_D2, currentBall-> xPos + BALL_SIZE_D2, currentBall->yPos - BALL_SIZE_D2, currentBall->yPos + BALL_SIZE_D2, outColor);
-    G8RTOS_SignalSemaphore(&USING_SPI);
+    //Check if in boundary
+    if(currentBall->yPos > MAX_SCREEN_Y || (currentBall->yPos < MIN_SCREEN_Y)){
+        //Out of bounds, Do not draw
+    }
+    else{
+        G8RTOS_WaitSemaphore(&USING_SPI);
+        LCD_DrawRectangle(currentBall->xPos - BALL_SIZE_D2, currentBall-> xPos + BALL_SIZE_D2, currentBall->yPos - BALL_SIZE_D2, currentBall->yPos + BALL_SIZE_D2, outColor);
+        G8RTOS_SignalSemaphore(&USING_SPI);
+    }
+
 }
 
 
