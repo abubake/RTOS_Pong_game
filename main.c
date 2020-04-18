@@ -16,27 +16,9 @@ int waitingForHost;
 int hostFlag;
 
 void main(void){
+	initCC3100(Host);
 
-<<<<<<< HEAD
-=======
-	/* Setting this to be the host WIFI */
-	//initCC3100(Host);
->>>>>>> 57ae4fd9d61de5ff104ec24591f64137c605d030
 
-	 P4DIR &= ~BIT4;
-	 P4IFG &= ~BIT4; // clear interrupt flag bit
-	 P4IE |= BIT4; // enable interrupt on pin 4
-	 P4IES |= BIT4; //enables low to high transition
-	 P4REN |= BIT4; // pull up resistor
-	 P4OUT |= BIT4; // sets resistor to pull up
-
-	    /*Freed from loop once choice is made */
-	    while(waitingForHost){
-	    	if(hostFlag){
-	    	/* Setting this to be the host WIFI */
-	    		initCC3100(Host);
-	    	}
-	    }
 	/* Initializes all the hardware resources on the board and sets the amount of threads and system time to 0 */
 	G8RTOS_Init();
 
@@ -59,14 +41,6 @@ void main(void){
 	/* Sets the first thread control block as the current thread, and calls the start_os assembly function */
 	G8RTOS_Launch();
 }
-
-void PORT4_IRQHandler(void){
-        P4IE &= ~BIT4; // disables interrupt on pin 4
-        //P4IFG &= ~BIT4; // must clear IFG flag to operate
-        hostFlag = 1; //We exit the while loop and we are set as the host
-        waitingForHost = 1;
-        //P4IE |= BIT4; // no need to enable interrupt on pin 4 since we don't need it again
-    }
 
 
 
