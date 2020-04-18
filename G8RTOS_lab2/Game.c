@@ -221,7 +221,7 @@ void GenerateBall(){
 
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
-	    sleep(curBalls*4000);
+	    sleep(curBalls*2500);
 	}
 }
 
@@ -363,6 +363,7 @@ void MoveBall(){
 		bool paddle = false;
 
 		//Check if it collided with a wall
+		//TODO mess with values until they are nice
 		if((myBalls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4) || (myBalls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
@@ -505,28 +506,33 @@ void EndOfGameHost(){
 		• Once ready, send notification to client, reinitialize the game and objects, add back all the threads, and kill self
 		*/
 
-    //TODO Wait for all semaphores to be unblocked?
+    //Wait for semaphores to be available so that threads using them are not killed yet
+    G8RTOS_WaitSemaphore(&USING_SPI);
+    G8RTOS_WaitSemaphore(&USING_LED_I2C);
 
+    //Now has both semaphores, kill all other threads
     G8RTOS_KillAllOthers();
 
-    //TODO Reinitialize semaphores
+    //Reinitialize semaphores
+    G8RTOS_InitSemaphore(&USING_SPI, 1);
+    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
-    //Clear screen with winner's color
+    //Clear screen with winner's color and print message
     if(curGame.LEDScores[0] > curGame.LEDScores[1]){
         //Player 0 won, make screen their color
         LCD_Clear(curGame.players[0].color);
+        LCD_Text(95, 75, "Host Press Button", curGame.players[1].color);
     }
     else if(curGame.LEDScores[0] < curGame.LEDScores[1]){
         //Player 1 won, make screen their color
         LCD_Clear(curGame.players[1].color);
+        LCD_Text(95, 75, "Host Press Button", curGame.players[0].color);
     }
 
-    //TODO Print a message and wait for host's action to start
-
-    //TODO Create aperiodic thread waiting for host's action
+    //Create aperiodic thread waiting for host's action
 
     //TODO When ready, notify client, reinitialize game, add threads back, kill self
-
+    while(1);
 
 }
 
