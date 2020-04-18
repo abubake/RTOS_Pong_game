@@ -119,6 +119,14 @@ typedef enum
 /*********************************************** Data Structures ********************************************************************/
 #pragma pack ( push, 1)
 /*
+ * Test struct
+ */
+typedef struct test_t
+{
+	uint8_t greatSucsess;
+}test_t;
+
+/*
  * Struct to be sent from the client to the host
  */
 typedef struct
