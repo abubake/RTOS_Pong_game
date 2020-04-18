@@ -366,9 +366,13 @@ void MoveBall(){
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
 		} //Checks if low enough on y-axis and between paddle left and right bounds to see if a collision occurs
-		else if((myBalls[ind].yPos >= 230)&&(myBalls[ind].xPos > PlayerPaddle.currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < PlayerPaddle.currentCenter + PADDLE_LEN_D2 + 2)){
+		else if((myBalls[ind].yPos >= 232)&&(myBalls[ind].xPos > PlayerPaddle.currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < PlayerPaddle.currentCenter + PADDLE_LEN_D2 + 2)){
 			collision = true;
 			paddle = true;
+		}
+		else if((myBalls[ind].yPos <= 9)&&(myBalls[ind].xPos > ClientPaddle.currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < ClientPaddle.currentCenter + PADDLE_LEN_D2 + 2)){
+		    collision = true;
+		    paddle = true;
 		}
 
 		if(collision){
@@ -379,11 +383,11 @@ void MoveBall(){
 			 	//Can be both paddle and wall
 			 	if(paddle){
 			 	    //Check which paddle it hits
-			 	    if(myBalls[ind].yPos > MAX_SCREEN_Y - PADDLE_WID - BALL_SIZE - 3){
+			 	    if(myBalls[ind].yPos > MAX_SCREEN_Y - PADDLE_WID - BALL_SIZE - 7){
 			 	        //Hit bottom paddle
 			 	        myBalls[ind].color = LCD_RED;
 			 	    }
-			 	    else if(myBalls[ind].yPos < PADDLE_WID + BALL_SIZE + 3){
+			 	    else if(myBalls[ind].yPos < PADDLE_WID + BALL_SIZE + 7){
 			 	        //Collided with top paddle
 			 	        myBalls[ind].color = LCD_BLUE;
 			 	    }

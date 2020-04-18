@@ -17,12 +17,6 @@ int hostFlag;
 
 void main(void){
 
-<<<<<<< HEAD
-=======
-	/* Setting this to be the host WIFI */
-	//initCC3100(Host);
->>>>>>> 57ae4fd9d61de5ff104ec24591f64137c605d030
-
 	 P4DIR &= ~BIT4;
 	 P4IFG &= ~BIT4; // clear interrupt flag bit
 	 P4IE |= BIT4; // enable interrupt on pin 4
