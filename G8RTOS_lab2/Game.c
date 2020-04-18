@@ -520,18 +520,42 @@ void EndOfGameHost(){
     //Clear screen with winner's color and print message
     if(curGame.LEDScores[0] > curGame.LEDScores[1]){
         //Player 0 won, make screen their color
+        //Increment overall scores
+        curGame.overallScores[0] += 1;
         LCD_Clear(curGame.players[0].color);
         LCD_Text(95, 75, "Host Press Button", curGame.players[1].color);
     }
     else if(curGame.LEDScores[0] < curGame.LEDScores[1]){
         //Player 1 won, make screen their color
+        //Increment overall scores
+        curGame.overallScores[1] += 1;
         LCD_Clear(curGame.players[1].color);
         LCD_Text(95, 75, "Host Press Button", curGame.players[0].color);
     }
 
     //Create aperiodic thread waiting for host's action
+    //TODO Button interrupt
 
-    //TODO When ready, notify client, reinitialize game, add threads back, kill self
+    //When ready, notify client, reinitialize game, add threads back, kill self
+//    while(!readyForNextGame);
+
+
+    //TODO Notify client
+
+    //Reinitialize game with new scores
+    InitBoardState();
+
+    /* Add these threads. (Need better priority definitions) */
+    G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
+    G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickHost, 201, "ReadJoystickHost");
+    //G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
+    //G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
+    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+    G8RTOS_AddThread(IdleThread, 254, "Idle");
+
+    G8RTOS_KillSelf();
+
     while(1);
 
 }
@@ -609,21 +633,23 @@ void MoveLEDs(){
 		/*
 		• Responsible for updating the LED array with current scores
 		*/
-	    if(!isClient){
+
+	    //Print both scores for debugging purposes- uncomment if/else for normal function
+	    //if(!isClient){
 	        //Update Host (Red/Bottom)
 	        valToWrite = numToLitLEDS(curGame.LEDScores[0]);
 	        G8RTOS_WaitSemaphore(&USING_LED_I2C);
 	        LP3943_DataDisplay(RED, ON, valToWrite);
 	        G8RTOS_SignalSemaphore(&USING_LED_I2C);
-	    }
-	    else{
+	    //}
+	    //else{
 	        //Update Client (Blue/Top)
             valToWrite = numToLitLEDS(curGame.LEDScores[1]);
             G8RTOS_WaitSemaphore(&USING_LED_I2C);
             LP3943_DataDisplay(BLUE, ON, valToWrite);
             G8RTOS_SignalSemaphore(&USING_LED_I2C);
 
-	    }
+	    //}
 
 	}
 }
@@ -807,6 +833,12 @@ inline void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall,
  * Initializes and prints initial game state
  */
 inline void InitBoardState(){
+    /*Clear screen*/
+    G8RTOS_WaitSemaphore(&USING_SPI);
+    LCD_Clear(BACK_COLOR);
+    G8RTOS_SignalSemaphore(&USING_SPI);
+
+
 	/* White lines to define arena size */
 	G8RTOS_WaitSemaphore(&USING_SPI);
 	LCD_DrawRectangle(1, 40, 1, 239, LCD_WHITE);
@@ -818,13 +850,12 @@ inline void InitBoardState(){
 
 	//Write Player Scores
 	uint8_t scores[3];
-	setScoreString(&scores, 0);
+	setScoreString(scores, 1);
 	G8RTOS_WaitSemaphore(&USING_SPI);
 	LCD_Text(5, 5, scores, PLAYER_BLUE);
 	G8RTOS_SignalSemaphore(&USING_SPI);
 
-	//curGame.overallScores[1] = 37;    //Testing high scores
-	setScoreString(scores, 1);
+	setScoreString(scores, 0);
     G8RTOS_WaitSemaphore(&USING_SPI);
     LCD_Text(5, MAX_SCREEN_Y - 20, scores, PLAYER_RED);
     G8RTOS_SignalSemaphore(&USING_SPI);
@@ -854,6 +885,21 @@ inline void InitBoardState(){
 
     prevHostLoc.Center = PADDLE_X_CENTER;
     prevClientLoc.Center = PADDLE_X_CENTER;
+
+    //Make sure all balls dead
+    for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
+        curGame.balls[i].alive = false;         //The game state to be sent
+        curGame.balls[i].color = LCD_WHITE;
+        myBalls[i].alive = false;               //The local copy of ball info
+        myBalls[i].color = LCD_WHITE;
+    }
+    //Make sure scores are all 0
+    curGame.LEDScores[0] = 0;
+    curGame.LEDScores[1] = 0;
+
+    curGame.gameDone = false;
+    curGame.winner = false;
+
 }
 
 inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex){
