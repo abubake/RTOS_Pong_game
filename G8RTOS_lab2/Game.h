@@ -26,6 +26,7 @@ semaphore_t USING_SPI; // semaphore for SPI interface using EUSCIB3 with LCD/ To
 /*********************************************** Global Defines ********************************************************************/
 #define MAX_NUM_OF_PLAYERS  2
 #define MAX_NUM_OF_BALLS    8
+#define POINTS_TO_WIN       16
 
 // This game can actually be played with 4 players... a little bit more challenging, but doable!
 #define NUM_OF_PLAYERS_PLAYING 2
@@ -315,12 +316,12 @@ playerType GetPlayerRole();
 /*
  * Draw players given center X center coordinate
  */
-void DrawPlayer(GeneralPlayerInfo_t * player);
+inline void DrawPlayer(GeneralPlayerInfo_t * player);
 
 /*
  * Updates player's paddle based on current and new center
  */
-void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * outPlayer);
+inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * outPlayer);
 
 /*
  * Function updates ball position on screen
@@ -330,12 +331,12 @@ void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall, uint16
 /*
  * detects if a collision occurs on a paddle
  */
-void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle);
+inline void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle);
 
 /*
  * Initializes and prints initial game state
  */
-void InitBoardState();
+inline void InitBoardState();
 
 /*********************************************** Public Functions *********************************************************************/
 
