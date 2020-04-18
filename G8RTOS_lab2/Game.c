@@ -621,6 +621,7 @@ void MoveLEDs(){
 
 	}
 }
+
 /*
  * Takes in a number and returns the number to light up that many LEDs
  * (Left to Right)
@@ -669,7 +670,6 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
     //Find how much the paddle has moved
     int16_t pixelsMoved = outPlayer->currentCenter - prevPlayerIn->Center;
     //In current-previous, positive values mean moved rightward
-    //FIXME ADD SEMAPHORES
     //FIXME Direction Changes sometimes leaves a small black line behind inside paddle
     if(outPlayer->position == TOP){
         if(pixelsMoved > 0){
@@ -682,6 +682,20 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
             G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(prevPlayerIn->Center + PADDLE_LEN_D2, outPlayer->currentCenter + PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
             G8RTOS_SignalSemaphore(&USING_SPI);
+
+            //If was close to wall, repaint white wall
+            if(prevPlayerIn->Center <= ARENA_MIN_X + PADDLE_LEN_D2 + PRINT_OFFSET){
+                G8RTOS_WaitSemaphore(&USING_SPI);
+                LCD_DrawRectangle(ARENA_MIN_X - PRINT_OFFSET, ARENA_MIN_X, ARENA_MIN_Y, ARENA_MIN_Y + PADDLE_WID, LCD_WHITE);
+                G8RTOS_SignalSemaphore(&USING_SPI);
+            }
+
+            //If was close to wall, repaint white wall
+            if(prevPlayerIn->Center <= ARENA_MIN_X + PADDLE_LEN_D2 + PRINT_OFFSET){
+                G8RTOS_WaitSemaphore(&USING_SPI);
+                LCD_DrawRectangle(ARENA_MIN_X - PRINT_OFFSET, ARENA_MIN_X,  ARENA_MIN_Y, ARENA_MIN_Y + PADDLE_WID + 1, LCD_WHITE);
+                G8RTOS_SignalSemaphore(&USING_SPI);
+            }
         }
         else if(pixelsMoved < 0){
             //Moved leftward
@@ -693,6 +707,14 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
             G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2, prevPlayerIn->Center - PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
             G8RTOS_SignalSemaphore(&USING_SPI);
+
+            //If was close to wall, repaint white wall
+            if(prevPlayerIn->Center >= ARENA_MAX_X - PADDLE_LEN_D2 - PRINT_OFFSET){
+                G8RTOS_WaitSemaphore(&USING_SPI);
+                LCD_DrawRectangle(ARENA_MAX_X, ARENA_MAX_X + PRINT_OFFSET, ARENA_MIN_Y, ARENA_MIN_Y + PADDLE_WID + 1, LCD_WHITE);
+                G8RTOS_SignalSemaphore(&USING_SPI);
+            }
+
         }
     }
     else if(outPlayer->position == BOTTOM){
@@ -706,6 +728,13 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
             G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(prevPlayerIn->Center + PADDLE_LEN_D2, outPlayer->currentCenter + PADDLE_LEN_D2, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, outPlayer->color);
             G8RTOS_SignalSemaphore(&USING_SPI);
+
+            //If was close to wall, repaint white wall
+            if(prevPlayerIn->Center <= ARENA_MIN_X + PADDLE_LEN_D2 + PRINT_OFFSET){
+                G8RTOS_WaitSemaphore(&USING_SPI);
+                LCD_DrawRectangle(ARENA_MIN_X - PRINT_OFFSET, ARENA_MIN_X, ARENA_MAX_Y - PADDLE_WID - 1, ARENA_MAX_Y, LCD_WHITE);
+                G8RTOS_SignalSemaphore(&USING_SPI);
+            }
         }
         else if(pixelsMoved < 0){
             //Moved leftward
@@ -717,6 +746,14 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
             G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2, prevPlayerIn->Center - PADDLE_LEN_D2, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, outPlayer->color);
             G8RTOS_SignalSemaphore(&USING_SPI);
+
+            //If was close to wall, repaint white wall
+            if(prevPlayerIn->Center >= ARENA_MAX_X - PADDLE_LEN_D2 - PRINT_OFFSET){
+                G8RTOS_WaitSemaphore(&USING_SPI);
+                LCD_DrawRectangle(ARENA_MAX_X, ARENA_MAX_X + PRINT_OFFSET, ARENA_MAX_Y - PADDLE_WID - 1, ARENA_MAX_Y, LCD_WHITE);
+                G8RTOS_SignalSemaphore(&USING_SPI);
+            }
+
         }
     }
 
@@ -735,9 +772,16 @@ inline void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall,
     int16_t prevY = previousBall->CenterY;
 
     //Paint background color over where it was
-    G8RTOS_WaitSemaphore(&USING_SPI);
-    LCD_DrawRectangle(prevX- BALL_SIZE_D2, prevX + BALL_SIZE_D2, prevY - BALL_SIZE_D2, prevY + BALL_SIZE_D2, BACK_COLOR);
-    G8RTOS_SignalSemaphore(&USING_SPI);
+    //Check if it is going to erase in a bad place
+    if(prevX < ARENA_MIN_X || prevX > ARENA_MAX_X){
+
+    }
+    else{
+        G8RTOS_WaitSemaphore(&USING_SPI);
+        LCD_DrawRectangle(prevX- BALL_SIZE_D2, prevX + BALL_SIZE_D2, prevY - BALL_SIZE_D2, prevY + BALL_SIZE_D2, BACK_COLOR);
+        G8RTOS_SignalSemaphore(&USING_SPI);
+    }
+
 
     //Paint where it is now
     //Check if in boundary
