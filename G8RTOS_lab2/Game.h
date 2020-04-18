@@ -143,8 +143,8 @@ typedef struct
     playerPosition position;
 
     /* Additional params added by Baker for individual play */
-    uint16_t paddleRightEdge; // = currentCenter + 42
-    uint16_t paddleLeftEdge; // = currentCenter - 42
+   // uint16_t paddleRightEdge; // = currentCenter + 42
+   // uint16_t paddleLeftEdge; // = currentCenter - 42
 
 } GeneralPlayerInfo_t;
 
@@ -338,6 +338,8 @@ inline void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle);
  * Initializes and prints initial game state
  */
 inline void InitBoardState();
+
+inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex);
 
 /*********************************************** Public Functions *********************************************************************/
 

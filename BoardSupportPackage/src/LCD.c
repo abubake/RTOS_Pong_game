@@ -372,15 +372,11 @@ void LCD_Text(uint16_t Xpos, uint16_t Ypos, uint8_t *str, uint16_t Color)
     uint8_t TempChar;
 
     /* Set area back to span the entire LCD */
-//    LCD_WriteReg(HOR_ADDR_START_POS, 0x0000);     /* Horizontal GRAM Start Address */
-//    LCD_WriteReg(HOR_ADDR_END_POS, (MAX_SCREEN_Y - 1));  /* Horizontal GRAM End Address */
-//    LCD_WriteReg(VERT_ADDR_START_POS, 0x0000);    /* Vertical GRAM Start Address */
-//    LCD_WriteReg(VERT_ADDR_END_POS, (MAX_SCREEN_X - 1)); /* Vertical GRAM Start Address */
-
-    LCD_WriteReg(VERT_ADDR_START_POS, 0x0000);     /* Horizontal GRAM Start Address */
-    LCD_WriteReg(VERT_ADDR_END_POS, (MAX_SCREEN_Y - 1));  /* Horizontal GRAM End Address */
-    LCD_WriteReg(HOR_ADDR_START_POS, 0x0000);    /* Vertical GRAM Start Address */
-    LCD_WriteReg(HOR_ADDR_END_POS, (MAX_SCREEN_X - 1)); /* Vertical GRAM Start Address */
+    /* Set area back to span the entire LCD */
+    LCD_WriteReg(HOR_ADDR_START_POS, 0x0000);     /* Horizontal GRAM Start Address */
+    LCD_WriteReg(HOR_ADDR_END_POS, (MAX_SCREEN_Y - 1));  /* Horizontal GRAM End Address */
+    LCD_WriteReg(VERT_ADDR_START_POS, 0x0000);    /* Vertical GRAM Start Address */
+    LCD_WriteReg(VERT_ADDR_END_POS, (MAX_SCREEN_X - 1)); /* Vertical GRAM Start Address */
 
     do
     {

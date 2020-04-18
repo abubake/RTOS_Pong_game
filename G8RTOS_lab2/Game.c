@@ -810,16 +810,22 @@ inline void InitBoardState(){
 	LCD_DrawRectangle(280, 319, 1, 239, LCD_WHITE);
 	G8RTOS_SignalSemaphore(&USING_SPI);
 
-	/* Host Starting Score, in bottom left */
+	//Write Player Scores
+	uint8_t scores[3];
+	setScoreString(&scores, 0);
 	G8RTOS_WaitSemaphore(&USING_SPI);
-	LCD_Text(5, 5,"00", PLAYER_RED);
+	LCD_Text(5, 5, scores, PLAYER_BLUE);
 	G8RTOS_SignalSemaphore(&USING_SPI);
+
+	//curGame.overallScores[1] = 37;    //Testing high scores
+	setScoreString(scores, 1);
+    G8RTOS_WaitSemaphore(&USING_SPI);
+    LCD_Text(5, MAX_SCREEN_Y - 20, scores, PLAYER_RED);
+    G8RTOS_SignalSemaphore(&USING_SPI);
 
 	/* The initial paddle */
     /* Set Center of player paddle */
     PlayerPaddle.currentCenter = PADDLE_X_CENTER;
-    PlayerPaddle.paddleRightEdge = PlayerPaddle.currentCenter + 42;
-    PlayerPaddle.paddleLeftEdge = PlayerPaddle.currentCenter - 42;
     PlayerPaddle.position = BOTTOM;
     PlayerPaddle.color = PLAYER_RED;
     DrawPlayer(&PlayerPaddle);
@@ -832,16 +838,27 @@ inline void InitBoardState(){
     //Save these in game state
     curGame.players[0].color = PLAYER_RED;
     curGame.players[0].currentCenter = PADDLE_X_CENTER;
-    curGame.players[0].paddleRightEdge = PlayerPaddle.currentCenter + 42;
-    curGame.players[0].paddleLeftEdge = PlayerPaddle.currentCenter - 42;
     curGame.players[0].position = BOTTOM;
+    curGame.LEDScores[0] = 0;
 
     curGame.players[1].currentCenter = PADDLE_X_CENTER;
     curGame.players[1].position = TOP;
     curGame.players[1].color = PLAYER_BLUE;
+    curGame.LEDScores[1] = 0;
 
     prevHostLoc.Center = PADDLE_X_CENTER;
     prevClientLoc.Center = PADDLE_X_CENTER;
 }
+
+inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex){
+    //Get player's score
+    uint8_t curScore = curGame.overallScores[playerIndex];
+
+    //Set array with characters that are that score
+    scoreArray[0] = curScore/10 + 0x30;
+    scoreArray[1] = curScore%10 + 0x30;
+    scoreArray[2] = 0x00;
+}
+
 
 /*********************************************** Public Functions *********************************************************************/

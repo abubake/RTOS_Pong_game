@@ -63,7 +63,6 @@ int32_t G8RTOS_Launch();
  */
 sched_ErrCode_t G8RTOS_AddThread(void (*threadToAdd)(void), uint16_t priority, char * name);
 
-
 /**********************SET INITIAL STACK******************************
  * Called by: G8RTOS_AddThread
  * Purpose: To create a stack for each of the threads
