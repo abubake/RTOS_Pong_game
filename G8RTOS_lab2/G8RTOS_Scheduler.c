@@ -197,9 +197,11 @@ void G8RTOS_Init()
     //# of threads = 0
     NumberOfThreads = 0;
 
+    /*
     uint32_t newVTORTable = 0x20000000;
     memcpy((uint32_t *)newVTORTable, (uint32_t *)SCB->VTOR, 57*4); // 57 interrupt vectors to copy
     SCB->VTOR = newVTORTable;
+	*/
 
     //init all hardware on the board
     BSP_InitBoard();

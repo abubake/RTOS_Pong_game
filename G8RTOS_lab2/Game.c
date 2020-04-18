@@ -560,7 +560,7 @@ playerType GetPlayerRole(){
 /*
  * Draw players given center X center coordinate
  */
-void DrawPlayer(GeneralPlayerInfo_t * player){
+inline void DrawPlayer(GeneralPlayerInfo_t * player){
     if(player->position == TOP){
         //Draw paddle on top of screen
         G8RTOS_WaitSemaphore(&USING_SPI);
@@ -578,7 +578,7 @@ void DrawPlayer(GeneralPlayerInfo_t * player){
 /*
  * Updates player's paddle based on current and new center
  */
-void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * outPlayer){
+inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * outPlayer){
     //Find how much the paddle has moved
     int16_t pixelsMoved = outPlayer->currentCenter - prevPlayerIn->Center;
     //In current-previous, positive values mean moved rightward
@@ -641,7 +641,7 @@ void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * out
  *
  * Changed the Ball_t parameter to balls_t that we made
  */
-void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall, uint16_t outColor){
+inline void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall, uint16_t outColor){
     //If not new, look for previous location
     int16_t prevX = previousBall->CenterX;
     int16_t prevY = previousBall->CenterY;
@@ -661,7 +661,7 @@ void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall, uint16
 /*
  * Initializes and prints initial game state
  */
-void InitBoardState(){
+inline void InitBoardState(){
 	/* White lines to define arena size */
 	G8RTOS_WaitSemaphore(&USING_SPI);
 	LCD_DrawRectangle(1, 40, 1, 239, LCD_WHITE);
