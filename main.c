@@ -30,6 +30,7 @@ void main(void){
 
  /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 	G8RTOS_InitSemaphore(&USING_SPI, 1);
+	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
 	/* Adds each task individually to the system */
 	G8RTOS_AddThread(CreateGame, 150, "CreateGame"); //NEEDS real PRI and maybe better nam

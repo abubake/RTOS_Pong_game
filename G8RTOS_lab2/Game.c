@@ -34,9 +34,10 @@ PrevPlayer_t prevClientLoc;
 
 int direction = 0; //Direction of the paddle
 
-
 //Game state to be sent from host to client
 GameState_t curGame;
+
+bool isClient;
 
 /*********************************************** Client Threads *********************************************************************/
 /*
@@ -588,32 +589,6 @@ void DrawObjects(){
 	    //Update Client Location
 	    UpdatePlayerOnScreen(&prevClientLoc, &ClientPaddle);
 
-	    /*
-	    if(direction == LEFT){
-	    	G8RTOS_WaitSemaphore(&USING_SPI);
-	    	LCD_DrawRectangle(PlayerPaddle.paddleRightEdge - 10, PlayerPaddle.paddleRightEdge, 239, 235, LCD_BLACK);
-	    	G8RTOS_SignalSemaphore(&USING_SPI);
-	    	G8RTOS_WaitSemaphore(&USING_SPI);
-	    	LCD_DrawRectangle(PlayerPaddle.paddleLeftEdge + 10, PlayerPaddle.paddleLeftEdge, 239, 235, LCD_RED);
-	    	G8RTOS_SignalSemaphore(&USING_SPI);
-	    	PlayerPaddle.currentCenter -= 10;
-	    	PlayerPaddle.paddleRightEdge -= 10;
-	    	PlayerPaddle.paddleLeftEdge -= 10;
-	    		//FIXME: Make the color based on who's paddle it is
-	    }
-	    else if(direction == RIGHT){
-	    	G8RTOS_WaitSemaphore(&USING_SPI);
-	    	LCD_DrawRectangle(PlayerPaddle.paddleLeftEdge, PlayerPaddle.paddleLeftEdge + 10, 239, 235, LCD_BLACK);
-	    	G8RTOS_SignalSemaphore(&USING_SPI);
-	    	G8RTOS_WaitSemaphore(&USING_SPI);
-	    	LCD_DrawRectangle(PlayerPaddle.paddleRightEdge, PlayerPaddle.paddleRightEdge + 10, 239, 235, LCD_RED);
-	    	G8RTOS_SignalSemaphore(&USING_SPI);
-	    	PlayerPaddle.currentCenter += 10;
-	    	PlayerPaddle.paddleRightEdge += 10;
-	    	PlayerPaddle.paddleLeftEdge += 10;
-	    }
-	    */
-
 	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
 		sleep(20);
 	}
@@ -623,27 +598,40 @@ void DrawObjects(){
  * Thread to update LEDs based on score
  */
 void MoveLEDs(){
+    uint16_t valToWrite;
 	while(1){
 		/*
 		• Responsible for updating the LED array with current scores
 		*/
-		if(iterated == false){ //Run the code
-			iterated = true;
-			for(int i=0; i<curBalls; i++){
-				if((myBalls[i].yPos < 3)&&(myBalls[i].prevLoc.CenterY >= 3)){
-					pointScored = true;
-				}
-			}
+	    if(!isClient){
+	        //Update Host (Red/Bottom)
+	        valToWrite = numToLitLEDS(curGame.LEDScores[0]);
+	        G8RTOS_WaitSemaphore(&USING_LED_I2C);
+	        LP3943_DataDisplay(RED, ON, valToWrite);
+	        G8RTOS_SignalSemaphore(&USING_LED_I2C);
+	    }
+	    else{
+	        //Update Client (Blue/Top)
+            valToWrite = numToLitLEDS(curGame.LEDScores[1]);
+            G8RTOS_WaitSemaphore(&USING_LED_I2C);
+            LP3943_DataDisplay(BLUE, ON, valToWrite);
+            G8RTOS_SignalSemaphore(&USING_LED_I2C);
 
-			if(pointScored == true){
-				pointScored = false; //For the next time
-				HostPoints += 1;
-				LP3943_DataDisplay(RED, ON, displayVal); //Display val init'd to 1, so from then on it displays the right val
-				displayVal = displayVal*2 + 1;
-			}
-		}
+	    }
 
 	}
+}
+/*
+ * Takes in a number and returns the number to light up that many LEDs
+ * (Left to Right)
+ */
+inline uint16_t numToLitLEDS(uint8_t playerScore){
+    uint16_t toSend = 0;
+    //Convert score to set that number of LEDs
+    for(uint16_t i = 0; i < playerScore; i++){
+        toSend = toSend*2 + 1;
+    }
+    return toSend;
 }
 
 /*********************************************** Common Threads *********************************************************************/

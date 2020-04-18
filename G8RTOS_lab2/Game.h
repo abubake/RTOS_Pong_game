@@ -20,6 +20,7 @@
 
 /* Semaphores here */
 semaphore_t USING_SPI; // semaphore for SPI interface using EUSCIB3 with LCD/ Touchpad
+semaphore_t USING_LED_I2C;  //Semaphore for I2C LED Drivers
 
 /*********************************************** Externs ********************************************************************/
 
@@ -303,7 +304,7 @@ void DrawObjects();
  * Thread to update LEDs based on score
  */
 void MoveLEDs();
-
+inline uint16_t numToLitLEDS(uint8_t playerScore);
 /*********************************************** Common Threads *********************************************************************/
 
 
