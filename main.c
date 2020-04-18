@@ -23,7 +23,7 @@ void main(void){
 	G8RTOS_Init();
 
 
-	LCD_Init(true);
+	LCD_Init(false);
 
 	/* For the color randomness */
 	srand(time(NULL));
