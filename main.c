@@ -27,9 +27,23 @@ void main(void){
 	/* For the color randomness */
 	srand(time(NULL));
 
- /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
+	/* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 	G8RTOS_InitSemaphore(&USING_SPI, 1);
 	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+
+
+    P4->SEL1 &= ~BIT4;
+    P4->SEL0 &= ~BIT4;
+    P4->DIR &= ~BIT4;
+    P4->IFG &= ~BIT4;   //Clears P4.4
+    P4->IE |= BIT4;     //Enables interrupt
+    P4->IES |= BIT4;    //High to low transition
+    P4->REN |= BIT4;    //Pull-up resistor
+    P4->OUT |= BIT4;    //Sets res to pull-up
+    NVIC_SetPriority(PORT4_IRQn, 6);
+    NVIC_EnableIRQ(PORT4_IRQn);
+    G8RTOS_AddAPeriodicEvent(TOP_BUTTON_TAP, 6, PORT4_IRQn);
+
 
 	/* Adds each task individually to the system */
 	G8RTOS_AddThread(CreateGame, 150, "CreateGame"); //NEEDS real PRI and maybe better nam
@@ -40,6 +54,7 @@ void main(void){
 	/* Initializes the Systick to trigger every 1ms and sets the priority for both PendSV and Systick  */
 	/* Sets the first thread control block as the current thread, and calls the start_os assembly function */
 	G8RTOS_Launch();
+
 }
 
 

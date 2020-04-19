@@ -37,7 +37,11 @@ int direction = 0; //Direction of the paddle
 //Game state to be sent from host to client
 GameState_t curGame;
 
-bool isClient;
+//ISR bools
+bool roleAssigned = false;
+bool isClient = false;
+bool readyForNextGame = false;
+
 
 /*********************************************** Client Threads *********************************************************************/
 /*
@@ -109,14 +113,26 @@ void SendDataToHost(){
  * Thread to read client's joystick
  */
 void ReadJoystickClient(){
+    int16_t clientXCoord;
+    int16_t clientYCoord;
+    int16_t clientDifference;
 	while(1){
 		/*
 		• Read joystick and add offset
 		• Add Displacement to Self accordingly
 		• Sleep 10ms
 		*/
-		GetJoystickCoordinates(&X_coord, &Y_coord); //must wait for its semaphore!
-		// need to add offset
+	    GetJoystickCoordinates(&clientXCoord, &clientYCoord);
+	    if(clientXCoord > 2000){
+	        clientDifference = -1;
+	    }
+	    else if(clientXCoord < -2000){
+	        clientDifference = 1;
+	    }
+	    else{
+	        clientDifference = 0;
+	    }
+		clientToHostInfo.displacement += clientDifference;
 		sleep(10);
 	}
 }
@@ -218,7 +234,6 @@ void GenerateBall(){
 	    if(curBalls < MAX_NUM_OF_BALLS){
 	        curBalls++;
 	        G8RTOS_AddThread(MoveBall, 30, "MoveBall");
-
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
 	    sleep(curBalls*2500);
@@ -533,11 +548,18 @@ void EndOfGameHost(){
         LCD_Text(95, 75, "Host Press Button", curGame.players[0].color);
     }
 
+
+
+
+
+
     //Create aperiodic thread waiting for host's action
     //TODO Button interrupt
 
     //When ready, notify client, reinitialize game, add threads back, kill self
-//    while(!readyForNextGame);
+
+    readyForNextGame = false;
+    while(!readyForNextGame);
 
 
     //TODO Notify client
@@ -560,6 +582,34 @@ void EndOfGameHost(){
 
 }
 
+/*
+ * ISR for button taps
+ * B0   4.4
+ * B1   4.5
+ * B2   5.2
+ * B3   5.5
+ */
+void TOP_BUTTON_TAP(){
+    if(!roleAssigned){
+
+    }
+    else{
+        //Role already assigned
+
+        readyForNextGame = true;
+
+    }
+    //Acknowledge
+    P4->IFG &= ~BIT4;
+    //P4->IE &= ~BIT0;
+
+}
+
+void PORT4_IRQHandler(void)
+{
+    P4 -> IFG = 0; // ~BIT0;         // clear the interrupt flag
+    //P4 -> IE &= ~(1 << 0);          // disable interrupt
+}
 /*********************************************** Host Threads *********************************************************************/
 
 
@@ -902,6 +952,9 @@ inline void InitBoardState(){
 
 }
 
+/*
+ * Takes in array and fills it with the characters of the entered player's score
+ */
 inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex){
     //Get player's score
     uint8_t curScore = curGame.overallScores[playerIndex];
@@ -909,7 +962,7 @@ inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex){
     //Set array with characters that are that score
     scoreArray[0] = curScore/10 + 0x30;
     scoreArray[1] = curScore%10 + 0x30;
-    scoreArray[2] = 0x00;
+    scoreArray[2] = 0x00;   //Terminating character
 }
 
 

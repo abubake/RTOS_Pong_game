@@ -27,7 +27,7 @@ semaphore_t USING_LED_I2C;  //Semaphore for I2C LED Drivers
 /*********************************************** Global Defines ********************************************************************/
 #define MAX_NUM_OF_PLAYERS  2
 #define MAX_NUM_OF_BALLS    8
-#define POINTS_TO_WIN       3
+#define POINTS_TO_WIN       1
 
 // This game can actually be played with 4 players... a little bit more challenging, but doable!
 #define NUM_OF_PLAYERS_PLAYING 2
@@ -143,8 +143,8 @@ typedef struct
     playerPosition position;
 
     /* Additional params added by Baker for individual play */
-   // uint16_t paddleRightEdge; // = currentCenter + 42
-   // uint16_t paddleLeftEdge; // = currentCenter - 42
+    // uint16_t paddleRightEdge; // = currentCenter + 42
+    // uint16_t paddleLeftEdge; // = currentCenter - 42
 
 } GeneralPlayerInfo_t;
 
@@ -286,6 +286,7 @@ void MoveBall();
  */
 void EndOfGameHost();
 
+void TOP_BUTTON_TAP();
 /*********************************************** Host Threads *********************************************************************/
 
 
