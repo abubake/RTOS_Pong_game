@@ -38,9 +38,8 @@ int direction = 0; //Direction of the paddle
 GameState_t curGame;
 
 //ISR bools
-bool roleAssigned = false;
 bool isClient = false;
-bool readyForNextGame = false;
+bool readyForGame = false;
 
 
 /*********************************************** Client Threads *********************************************************************/
@@ -573,8 +572,8 @@ void EndOfGameHost(){
 
     //When ready, notify client, reinitialize game, add threads back, kill self
 
-    readyForNextGame = false;
-    while(!readyForNextGame);
+    readyForGame = false;
+    while(!readyForGame);
 
 
     //TODO Notify client
@@ -605,19 +604,42 @@ void EndOfGameHost(){
  * B3   5.5
  */
 void TOP_BUTTON_TAP(){
-    if(!roleAssigned){
+    if(!readyForGame){
+        if(!isClient){
+            //Make the device the host (Create Game)
+            G8RTOS_AddThread(CreateGame, 150, "Create Game");
+        }
+        else{
+            LCD_Clear(LCD_GRAY);
+            LCD_Text(95, 75, "ERROR: Only Host may restart game", LCD_RED);
+        }
+    }
+    else{
+        //Role already assigned
+        readyForGame = true;
+
+    }
+
+    //Clear Flag
+    P4->IFG &= ~BIT4;
+}
+
+void BOTTOM_BUTTON_TAP(){
+    if(!readyForGame){
+    isClient = true;
+
+    //Make the device the client (Join Game)
+    G8RTOS_AddThread(CreateGame, 150, "Join Game");
 
     }
     else{
         //Role already assigned
 
-        readyForNextGame = true;
+        readyForGame = true;
 
     }
-    //Acknowledge
-    P4->IFG &= ~BIT4;
-    //P4->IE &= ~BIT0;
-
+    //Clear Flag
+    P5->IFG &= ~BIT2;
 }
 
 void PORT4_IRQHandler(void)
@@ -730,6 +752,21 @@ inline uint16_t numToLitLEDS(uint8_t playerScore){
         toSend = toSend*2 + 1;
     }
     return toSend;
+}
+
+void WaitScreen(){
+
+    LCD_Clear(LCD_GRAY);
+    LCD_Text(95, 75, "Press Top Button For Host",LCD_GREEN);
+    LCD_Text(85, 95,"Press Bottom Button For Client",LCD_GREEN);
+
+    LCD_Text(Xpos, Ypos, str, Color)
+
+    //wait until host or client is chosen
+    while(!readyForGame);
+
+    G8RTOS_KillSelf();
+    while(1);
 }
 
 /*********************************************** Common Threads *********************************************************************/
