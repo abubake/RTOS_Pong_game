@@ -43,6 +43,8 @@ GameState_t curGame;
 bool isClient = false;
 bool readyForGame = false;
 
+bool NewGame = false;
+
 
 /*********************************************** Client Threads *********************************************************************/
 /*
@@ -52,8 +54,8 @@ void JoinGame(){
 		/*
 		Only thread to run after launching the OS
 		• Set initial SpecificPlayerInfo_t struct attributes (you can get the IP address by calling getLocalIP() (SETUP)
-		• Send player info to the host (?)
-		• Wait for server response (?)
+		• Send player info to the host
+		• Wait for server response
 		• If you’ve joined the game, acknowledge you’ve joined to the host and show connection with an LED (?)
 		• Initialize the board state, semaphores, and add the following threads (?)
 		o ReadJoystickClient
@@ -80,7 +82,7 @@ void JoinGame(){
 		while(ack == 0){
 			/* Client transmits the data so host has the address*/
 			/* first is sending to addy, 2nd is data, which is the client address */
-			TX_Buffer(HOST_IP_ADDR, &clientToHostInfo.IP_address, 4);
+			TX_Buffer(HOST_IP_ADDR, &clientToHostInfo.IP_address, 4); //FIXME: Make it transmit the struct, need to test before implementing
 			/* Blue LED indicates established connection */
 				P2->OUT ^= 0x04;         /* turn blue LED on */
 			sleep(50);
@@ -89,15 +91,16 @@ void JoinGame(){
 		}
 		P2->OUT |= 4; // Solid blue, connection established
 
+
 	G8RTOS_AddThread(ReadJoystickClient, 200, "readJoystick");
 	G8RTOS_AddThread(DrawObjects, 20, "updateObjects");
 	G8RTOS_AddThread(SendDataToHost, 150, "sendData");
 	G8RTOS_AddThread(ReceiveDataFromHost, 30, "recieveData");
 	G8RTOS_AddThread(MoveLEDs, 30, "Update leds");
 	G8RTOS_AddThread(EndOfGameClient, 0, "EOGHandler");
-
+	G8RTOS_AddThread(IdleThread, 250, "idle");
+	sleep(1); // idles before killing self (may not need)
 	G8RTOS_KillSelf();
-	while(1); // feeling cute, might delete later
 }
 
 /*
@@ -206,6 +209,9 @@ void EndOfGameClient(){
     }
 
     //TODO Wait for host to restart game
+    while(NewGame == false){
+    	//RX_Buffer(rx_data, dataSize);
+    }
 
     //Reset game variables
     clientToHostInfo.displacement = 0;
@@ -240,27 +246,32 @@ void CreateGame(){
 	*/
 	InitBoardState();
 
-	initCC3100(Host);
-
-	/* Recieves the IP address from the player so it can send to it */
-	P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
-
-	while(clientIP == 0){
-		RX_Buffer(&clientIP, 4);
-		sleep(50);
-		P2->OUT ^= 0x04;         /* turn blue toggle */
+	if(NewGame == true){ //THIS SHOULD GET SET IN THE APERIODIC FOR STARTING A NEW GAME
+		TX_Buffer(clientIP, (uint32_t *)NewGame, 4); // sends this to tell the client it's a new game
 	}
+	else
+	{
+		initCC3100(Host);
+		/* Recieves the IP address from the player so it can send to it */
+		P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
 
-	/* Blue LED indicates established connection */
-	P2->OUT |= 0x04;         /* turn blue LED on */
+		while(clientIP == 0){
+			RX_Buffer(&clientIP, 4);
+			sleep(50);
+			P2->OUT ^= 0x04;         /* turn blue toggle */
+		}
 
-	/* Transmit an acknowledge back to Client to indicate successful connection */
-	/* Transmits to ensure it is recieved and client can function */
-	uint32_t ack = 1;
-	int i = 100000;
-	while(i > 0){
+		/* Blue LED indicates established connection */
+		P2->OUT |= 0x04;         /* turn blue LED on */
+
+		/* Transmit an acknowledge back to Client to indicate successful connection */
+		/* Transmits to ensure it is recieved and client can function */
+		uint32_t ack = 1;
+		int i = 100000;
+		while(i > 0){
 		TX_Buffer(clientIP, &ack, 4);
 		i--;
+		}
 	}
 
 	/* Connection is now complete if client gets acknowledge */
