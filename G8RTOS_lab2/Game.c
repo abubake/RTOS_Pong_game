@@ -154,17 +154,53 @@ void ReadJoystickClient(){
  * End of game for the client
  */
 void EndOfGameClient(){
-	/*
-	• Wait for all semaphores to be released
-	• Kill all other threads
-	• Re-initialize semaphores
-	• Clear screen with winner’s color
-	• Wait for host to restart game
-	• Add all threads back and restart game variables
-	• Kill Self
-	*/
-	LCD_Clear(LCD_RED); //should clear with player's color
-	G8RTOS_KillSelf();
+    /*
+    • Wait for all semaphores to be released
+    • Kill all other threads
+    • Re-initialize semaphores
+    • Clear screen with winner’s color
+    • Wait for host to restart game
+    • Add all threads back and restart game variables
+    • Kill Self
+    */
+
+    //Wait for semaphores to be available so that threads using them are not killed yet
+    G8RTOS_WaitSemaphore(&USING_SPI);
+    G8RTOS_WaitSemaphore(&USING_LED_I2C);
+
+    //Now has both semaphores, kill all other threads
+    G8RTOS_KillAllOthers();
+
+    //Reinitialize semaphores
+    G8RTOS_InitSemaphore(&USING_SPI, 1);
+    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+
+    if(curGame.LEDScores[0] > curGame.LEDScores[1]){
+        //Player 0 won, make screen their color
+        LCD_Clear(curGame.players[0].color);
+        LCD_Text(90, 75, "Wait for Host Push", curGame.players[1].color);
+    }
+    else if(curGame.LEDScores[0] < curGame.LEDScores[1]){
+        //Player 1 won, make screen their color
+        LCD_Clear(curGame.players[1].color);
+        LCD_Text(90, 75, "Wait for Host Push", curGame.players[0].color);
+    }
+
+    //TODO Wait for host to restart game
+
+    //Reset game variables
+    clientToHostInfo.displacement = 0;
+
+    /* Add back client threads */
+    G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickClient, 201, "ReadJoystickClient");
+    //G8RTOS_AddThread(SendDataToHost, 200, "SendDataToHost");
+    //G8RTOS_AddThread(ReceiveDataFromHost, 200, "ReceiveDataFromHost");
+    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+    G8RTOS_AddThread(IdleThread, 254, "Idle");
+
+    //Kill self
+    G8RTOS_KillSelf();
 }
 
 /*********************************************** Client Threads *********************************************************************/

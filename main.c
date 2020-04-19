@@ -53,9 +53,9 @@ void main(void){
     P5->REN  |= BIT2;    //Pull-up resistor
     P5->OUT  |= BIT2;    //Sets res to pull-up
 
-    G8RTOS_AddThread(WaitScreen, 1, "Wait_Screen");
+    //G8RTOS_AddThread(WaitScreen, 1, "Wait_Screen");
     G8RTOS_AddAPeriodicEvent(TOP_BUTTON_TAP, 6, PORT4_IRQn);
-    G8RTOS_AddAPeriodicEvent(BOTTOM_BUTTON_TAP, 6, PORT5_IRQn);
+    //G8RTOS_AddAPeriodicEvent(BOTTOM_BUTTON_TAP, 6, PORT5_IRQn);
 
 	G8RTOS_InitFIFO(JOYSTICKFIFO);
 
