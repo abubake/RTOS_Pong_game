@@ -1,6 +1,7 @@
 /*
  * G8RTOS_Scheduler.h
  */
+#include "msp.h"
 
 #ifndef G8RTOS_SCHEDULER_H_
 #define G8RTOS_SCHEDULER_H_
@@ -95,10 +96,11 @@ void sleep(uint32_t durationMS);
 threadId_t G8RTOS_GetThreadId();
 
 /*  */
-sched_ErrCode_t G8RTOS_KillThread(threadId_t threadId); //may change the type later to error code type
+sched_ErrCode_t G8RTOS_KillThread(threadId_t threadId);
 
 sched_ErrCode_t G8RTOS_KillSelf();
 
+sched_ErrCode_t G8RTOS_KillAllOthers();
 /*********************************************** Public Functions *********************************************************************/
 
 #endif /* G8RTOS_SCHEDULER_H_ */
