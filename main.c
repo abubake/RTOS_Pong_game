@@ -29,7 +29,7 @@ void main(void){
 	initCC3100(Host);
 
 	/* Initializes all the hardware resources on the board and sets the amount of threads and system time to 0 */
-
+/*
 	uint8_t ip_addy[4];
 
 	int retval = -1;
@@ -48,8 +48,8 @@ void main(void){
 	}
 
 	SendData(buffer, client_IP, 4);
-
-	while(1);
+*/
+	//while(1);
 /*
 	P4DIR &= ~BIT4;
 	P4IFG &= ~BIT4; // clear interrupt flag bit

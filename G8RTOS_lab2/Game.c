@@ -43,19 +43,10 @@ GameState_t curGame;
  * Thread for client to join game
  */
 void JoinGame(){
-
-	/* NEED TO SET ALL THESE WITH REAL VALUES */
-	clientToHostInfo.IP_address = getLocalIP();
-	clientToHostInfo.acknowledge = false;
-	clientToHostInfo.displacement = 0;
-	clientToHostInfo.joined = false;
-	clientToHostInfo.playerNumber = 0;
-	clientToHostInfo.ready = false;
-
 		/*
 		Only thread to run after launching the OS
 		• Set initial SpecificPlayerInfo_t struct attributes (you can get the IP address by calling getLocalIP() (SETUP)
-		• Send player into to the host (?)
+		• Send player info to the host (?)
 		• Wait for server response (?)
 		• If you’ve joined the game, acknowledge you’ve joined to the host and show connection with an LED (?)
 		• Initialize the board state, semaphores, and add the following threads (?)
@@ -67,6 +58,28 @@ void JoinGame(){
 		o Idle (SETUP)
 		• Kill self (SETUP)
 		*/
+	initCC3100(Client);
+
+	/* NEED TO SET ALL THESE WITH REAL VALUES */
+	clientToHostInfo.IP_address = getLocalIP();
+	clientToHostInfo.acknowledge = false;
+	clientToHostInfo.displacement = 0;
+	clientToHostInfo.joined = false;
+	clientToHostInfo.playerNumber = 0;
+	clientToHostInfo.ready = false;
+	clientToHostInfo.playerNumber = TOP;
+
+	/* Client transmits the data so host has the address*/
+	/* first is sending to addy, 2nd is data, which is the client address */
+	TX_Buffer(0x0A140033, &clientToHostInfo.IP_address, 4);
+
+	G8RTOS_AddThread(ReadJoystickClient, 200, "readJoystick");
+	G8RTOS_AddThread(DrawObjects, 20, "updateObjects");
+	G8RTOS_AddThread(SendDataToHost, 150, "sendData");
+	G8RTOS_AddThread(ReceiveDataFromHost, 30, "recieveData");
+	G8RTOS_AddThread(MoveLEDs, 30, "Update leds");
+	G8RTOS_AddThread(EndOfGameClient, 0, "EOGHandler");
+
 	G8RTOS_KillSelf();
 	while(1); // feeling cute, might delete later
 }
@@ -157,6 +170,8 @@ void CreateGame(){
 	• Initialize the board (draw arena, players, and scores)
 	*/
 	InitBoardState();
+
+		//RX_Buffer(, 1);
 
 	/* Add these threads. (Need better priority definitions) */
 	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
@@ -810,6 +825,43 @@ inline void InitBoardState(){
 
     prevHostLoc.Center = PADDLE_X_CENTER;
     prevClientLoc.Center = PADDLE_X_CENTER;
+}
+
+
+//can transmit packets of size 1 - 4 bytes
+static void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize){
+
+    const uint8_t size = dataSize;
+    uint8_t buffer[size];
+
+    uint32_t mask = (0xFF << ((dataSize-1)*8));
+
+    for(uint8_t i = 0; i < dataSize; i++){
+        buffer[i] = (uint8_t)( (*tx_data & mask) >> (8*(dataSize-1 - i)) );
+        mask =  mask >> 8;
+    }
+
+    SendData(buffer, IP_ADDR, dataSize);
+
+}
+
+//can receive packets of size 1 - 4 bytes
+static void RX_Buffer(uint32_t* rx_data, uint8_t dataSize){
+
+    const uint8_t size = dataSize;
+    uint8_t buffer[size];
+
+    int8_t retval = -1;
+    while(retval < 0){
+        retval = ReceiveData(buffer, dataSize);
+    }
+
+    uint32_t data = 0;
+    for(uint8_t i = 0; i < dataSize; i++){
+        data = data | (uint32_t) ( buffer[i] << (8*(size - 1 - i)) );
+    }
+
+    *rx_data = data;
 }
 
 /*********************************************** Public Functions *********************************************************************/

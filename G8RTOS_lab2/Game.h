@@ -346,6 +346,12 @@ inline void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle);
  */
 inline void InitBoardState();
 
+//can transmit packets of size 1 - 4 bytes
+static void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize);
+
+//can receive packets of size 1 - 4 bytes
+static void RX_Buffer(uint32_t* rx_data, uint8_t dataSize);
+
 /*********************************************** Public Functions *********************************************************************/
 
 
