@@ -40,9 +40,8 @@ int direction = 0; //Direction of the paddle
 GameState_t curGame;
 
 //ISR bools
-bool roleAssigned = false;
 bool isClient = false;
-bool readyForNextGame = false;
+bool readyForGame = false;
 
 
 /*********************************************** Client Threads *********************************************************************/
@@ -174,17 +173,53 @@ void ReadJoystickClient(){
  * End of game for the client
  */
 void EndOfGameClient(){
-	/*
-	• Wait for all semaphores to be released
-	• Kill all other threads
-	• Re-initialize semaphores
-	• Clear screen with winner’s color
-	• Wait for host to restart game
-	• Add all threads back and restart game variables
-	• Kill Self
-	*/
-	LCD_Clear(LCD_RED); //should clear with player's color
-	G8RTOS_KillSelf();
+    /*
+    • Wait for all semaphores to be released
+    • Kill all other threads
+    • Re-initialize semaphores
+    • Clear screen with winner’s color
+    • Wait for host to restart game
+    • Add all threads back and restart game variables
+    • Kill Self
+    */
+
+    //Wait for semaphores to be available so that threads using them are not killed yet
+    G8RTOS_WaitSemaphore(&USING_SPI);
+    G8RTOS_WaitSemaphore(&USING_LED_I2C);
+
+    //Now has both semaphores, kill all other threads
+    G8RTOS_KillAllOthers();
+
+    //Reinitialize semaphores
+    G8RTOS_InitSemaphore(&USING_SPI, 1);
+    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+
+    if(curGame.LEDScores[0] > curGame.LEDScores[1]){
+        //Player 0 won, make screen their color
+        LCD_Clear(curGame.players[0].color);
+        LCD_Text(90, 75, "Wait for Host Push", curGame.players[1].color);
+    }
+    else if(curGame.LEDScores[0] < curGame.LEDScores[1]){
+        //Player 1 won, make screen their color
+        LCD_Clear(curGame.players[1].color);
+        LCD_Text(90, 75, "Wait for Host Push", curGame.players[0].color);
+    }
+
+    //TODO Wait for host to restart game
+
+    //Reset game variables
+    clientToHostInfo.displacement = 0;
+
+    /* Add back client threads */
+    G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickClient, 201, "ReadJoystickClient");
+    //G8RTOS_AddThread(SendDataToHost, 200, "SendDataToHost");
+    //G8RTOS_AddThread(ReceiveDataFromHost, 200, "ReceiveDataFromHost");
+    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+    G8RTOS_AddThread(IdleThread, 254, "Idle");
+
+    //Kill self
+    G8RTOS_KillSelf();
 }
 
 /*********************************************** Client Threads *********************************************************************/
@@ -624,8 +659,8 @@ void EndOfGameHost(){
 
     //When ready, notify client, reinitialize game, add threads back, kill self
 
-    readyForNextGame = false;
-    while(!readyForNextGame);
+    readyForGame = false;
+    while(!readyForGame);
 
 
     //TODO Notify client
@@ -656,19 +691,42 @@ void EndOfGameHost(){
  * B3   5.5
  */
 void TOP_BUTTON_TAP(){
-    if(!roleAssigned){
+    if(!readyForGame){
+        if(!isClient){
+            //Make the device the host (Create Game)
+            G8RTOS_AddThread(CreateGame, 150, "Create Game");
+        }
+        else{
+            LCD_Clear(LCD_GRAY);
+            LCD_Text(95, 75, "ERROR: Only Host may restart game", LCD_RED);
+        }
+    }
+    else{
+        //Role already assigned
+        readyForGame = true;
+
+    }
+
+    //Clear Flag
+    P4->IFG &= ~BIT4;
+}
+
+void BOTTOM_BUTTON_TAP(){
+    if(!readyForGame){
+    isClient = true;
+
+    //Make the device the client (Join Game)
+    G8RTOS_AddThread(CreateGame, 150, "Join Game");
 
     }
     else{
         //Role already assigned
 
-        readyForNextGame = true;
+        readyForGame = true;
 
     }
-    //Acknowledge
-    P4->IFG &= ~BIT4;
-    //P4->IE &= ~BIT0;
-
+    //Clear Flag
+    P5->IFG &= ~BIT2;
 }
 
 void PORT4_IRQHandler(void)
@@ -781,6 +839,21 @@ inline uint16_t numToLitLEDS(uint8_t playerScore){
         toSend = toSend*2 + 1;
     }
     return toSend;
+}
+
+void WaitScreen(){
+
+    LCD_Clear(LCD_GRAY);
+    LCD_Text(95, 75, "Press Top Button For Host",LCD_GREEN);
+    LCD_Text(85, 95,"Press Bottom Button For Client",LCD_GREEN);
+
+    //LCD_Text(Xpos, Ypos, str, Color);
+
+    //wait until host or client is chosen
+    while(!readyForGame);
+
+    G8RTOS_KillSelf();
+    while(1);
 }
 
 /*********************************************** Common Threads *********************************************************************/
