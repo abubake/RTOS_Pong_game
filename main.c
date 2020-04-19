@@ -16,20 +16,9 @@
 #define MAIN_LAB5
 #ifdef MAIN_LAB5
 
-int waitingForHost = 0x55;
-int hostFlag = 0x55;
-
-test_t winning;
-
 void main(void){
 
-
-	//initCC3100(Host);
-
 	WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD; //
-
-	winning.greatSucsess = 55;
-	initCC3100(Host);
 
 	/* Initializes all the hardware resources on the board and sets the amount of threads and system time to 0 */
 /*
@@ -89,7 +78,7 @@ void main(void){
 
 
 	/* Adds each task individually to the system */
-	G8RTOS_AddThread(CreateGame, 150, "CreateGame"); //NEEDS real PRI and maybe better nam
+	G8RTOS_AddThread(CreateGame, 150, "CreateGame");
 	//G8RTOS_AddAPeriodicEvent(LCD_Tap, 3,  PORT4_IRQn);
 
 	G8RTOS_InitFIFO(JOYSTICKFIFO);

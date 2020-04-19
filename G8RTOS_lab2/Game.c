@@ -4,8 +4,10 @@
 #include <stdlib.h>
 #include "LCD.h"
 #include "RGBLeds.h"
+#include "cc3100_usage.h"
 
 SpecificPlayerInfo_t clientToHostInfo;
+uint32_t clientIP = 0; //the client's IP address that is recieved by the host
 
 /* Joystick Info */
 int16_t X_coord;
@@ -74,9 +76,19 @@ void JoinGame(){
 	clientToHostInfo.ready = false;
 	clientToHostInfo.playerNumber = TOP;
 
-	/* Client transmits the data so host has the address*/
-	/* first is sending to addy, 2nd is data, which is the client address */
-	TX_Buffer(0x0A140033, &clientToHostInfo.IP_address, 4);
+	uint32_t ack = 0;
+	P2->DIR |= 0x04;         /* P2.2 set as output */
+		while(ack == 0){
+			/* Client transmits the data so host has the address*/
+			/* first is sending to addy, 2nd is data, which is the client address */
+			TX_Buffer(HOST_IP_ADDR, &clientToHostInfo.IP_address, 4);
+			/* Blue LED indicates established connection */
+				P2->OUT ^= 0x04;         /* turn blue LED on */
+			sleep(50);
+			/* Client is notified through the acknowledge sent from the host, that it is connected to the host */
+			RX_Buffer(&ack, 4);
+		}
+		P2->OUT |= 4; // Solid blue, connection established
 
 	G8RTOS_AddThread(ReadJoystickClient, 200, "readJoystick");
 	G8RTOS_AddThread(DrawObjects, 20, "updateObjects");
@@ -93,18 +105,27 @@ void JoinGame(){
  * Thread that receives game state packets from host
  */
 void ReceiveDataFromHost(){
+	int retval = 0;
 	while(1){
 		/*
-		• (?) Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
+		• Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
+		while(retval <= 0){
+			retval = RX_Buffer((uint32_t *)&curGame, sizeof(curGame));
+		}
+		retval = 0; //resets retval
 		sleep(1);
 		/*
 		• Empty the received packet
 		• If the game is done, add EndOfGameClient thread with the highest priority
 		• Sleep for 5ms
 		*/
+		if(curGame.gameDone == true){
+			G8RTOS_AddThread(EndOfGameClient, 0, "enditallPLZ");
+		}
+
 		sleep(5);
 
 	}
@@ -116,8 +137,7 @@ void ReceiveDataFromHost(){
 void SendDataToHost(){
 	while(1){
 		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
-
-		//SendData(_u8 *data, _u32 IP, _u16 BUF_SIZE);
+		TX_Buffer(HOST_IP_ADDR, (uint32_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 		sleep(2);
 	}
 }
@@ -181,14 +201,34 @@ void CreateGame(){
 	• Establish connection with client (use an LED on the Launchpad to indicate Wi-Fi connection)
 	o Should be trying to receive a packet from the client
 	o Should acknowledge client once client has joined
-	*/
-
-	/* W/O WIFI
 	• Initialize the board (draw arena, players, and scores)
 	*/
 	InitBoardState();
 
-		//RX_Buffer(, 1);
+	initCC3100(Host);
+
+	/* Recieves the IP address from the player so it can send to it */
+	P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
+
+	while(clientIP == 0){
+		RX_Buffer(&clientIP, 4);
+		sleep(50);
+		P2->OUT ^= 0x04;         /* turn blue toggle */
+	}
+
+	/* Blue LED indicates established connection */
+	P2->OUT |= 0x04;         /* turn blue LED on */
+
+	/* Transmit an acknowledge back to Client to indicate successful connection */
+	/* Transmits to ensure it is recieved and client can function */
+	uint32_t ack = 1;
+	int i = 100000;
+	while(i > 0){
+		TX_Buffer(clientIP, &ack, 4);
+		i--;
+	}
+
+	/* Connection is now complete if client gets acknowledge */
 
 	/* Add these threads. (Need better priority definitions) */
 	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
@@ -214,6 +254,11 @@ void SendDataToClient(){
 		o If done, Add EndOfGameHost thread with highest priority
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
+		TX_Buffer(clientIP, (uint32_t *)&curGame, sizeof(curGame));
+
+		if(curGame.gameDone == true){
+			G8RTOS_AddThread(EndOfGameHost, 0, "desolation"); //The end is approaching
+		}
 		sleep(5);
 	}
 }
@@ -222,17 +267,23 @@ void SendDataToClient(){
  * Thread that receives UDP packets from client
  */
 void ReceiveDataFromClient(){
+	int retval = 0;
 	while(1){
 		/*
 		• Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
+		while(retval <= 0){
+			retval = RX_Buffer((uint32_t *)&clientToHostInfo, sizeof(clientToHostInfo)); //Gets the client specific info and stores it in a struct
+		}
+		retval = 0; //resets retval
 		sleep(1);
 		/*
 		• Update the player’s current center with the displacement received from the client
 		• Sleep for 2ms (again found experimentally)
 		*/
+		//FIXME: Update player's position with displacement from client
 		sleep(2);
 	}
 }
@@ -893,7 +944,6 @@ inline void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall,
 
 }
 
-
 /*
  * Initializes and prints initial game state
  */
@@ -982,7 +1032,7 @@ inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex){
 
 
 //can transmit packets of size 1 - 4 bytes
-static void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize){
+static inline void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize){
 
     const uint8_t size = dataSize;
     uint8_t buffer[size];
@@ -999,7 +1049,7 @@ static void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize){
 }
 
 //can receive packets of size 1 - 4 bytes
-static void RX_Buffer(uint32_t* rx_data, uint8_t dataSize){
+static inline int RX_Buffer(uint32_t* rx_data, uint8_t dataSize){
 
     const uint8_t size = dataSize;
     uint8_t buffer[size];
@@ -1015,6 +1065,8 @@ static void RX_Buffer(uint32_t* rx_data, uint8_t dataSize){
     }
 
     *rx_data = data;
+
+    return retval;
 }
 
 
