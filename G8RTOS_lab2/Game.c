@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "LCD.h"
 #include "RGBLeds.h"
+#include "demo_sysctl.h"
 
 SpecificPlayerInfo_t clientToHostInfo;
 
@@ -818,6 +819,28 @@ void WaitScreen(){
  */
 playerType GetPlayerRole(){
 
+		P4->DIR &= ~(BIT4 | BIT5);
+	    P4->REN |= BIT4|BIT5; //Pull-up resistor
+	    P4->OUT |= BIT4|BIT5; //Set resistor to pull-up
+	    while(1)
+	    {
+	        if(!(P4->IN & BIT4))
+	        {
+	            DelayMs(10);
+	            if(!(P4->IN & BIT4))
+	            {
+	                return Client;
+	            }
+	        }
+	        if(!(P4->IN & BIT5))
+	        {
+	            DelayMs(10);
+	            if(!(P4->IN & BIT5))
+	            {
+	                return Host;
+	            }
+	        }
+	    }
 }
 
 /*

@@ -9,6 +9,7 @@
 #include "sl_common.h"
 #include "Game.h"
 #include "G8RTOS_Scheduler.h"
+#include "demo_sysctl.h"
 
 #include <DriverLib.h>
 #include "BSP.h"
@@ -19,12 +20,23 @@
 int waitingForHost = 0x55;
 int hostFlag = 0x55;
 
+
 test_t winning;
 
 void main(void){
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
 
+    //Button taps
+
     G8RTOS_Init();
+    //LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_BLACK);
+    //LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_BLACK);
+    playerType gameRole = GetPlayerRole();
+    //LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
+    initCC3100(gameRole);
+    //LCD_Clear(BACK_COLOR);
+
+
     LCD_Init(false);
 	/* For the color randomness */
 	srand(time(NULL));
@@ -34,28 +46,10 @@ void main(void){
 	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
 	/*Aperioidic Threads*/
-	//Button taps
-    P4->SEL1 &= ~BIT4;
-    P4->SEL0 &= ~BIT4;
-    P4->DIR  &= ~BIT4;
-    P4->IFG  &= ~BIT4;   //Clears P4.4
-    P4->IE   |= BIT4;     //Enables interrupt
-    P4->IES  |= BIT4;    //High to low transition
-    P4->REN  |= BIT4;    //Pull-up resistor
-    P4->OUT  |= BIT4;    //Sets res to pull-up
-
-    P5->SEL1 &= ~BIT4;
-    P5->SEL0 &= ~BIT4;
-    P5->DIR  &= ~BIT4;
-    P5->IFG  &= ~BIT4;   //Clears P5.4
-    P5->IE   |= BIT4;    //Enables interrupt
-    P5->IES  |= BIT4;    //High to low transition
-    P5->REN  |= BIT4;    //Pull-up resistor
-    P5->OUT  |= BIT4;    //Sets res to pull-up
 
     G8RTOS_AddThread(WaitScreen, 1, "Wait_Screen");
-    G8RTOS_AddAPeriodicEvent(TOP_BUTTON_TAP, 6, PORT4_IRQn);
-    G8RTOS_AddAPeriodicEvent(BOTTOM_BUTTON_TAP, 6, PORT5_IRQn);
+    //G8RTOS_AddAPeriodicEvent(TOP_BUTTON_TAP, 6, PORT4_IRQn);
+    //G8RTOS_AddAPeriodicEvent(BOTTOM_BUTTON_TAP, 6, PORT5_IRQn);
 
 	G8RTOS_InitFIFO(JOYSTICKFIFO);
 
@@ -64,6 +58,22 @@ void main(void){
 	G8RTOS_Launch();
 
 }
+
+void PORT4_IRQHandler(void){
+	//4.4
+	P4IE &= ~BIT4;
+	P4IFG &= ~BIT4;
+	P4IE |= BIT4;
+}
+
+void PORT5_IRQHandler(void){
+	//5.4
+	P5IE &= ~BIT4;
+	P5IFG &= ~BIT4;
+	P5IE |= BIT4;
+
+}
+
 #endif /* MAIN_LAB5 */
 
 
