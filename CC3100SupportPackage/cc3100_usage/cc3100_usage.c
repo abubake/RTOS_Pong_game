@@ -455,10 +455,15 @@ _i32 ReceiveData(_u8 *data, _u16 BUF_SIZE)
 {
     /* Receiving data from UDP server */
     retVal = BsdUdpServer(PORT_NUM, data, BUF_SIZE);
-    //    if(retVal < 0)
-    //        /* Failed to read data from the UDP client */
-    //    else
-    //        /* Successfully received data from UDP client */
+        if(retVal < 0){
+            /* Failed to read data from the UDP client */
+        }
+        else{
+            /* Successfully received
+             *  data from UDP client */
+        	uint8_t help = 0;
+        	help += 1;
+        }
     return retVal;
 }
 

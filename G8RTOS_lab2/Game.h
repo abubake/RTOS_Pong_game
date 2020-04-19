@@ -120,6 +120,14 @@ typedef enum
 /*********************************************** Data Structures ********************************************************************/
 #pragma pack ( push, 1)
 /*
+ * Test struct
+ */
+typedef struct test_t
+{
+	uint8_t greatSucsess;
+}test_t;
+
+/*
  * Struct to be sent from the client to the host
  */
 typedef struct
@@ -341,6 +349,13 @@ inline void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle);
 inline void InitBoardState();
 
 inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex);
+
+//can transmit packets of size 1 - 4 bytes
+static void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize);
+
+//can receive packets of size 1 - 4 bytes
+static void RX_Buffer(uint32_t* rx_data, uint8_t dataSize);
+
 
 /*********************************************** Public Functions *********************************************************************/
 
