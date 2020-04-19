@@ -863,7 +863,7 @@ void WaitScreen(){
  * Returns either Host or Client depending on button press
  */
 playerType GetPlayerRole(){
-
+ return Host;
 }
 
 /*
