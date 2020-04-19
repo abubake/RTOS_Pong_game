@@ -71,6 +71,7 @@ Fd_t spi_Open(char *ifName, unsigned long flags)
     UCB0CTLW0 = UCMSB | UCMST | UCSYNC | UCCKPH | UCSWRST | UCSSEL__SMCLK; /* 3-pin, 8-bit SPI master */
 
     /* Set SPI clock */
+    //UCB0BRW = 3;
     UCB0BR0 = 0x00; /* f_UCxCLK = 25MHz/1 */// -- used to be 0x08
     UCB0BR1 = 0;
     UCB0CTLW0 &= ~UCSWRST;

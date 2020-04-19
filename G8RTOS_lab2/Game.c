@@ -62,7 +62,9 @@ void JoinGame(){
 		o Idle (SETUP)
 		• Kill self (SETUP)
 		*/
+    //setClk3Meg();
 	initCC3100(Client);
+    ClockSys_SetMaxFreq();
 
 	/* NEED TO SET ALL THESE WITH REAL VALUES */
 	clientToHostInfo.IP_address = getLocalIP();
@@ -117,6 +119,8 @@ void SendDataToHost(){
 		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
 
 		//SendData(_u8 *data, _u32 IP, _u16 BUF_SIZE);
+	    uint32_t data = 8;
+	    TX_Buffer(0x3344, &data, sizeof(data));
 		sleep(2);
 	}
 }
@@ -223,13 +227,15 @@ void CreateGame(){
 	*/
 	InitBoardState();
 
-		//RX_Buffer(, 1);
+	//setClk3Meg();
+	initCC3100(Host);
+    ClockSys_SetMaxFreq();
 
 	/* Add these threads. (Need better priority definitions) */
 	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
 	G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
 	G8RTOS_AddThread(ReadJoystickHost, 201, "ReadJoystickHost");
-	//G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
+	G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
 	//G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
 	G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
 	G8RTOS_AddThread(IdleThread, 254, "Idle");
@@ -249,6 +255,9 @@ void SendDataToClient(){
 		o If done, Add EndOfGameHost thread with highest priority
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
+        //uint32_t data = 8;
+        //TX_Buffer(0x3344, &data, sizeof(data));
+
 		sleep(5);
 	}
 }
@@ -636,11 +645,12 @@ void EndOfGameHost(){
  * ISR for button taps
  * B0   4.4
  * B1   4.5
- * B2   5.2
+ * B2   5.4
  * B3   5.5
  */
 void TOP_BUTTON_TAP(){
     if(!readyForGame){
+        readyForGame = true;
         if(!isClient){
             //Make the device the host (Create Game)
             G8RTOS_AddThread(CreateGame, 150, "Create Game");
@@ -663,9 +673,10 @@ void TOP_BUTTON_TAP(){
 void BOTTOM_BUTTON_TAP(){
     if(!readyForGame){
     isClient = true;
+    readyForGame = true;
 
     //Make the device the client (Join Game)
-    G8RTOS_AddThread(CreateGame, 150, "Join Game");
+    G8RTOS_AddThread(JoinGame, 150, "Join Game");
 
     }
     else{
@@ -675,14 +686,9 @@ void BOTTOM_BUTTON_TAP(){
 
     }
     //Clear Flag
-    P5->IFG &= ~BIT2;
+    P5->IFG &= ~BIT4;
 }
 
-void PORT4_IRQHandler(void)
-{
-    P4 -> IFG = 0; // ~BIT0;         // clear the interrupt flag
-    //P4 -> IE &= ~(1 << 0);          // disable interrupt
-}
 /*********************************************** Host Threads *********************************************************************/
 
 
@@ -792,11 +798,10 @@ inline uint16_t numToLitLEDS(uint8_t playerScore){
 
 void WaitScreen(){
 
-    LCD_Clear(LCD_GRAY);
-    LCD_Text(95, 75, "Press Top Button For Host",LCD_GREEN);
-    LCD_Text(85, 95,"Press Bottom Button For Client",LCD_GREEN);
+    //LCD_Clear(LCD_GRAY);
+    LCD_Text(75, 75, "Press Top Button For Host",LCD_GREEN);
+    LCD_Text(60, 95,"Press Bottom Button For Client",LCD_GREEN);
 
-    LCD_Text(Xpos, Ypos, str, Color)
 
     //wait until host or client is chosen
     while(!readyForGame);
@@ -1090,5 +1095,37 @@ static void RX_Buffer(uint32_t* rx_data, uint8_t dataSize){
     *rx_data = data;
 }
 
+
+void setClk3Meg(){
+    /* Set GPIO to be Crystal In/Out for HFXT */
+    MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ, GPIO_PIN3 | GPIO_PIN2, GPIO_PRIMARY_MODULE_FUNCTION);
+
+    /* Set Core Voltage Level to VCORE1 to handle 48 MHz Speed */
+    while(!PCM_setCoreVoltageLevel(PCM_VCORE1));
+
+    /* Set frequency of HFXT and LFXT */
+    MAP_CS_setExternalClockSourceFrequency(32000, 3000000);
+
+    /* Set 2 Flash Wait States */
+    MAP_FlashCtl_setWaitState(FLASH_BANK0, 2);
+    MAP_FlashCtl_setWaitState(FLASH_BANK1, 2);
+
+    /* Danny added this for Wi-Fi */
+    FLCTL->BANK0_RDCTL |= (FLCTL_BANK0_RDCTL_BUFI | FLCTL_BANK0_RDCTL_BUFD );
+    FLCTL->BANK1_RDCTL |= (FLCTL_BANK1_RDCTL_BUFI | FLCTL_BANK1_RDCTL_BUFD );
+
+    /* Start HFXT */
+    MAP_CS_startHFXT(0);
+
+    /* Initialize MCLK to HFXT */
+    //MAP_CS_initClockSignal(CS_MCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_1);
+
+    /* Initialize HSMCLK to HFXT/2 */
+   // MAP_CS_initClockSignal(CS_HSMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_2);
+
+    /* Initialize SMCLK to HFXT/1 */ //changed from Initialize SMCLK to HFXT/4
+ //   MAP_CS_initClockSignal(CS_SMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_1);
+
+}
 
 /*********************************************** Public Functions *********************************************************************/

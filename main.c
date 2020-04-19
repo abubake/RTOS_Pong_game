@@ -22,10 +22,10 @@ int hostFlag = 0x55;
 test_t winning;
 
 void main(void){
-	G8RTOS_Init();
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
 
-	LCD_Init(false);
-
+    G8RTOS_Init();
+    LCD_Init(false);
 	/* For the color randomness */
 	srand(time(NULL));
 
@@ -44,18 +44,18 @@ void main(void){
     P4->REN  |= BIT4;    //Pull-up resistor
     P4->OUT  |= BIT4;    //Sets res to pull-up
 
-    P5->SEL1 &= ~BIT2;
-    P5->SEL0 &= ~BIT2;
-    P5->DIR  &= ~BIT2;
-    P5->IFG  &= ~BIT2;   //Clears P5.2
-    P5->IE   |= BIT2;    //Enables interrupt
-    P5->IES  |= BIT2;    //High to low transition
-    P5->REN  |= BIT2;    //Pull-up resistor
-    P5->OUT  |= BIT2;    //Sets res to pull-up
+    P5->SEL1 &= ~BIT4;
+    P5->SEL0 &= ~BIT4;
+    P5->DIR  &= ~BIT4;
+    P5->IFG  &= ~BIT4;   //Clears P5.4
+    P5->IE   |= BIT4;    //Enables interrupt
+    P5->IES  |= BIT4;    //High to low transition
+    P5->REN  |= BIT4;    //Pull-up resistor
+    P5->OUT  |= BIT4;    //Sets res to pull-up
 
-    //G8RTOS_AddThread(WaitScreen, 1, "Wait_Screen");
+    G8RTOS_AddThread(WaitScreen, 1, "Wait_Screen");
     G8RTOS_AddAPeriodicEvent(TOP_BUTTON_TAP, 6, PORT4_IRQn);
-    //G8RTOS_AddAPeriodicEvent(BOTTOM_BUTTON_TAP, 6, PORT5_IRQn);
+    G8RTOS_AddAPeriodicEvent(BOTTOM_BUTTON_TAP, 6, PORT5_IRQn);
 
 	G8RTOS_InitFIFO(JOYSTICKFIFO);
 
