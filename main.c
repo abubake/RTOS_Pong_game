@@ -24,22 +24,27 @@ void main(void){
 
     //Button taps
 
+<<<<<<< HEAD
     //LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_BLACK);
     //LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_BLACK);
+=======
+    G8RTOS_Init();
+    LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_BLACK);
+    LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_BLACK);
+>>>>>>> 994b0cc5ded6986edda554dd398c12121201fede
     playerType gameRole = GetPlayerRole();
-    //LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
+    LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_BLACK);
     initCC3100(gameRole);
+<<<<<<< HEAD
     //LCD_Clear(BACK_COLOR);
     G8RTOS_Init();
+=======
+>>>>>>> 994b0cc5ded6986edda554dd398c12121201fede
 
 
     LCD_Init(false);
 	/* For the color randomness */
 	srand(time(NULL));
-
-	/* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
-	G8RTOS_InitSemaphore(&USING_SPI, 1);
-	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
     G8RTOS_AddThread(IdleThread, 250, "idle");
 
@@ -50,10 +55,6 @@ void main(void){
 	else if(gameRole == Client){
 	    G8RTOS_AddThread(JoinGame, 1, "genesis");
 	}
-
-
-
-
 
 	/* Initializes the Systick to trigger every 1ms and sets the priority for both PendSV and Systick  */
 	/* Sets the first thread control block as the current thread, and calls the start_os assembly function */
