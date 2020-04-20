@@ -314,6 +314,8 @@ void DrawObjects();
  */
 void MoveLEDs();
 inline uint16_t numToLitLEDS(uint8_t playerScore);
+void WaitScreen();
+void BOTTOM_BUTTON_TAP();
 /*********************************************** Common Threads *********************************************************************/
 
 
