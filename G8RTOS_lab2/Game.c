@@ -14,19 +14,11 @@ int16_t host_X_coord; // Since I have two joystick read functions, shouldn't be 
 						//other board won't
 int16_t host_Y_coord;
 
-/*Ball related Info */
-balls_t myBalls[MAX_NUM_OF_BALLS];
-int ballNumber;
-int curBalls = 0;
 
 int HostPoints = 0; // Number of points (i.e. LED's that are on)
 bool pointScored = false;
 bool iterated = false; //for the LEDs
 int displayVal = 1; //No so that first LED comes on correctly
-
-/* The paddles */
-GeneralPlayerInfo_t PlayerPaddle;
-GeneralPlayerInfo_t ClientPaddle;
 
 //Previous Locations of Players for updating drawings
 PrevPlayer_t prevHostLoc;
@@ -40,8 +32,6 @@ GameState_t curGame;
 SpecificPlayerInfo_t clientToHostInfo;
 
 uint32_t clientIP = 0; //the client's IP address that is recieved by the host
-
-
 
 //ISR bools
 bool isClient = false;
@@ -106,6 +96,9 @@ void JoinGame(){
  * Thread that receives game state packets from host
  */
 void ReceiveDataFromHost(){
+    //Before receiving new host location, update the previous location of host
+    prevHostLoc.Center = curGame.players[0].currentCenter;
+
 	int retval = 0;
 	while(1){
 		/*
@@ -313,6 +306,9 @@ void SendDataToClient(){
  * Thread that receives UDP packets from client
  */
 void ReceiveDataFromClient(){
+    //Before receiving new client location update previous location
+    prevClientLoc.Center = curGame.players[1].currentCenter;
+
 	int retval = 0;
 	while(1){
 		/*
@@ -343,12 +339,12 @@ void GenerateBall(){
 		• Adds another MoveBall thread if the number of balls is less than the max
 		• Sleeps proportional to the number of balls currently in play
 		*/
-	    if(curBalls < MAX_NUM_OF_BALLS){
-	        curBalls++;
+	    if(curGame.numberOfBalls < MAX_NUM_OF_BALLS){
+	        curGame.numberOfBalls++;
 	        G8RTOS_AddThread(MoveBall, 30, "MoveBall");
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
-	    sleep(curBalls*2500);
+	    sleep(curGame.numberOfBalls*2500);
 	}
 }
 
@@ -413,15 +409,14 @@ void MoveBall(){
 	//Initialize ball if it was newly made
     uint8_t ind;
     for (int i = 0; i < MAX_NUM_OF_BALLS; i++){
-        if(myBalls[i].alive == false){ // Searching for the first dead ball
+        if(curGame.balls[i].alive == false){ // Searching for the first dead ball
 
         	//• Once found, initialize random position and X and Y velocities, as well as color and alive attributes
             /* Gives random position */
-
             //Random x that will be within arena bounds and not too close to a wall
-            myBalls[i].xPos = (rand() % (ARENA_MAX_X - ARENA_MIN_X - 20)) + ARENA_MIN_X + 10;
+            curGame.balls[i].xPos = (rand() % (ARENA_MAX_X - ARENA_MIN_X - 20)) + ARENA_MIN_X + 10;
             //Random y that won't be too close to the paddles
-            myBalls[i].yPos = (rand() % MAX_SCREEN_Y - 60) + 30;
+            curGame.balls[i].yPos = (rand() % MAX_SCREEN_Y - 60) + 30;
 
             /* Getting a random speed */
             //TODO Experimentally determine a good max speed
@@ -430,35 +425,26 @@ void MoveBall(){
 
             //Get random x-direction
             if(rand() % 2){
-                myBalls[i].xVel = xMag * -1;
+                curGame.balls[i].xVel = xMag * -1;
             }
             else{
-                myBalls[i].xVel = xMag;
+                curGame.balls[i].xVel = xMag;
             }
             //Get random y-direction
             if(rand() % 2){
-                myBalls[i].yVel = yMag * -1;
+                curGame.balls[i].yVel = yMag * -1;
             }
             else{
-                myBalls[i].yVel = yMag;
+                curGame.balls[i].yVel = yMag;
             }
 
             //Ball is initially white
-            myBalls[i].color = LCD_WHITE;
-            myBalls[i].alive = true;
-
-            myBalls[i].prevLoc.CenterX = myBalls[i].xPos;
-            myBalls[i].prevLoc.CenterY = myBalls[i].yPos;
-            myBalls[i].newBall = true;
-
-            //Update structure to be sent
-            curGame.numberOfBalls++;
-            curGame.balls[i].alive = true;
             curGame.balls[i].color = LCD_WHITE;
-            curGame.balls[i].xPos = myBalls[i].xPos;
-            curGame.balls[i].yPos = myBalls[i].yPos;
-            curGame.balls[i].prevLoc.CenterX = myBalls[i].xPos;
-            curGame.balls[i].prevLoc.CenterY = myBalls[i].yPos;
+            curGame.balls[i].alive = true;
+
+            //Set previous location as this location
+            curGame.balls[i].prevLoc.CenterX = curGame.balls[i].xPos;
+            curGame.balls[i].prevLoc.CenterY = curGame.balls[i].yPos;
             curGame.balls[i].newBall = true;
 
             ind = i;
@@ -477,15 +463,15 @@ void MoveBall(){
 
 		//Check if it collided with a wall
 		//TODO mess with values until they are nice
-		if((myBalls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4) || (myBalls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
+		if((curGame.balls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4) || (curGame.balls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
 		} //Checks if low enough on y-axis and between paddle left and right bounds to see if a collision occurs
-		else if((myBalls[ind].yPos >= 232)&&(myBalls[ind].xPos > curGame.players[0].currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < curGame.players[0].currentCenter + PADDLE_LEN_D2 + 2)){
+		else if((curGame.balls[ind].yPos >= 232)&&(curGame.balls[ind].xPos > curGame.players[0].currentCenter - PADDLE_LEN_D2 - 2)&&(curGame.balls[ind].xPos < curGame.players[0].currentCenter + PADDLE_LEN_D2 + 2)){
 			collision = true;
 			paddle = true;
 		}
-		else if((myBalls[ind].yPos <= 9)&&(myBalls[ind].xPos > curGame.players[1].currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < curGame.players[1].currentCenter + PADDLE_LEN_D2 + 2)){
+		else if((curGame.balls[ind].yPos <= 9)&&(curGame.balls[ind].xPos > curGame.players[1].currentCenter - PADDLE_LEN_D2 - 2)&&(curGame.balls[ind].xPos < curGame.players[1].currentCenter + PADDLE_LEN_D2 + 2)){
 		    collision = true;
 		    paddle = true;
 		}
@@ -493,62 +479,60 @@ void MoveBall(){
 		if(collision){
 			 	if(wall){
 			 		//If wall is hit, maintain vertical velocity, but reflect horizontally
-			 		myBalls[ind].xVel = myBalls[ind].xVel * -1;
+			 		curGame.balls[ind].xVel = curGame.balls[ind].xVel * -1;
 			 	}
 			 	//Can be both paddle and wall
 			 	if(paddle){
 			 	    //Check which paddle it hits
-			 	    if(myBalls[ind].yPos > MAX_SCREEN_Y - PADDLE_WID - BALL_SIZE - 7){
+			 	    if(curGame.balls[ind].yPos > MAX_SCREEN_Y - PADDLE_WID - BALL_SIZE - 7){
 			 	        //Hit bottom paddle
-			 	        myBalls[ind].color = LCD_RED;
+			 	        curGame.balls[ind].color = LCD_RED;
 			 	    }
-			 	    else if(myBalls[ind].yPos < PADDLE_WID + BALL_SIZE + 7){
+			 	    else if(curGame.balls[ind].yPos < PADDLE_WID + BALL_SIZE + 7){
 			 	        //Collided with top paddle
-			 	        myBalls[ind].color = LCD_BLUE;
+			 	        curGame.balls[ind].color = LCD_BLUE;
 			 	    }
 			 	    //Left Side
-			 		if(myBalls[ind].xPos < curGame.players[0].currentCenter - PADDLE_LEN_D2 + 16 ){
-			 		    myBalls[ind].yVel = myBalls[ind].yVel * -1;
-			 		    if(myBalls[ind].xVel > 1){
+			 		if(curGame.balls[ind].xPos < curGame.players[0].currentCenter - PADDLE_LEN_D2 + 16 ){
+			 		    curGame.balls[ind].yVel = curGame.balls[ind].yVel * -1;
+			 		    if(curGame.balls[ind].xVel > 1){
 			 		        //Make ball go left
-			 		       myBalls[ind].xVel = myBalls[ind].xVel * -1;
+			 		       curGame.balls[ind].xVel = curGame.balls[ind].xVel * -1;
 			 		    }
 			 		}
 			 		//Right side
-			 		else if(myBalls[ind].xPos > curGame.players[0].currentCenter + PADDLE_LEN_D2 - 16){
-			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
-			 			if(myBalls[ind].xVel < 1){
-			 			   myBalls[ind].xVel = myBalls[ind].xVel * -1;
+			 		else if(curGame.balls[ind].xPos > curGame.players[0].currentCenter + PADDLE_LEN_D2 - 16){
+			 			curGame.balls[ind].yVel = curGame.balls[ind].yVel * -1;
+			 			if(curGame.balls[ind].xVel < 1){
+			 			   curGame.balls[ind].xVel = curGame.balls[ind].xVel * -1;
 			 			}
 			 		}
 			 		//Middle
 			 		else{ //This is the center of the paddle's area, a space of 24
-			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
+			 			curGame.balls[ind].yVel = curGame.balls[ind].yVel * -1;
 			 		}
 			 	}
 		}
 
 	    //If ball has passed boundary, adjust score
 		bool passedBoundary = false;
-		if((myBalls[ind].yPos < ARENA_MIN_Y) || (myBalls[ind].yPos > ARENA_MAX_X)){
-		    if(myBalls[ind].color == LCD_RED){
+		if((curGame.balls[ind].yPos < ARENA_MIN_Y) || (curGame.balls[ind].yPos > ARENA_MAX_X)){
+		    //Has passed boundary and will kill itself
+		    if(curGame.balls[ind].color == LCD_RED){
 		        //Red Ball Scored
-		        curBalls--;
-		        curGame.numberOfBalls -= 1;
+		        curGame.numberOfBalls--;
 		        curGame.LEDScores[0] += 1;
 		        passedBoundary = true;
 		    }
-		    else if(myBalls[ind].color == LCD_BLUE){
+		    else if(curGame.balls[ind].color == LCD_BLUE){
 		        //Blue Ball Scored
-                curBalls--;
-                curGame.numberOfBalls -= 1;
+                curGame.numberOfBalls--;
 		        curGame.LEDScores[1] += 1;
 		        passedBoundary = true;
 		    }
 		    else{
 		        //White Ball fell through- No one scores but ball still is killed
-                curBalls--;
-                curGame.numberOfBalls -= 1;
+                curGame.numberOfBalls--;
 		        passedBoundary = true;
 		    }
 		}
@@ -571,37 +555,29 @@ void MoveBall(){
 		    }
 		    else{
                 //Kill this MoveBall
-                myBalls[ind].alive = false;
+                curGame.balls[ind].alive = false;
                 G8RTOS_KillSelf();
 		    }
 
 		}
 		else{
-	        //Save old position
-	        myBalls[ind].prevLoc.CenterX = myBalls[ind].xPos;
-	        myBalls[ind].prevLoc.CenterY = myBalls[ind].yPos;
+	        //Save position as the now previous position
+	        curGame.balls[ind].prevLoc.CenterX = curGame.balls[ind].xPos;
+	        curGame.balls[ind].prevLoc.CenterY = curGame.balls[ind].yPos;
 
-	        //If not killed, move ball to position according to its velocity
-	        myBalls[ind].xPos = myBalls[ind].xPos + myBalls[ind].xVel;
-	        myBalls[ind].yPos = myBalls[ind].yPos + myBalls[ind].yVel;
+	        //Update current location of the ball
+	        curGame.balls[ind].xPos = curGame.balls[ind].xPos + curGame.balls[ind].xVel;
+	        curGame.balls[ind].yPos = curGame.balls[ind].yPos + curGame.balls[ind].yVel;
 
 	        //If went beyond boundary, adjust so it is on boundary
 	        //I did this to try to stop the balls from eroding walls
-	        if(myBalls[ind].xPos > ARENA_MAX_X - BALL_SIZE){
-	            myBalls[ind].xPos = ARENA_MAX_X - BALL_SIZE;
+	        if(curGame.balls[ind].xPos > ARENA_MAX_X - BALL_SIZE){
+	            curGame.balls[ind].xPos = ARENA_MAX_X - BALL_SIZE;
 	        }
-	        else if(myBalls[ind].xPos < ARENA_MIN_X + BALL_SIZE){
-	            myBalls[ind].xPos = ARENA_MAX_X + BALL_SIZE;
+	        else if(curGame.balls[ind].xPos < ARENA_MIN_X + BALL_SIZE){
+	            curGame.balls[ind].xPos = ARENA_MAX_X + BALL_SIZE;
 	        }
-	        //Update GameState to be sent
-	        curGame.balls[ind].alive = myBalls[ind].alive;
-	        curGame.balls[ind].color = myBalls[ind].color;
-	        curGame.balls[ind].xPos = myBalls[ind].xPos;
-	        curGame.balls[ind].yPos = myBalls[ind].yPos;
-	        curGame.balls[ind].prevLoc.CenterX = myBalls[ind].xPos;
-	        curGame.balls[ind].prevLoc.CenterY = myBalls[ind].yPos;
 		}
-
 		sleep(35);
 	}
 }
@@ -754,27 +730,26 @@ void DrawObjects(){
 	    //Update Ball Locations
 	    for(uint8_t i = 0; i < MAX_NUM_OF_BALLS; i++){
 	        //Check if ball is alive
-	        if(myBalls[i].alive){
-	            if(myBalls[i].newBall){
+	        if(curGame.balls[i].alive){
+	            if(curGame.balls[i].newBall){
 	                //If a new ball, paint its initial location
-	                int16_t xCoord = myBalls[i].xPos;
-	                int16_t yCoord = myBalls[i].yPos;
+	                int16_t xCoord = curGame.balls[i].xPos;
+	                int16_t yCoord = curGame.balls[i].yPos;
 
 	                G8RTOS_WaitSemaphore(&USING_SPI);
 	                LCD_DrawRectangle(xCoord - BALL_SIZE_D2, xCoord + BALL_SIZE_D2, yCoord - BALL_SIZE_D2, yCoord + BALL_SIZE_D2, LCD_WHITE);
 	                G8RTOS_SignalSemaphore(&USING_SPI);
 
 	                //Not new anymore
-	                myBalls[i].newBall = false;
+	                curGame.balls[i].newBall = false;
 	                curGame.balls[i].newBall = false;
 	            }
 	            else{
 	                //If not a new ball, update its location
-	                UpdateBallOnScreen(&myBalls[i].prevLoc, &myBalls[i], myBalls[i].color);
+	                UpdateBallOnScreen(&curGame.balls[i].prevLoc, &curGame.balls[i], curGame.balls[i].color);
 	            }
 	        }
 	    }
-
 	    //Update Players
 	    //Update Location of Each Player
 	    //Host
@@ -1088,8 +1063,8 @@ inline void InitBoardState(){
     for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
         curGame.balls[i].alive = false;         //The game state to be sent
         curGame.balls[i].color = LCD_WHITE;
-        myBalls[i].alive = false;               //The local copy of ball info
-        myBalls[i].color = LCD_WHITE;
+        curGame.balls[i].alive = false;               //The local copy of ball info
+        curGame.balls[i].color = LCD_WHITE;
     }
     //Make sure scores are all 0
     curGame.LEDScores[0] = 0;
