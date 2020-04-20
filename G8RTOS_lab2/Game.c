@@ -77,6 +77,7 @@ void JoinGame(){
 	int retval = -1;
 	uint8_t read_ack = 255;
 
+    G8RTOS_WaitSemaphore(&USING_SPI);
 	while(retval < 0 || read_ack != H2C_ack){
 	    SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
@@ -85,15 +86,12 @@ void JoinGame(){
         retval = ReceiveData((uint8_t*)&curGame, sizeof(curGame)); //Recieves the GameState from Host
 		sleep(50);
 	}
+    G8RTOS_SignalSemaphore(&USING_SPI);
 	sleep(50);
 
 	/* Connection established, launch RTOS */
 	P2->DIR |= 0x04;         /* P2.2 set as output */
 	P2->OUT |= 4; // Solid blue, connection established
-
-	/* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
-	G8RTOS_InitSemaphore(&USING_SPI, 1);
-	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
 
 	InitBoardState(); // The stuff
@@ -120,7 +118,9 @@ void ReceiveDataFromHost(){
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
+	    G8RTOS_WaitSemaphore(&USING_SPI);
 		ReceiveData((uint8_t *)&curGame, sizeof(curGame));
+		G8RTOS_SignalSemaphore(&USING_SPI);
 		sleep(1);
 		/*
 		• Empty the received packet
@@ -141,7 +141,10 @@ void ReceiveDataFromHost(){
 void SendDataToHost(){
 	while(1){
 		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
+	    G8RTOS_WaitSemaphore(&USING_SPI);
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+	    G8RTOS_SignalSemaphore(&USING_SPI);
+
 		sleep(2);
 	}
 }
@@ -208,11 +211,6 @@ void EndOfGameClient(){
     //Now has both semaphores, kill all other threads
     G8RTOS_KillAllOthers();
 
-    //Reinitialize semaphores
-    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
-    G8RTOS_InitSemaphore(&USING_SPI, 1);
-
-
     if(curGame.LEDScores[0] > curGame.LEDScores[1]){
         //Player 0 won, make screen their color
         LCD_Clear(curGame.players[0].color);
@@ -226,8 +224,10 @@ void EndOfGameClient(){
 
     //TODO Wait for host to restart game
     while(NewGame == false){
-        //TODO semaphore
+        /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
+        G8RTOS_WaitSemaphore(&USING_SPI);
         ReceiveData((uint8_t *)&curGame , sizeof(curGame));
+        G8RTOS_SignalSemaphore(&USING_SPI);
         if(curGame.gameDone != false){
             //I think this should work as long as curGame has been updated with a new game status
             NewGame = true;
@@ -251,6 +251,9 @@ void EndOfGameClient(){
     G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 254, "Idle");
 
+    G8RTOS_SignalSemaphore(&USING_LED_I2C);
+    G8RTOS_SignalSemaphore(&USING_SPI);
+
     //Kill self
     G8RTOS_KillSelf();
 }
@@ -271,11 +274,12 @@ void CreateGame(){
 	o Should acknowledge client once client has joined
 	• Initialize the board (draw arena, players, and scores)
 	*/
+    /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 
 	int retval = -1;
     uint8_t read_ack = 255;
+    G8RTOS_WaitSemaphore(&USING_SPI);
 	while(retval < 0 || read_ack != C2H_ack){//RECIEVING THE IP ADDRESS
-
         retval = ReceiveData(&read_ack, sizeof(read_ack));
 	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 	    sleep(50);
@@ -283,13 +287,10 @@ void CreateGame(){
 		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame)); //Sends gameState to client
 	    sleep(50);
 	}
+    G8RTOS_SignalSemaphore(&USING_SPI);
 
 		P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
 		P2->OUT ^= 0x04;         /* turn blue ON */
-
-	/* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
-	G8RTOS_InitSemaphore(&USING_SPI, 1);
-	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
 	InitBoardState();
 
@@ -316,13 +317,12 @@ void SendDataToClient(){
 		o If done, Add EndOfGameHost thread with highest priority
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
+        G8RTOS_WaitSemaphore(&USING_SPI);
 		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
-
+        G8RTOS_SignalSemaphore(&USING_SPI);
 		if(curGame.gameDone == true){
 			G8RTOS_AddThread(EndOfGameHost, 0, "desolation"); //The end is approaching
 		}
-        //uint32_t data = 8;
-        //TX_Buffer(0x3344, &data, sizeof(data));
 
 		sleep(5);
 	}
@@ -340,7 +340,9 @@ void ReceiveDataFromClient(){
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
+        G8RTOS_WaitSemaphore(&USING_SPI);
 		ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+        G8RTOS_SignalSemaphore(&USING_SPI);
 
 		sleep(1);
 		/*
@@ -626,10 +628,6 @@ void EndOfGameHost(){
     //Now has both semaphores, kill all other threads
     G8RTOS_KillAllOthers();
 
-    //Reinitialize semaphores
-    G8RTOS_InitSemaphore(&USING_SPI, 1);
-    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
-
     //Clear screen with winner's color and print message
     if(curGame.LEDScores[0] > curGame.LEDScores[1]){
         //Player 0 won, make screen their color
@@ -675,6 +673,11 @@ void EndOfGameHost(){
     G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
     G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 254, "Idle");
+
+
+    //Reinitialize semaphores
+    G8RTOS_SignalSemaphore(&USING_LED_I2C);
+    G8RTOS_SignalSemaphore(&USING_SPI);
 
     G8RTOS_KillSelf();
 
@@ -823,21 +826,6 @@ inline uint16_t numToLitLEDS(uint8_t playerScore){
     }
     return toSend;
 }
-
-void WaitScreen(){
-
-    //LCD_Clear(LCD_GRAY);
-    LCD_Text(75, 75, "Press Top Button For Host",LCD_GREEN);
-    LCD_Text(60, 95,"Press Bottom Button For Client",LCD_GREEN);
-
-
-    //wait until host or client is chosen
-    while(!readyForGame);
-
-    G8RTOS_KillSelf();
-    while(1);
-}
-
 /*********************************************** Common Threads *********************************************************************/
 
 /*********************************************** Public Functions *********************************************************************/
