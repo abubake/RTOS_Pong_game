@@ -90,12 +90,12 @@ void JoinGame(){
 
 	InitBoardState(); // The stuff
 
-	G8RTOS_AddThread(ReadJoystickClient, 200, "readJoystick");
-	G8RTOS_AddThread(DrawObjects, 20, "updateObjects");
-	G8RTOS_AddThread(SendDataToHost, 150, "sendData");
-	G8RTOS_AddThread(ReceiveDataFromHost, 30, "recieveData");
-	G8RTOS_AddThread(MoveLEDs, 30, "Update leds");
-	//sleep(1); // idles before killing self (may not need)
+    G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");
+    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
+    G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
+    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
+
 	G8RTOS_KillSelf();
 }
 
@@ -120,11 +120,10 @@ void ReceiveDataFromHost(){
 		• Sleep for 5ms
 		*/
 		if(curGame.gameDone == true){
-			G8RTOS_AddThread(EndOfGameClient, 0, "enditallPLZ");
+			G8RTOS_AddThread(EndOfGameClient, 1, "enditallPLZ");
 		}
 
 		sleep(5);
-
 	}
 }
 
@@ -233,10 +232,10 @@ void EndOfGameClient(){
     clientToHostInfo.displacement = MAX_SCREEN_X/2;
 
     /* Add back client threads */
-    G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
-    G8RTOS_AddThread(ReadJoystickClient, 201, "ReadJoystickClient");
-    //G8RTOS_AddThread(SendDataToHost, 200, "SendDataToHost");
-    //G8RTOS_AddThread(ReceiveDataFromHost, 200, "ReceiveDataFromHost");
+    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
+    G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
+    G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");
     G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 254, "Idle");
 
@@ -278,12 +277,12 @@ void CreateGame(){
 	InitBoardState();
 
 	/* Add these threads. (Need better priority definitions) */
-	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
-	G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
-	G8RTOS_AddThread(ReadJoystickHost, 201, "ReadJoystickHost");
-	G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
-	G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
-	G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+    G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
+    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
+    G8RTOS_AddThread(DrawObjects, 5, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickHost, 5, "ReadJoystickHost");
+    G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
+    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
 
 	G8RTOS_KillSelf();
 }
@@ -349,7 +348,7 @@ void GenerateBall(){
 		*/
 	    if(curGame.numberOfBalls < MAX_NUM_OF_BALLS){
 	        curGame.numberOfBalls++;
-	        G8RTOS_AddThread(MoveBall, 30, "MoveBall");
+	        G8RTOS_AddThread(MoveBall, 5, "MoveBall");
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
 	    sleep(curGame.numberOfBalls*2500);
@@ -559,7 +558,7 @@ void MoveBall(){
 		if(passedBoundary){
 		    if(curGame.gameDone == true){
                 //If this was the final point, add ending thread
-                G8RTOS_AddThread(EndOfGameHost, 4, "EndOfGame");
+                G8RTOS_AddThread(EndOfGameHost, 1, "EndOfGame");
 		    }
 		    else{
                 //Kill this MoveBall
@@ -645,11 +644,11 @@ void EndOfGameHost(){
     InitBoardState();
 
     /* Add these threads. (Need better priority definitions) */
-    G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
-    G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
-    G8RTOS_AddThread(ReadJoystickHost, 201, "ReadJoystickHost");
-    //G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
-    //G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
+    G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
+    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
+    G8RTOS_AddThread(DrawObjects, 5, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickHost, 5, "ReadJoystickHost");
+    G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
     G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 254, "Idle");
 
@@ -663,7 +662,7 @@ void EndOfGameHost(){
 inline void resetGameExScores(){
     //Make LED scores 0
     curGame.LEDScores[0] = 0;
-    curGame.LEDScores[1] = 1;
+    curGame.LEDScores[1] = 0;
 
     //Clear each ball
     for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
