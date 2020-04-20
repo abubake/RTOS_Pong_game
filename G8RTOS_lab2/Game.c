@@ -101,7 +101,7 @@ void JoinGame(){
 	G8RTOS_AddThread(MoveLEDs, 30, "Update leds");
 	G8RTOS_AddThread(EndOfGameClient, 0, "EOGHandler");
 	G8RTOS_AddThread(IdleThread, 250, "idle");
-	sleep(1); // idles before killing self (may not need)
+	//sleep(1); // idles before killing self (may not need)
 	G8RTOS_KillSelf();
 }
 
@@ -270,7 +270,6 @@ void CreateGame(){
 	}
 	else
 	{
-		initCC3100(Host);
 		/* Recieves the IP address from the player so it can send to it */
 		P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
 
