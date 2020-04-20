@@ -204,7 +204,7 @@ void G8RTOS_Init()
 
 
     //init all hardware on the board
-    //BSP_InitBoard();
+    BSP_InitBoard();
 }
 
 /*

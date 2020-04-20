@@ -25,21 +25,16 @@ void main(void){
     //Button taps
 
     G8RTOS_Init();
-    //LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_BLACK);
-    //LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_BLACK);
+    LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_BLACK);
+    LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_BLACK);
     playerType gameRole = GetPlayerRole();
-    //LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
+    LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_BLACK);
     initCC3100(gameRole);
-    //LCD_Clear(BACK_COLOR);
 
 
     LCD_Init(false);
 	/* For the color randomness */
 	srand(time(NULL));
-
-	/* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
-	G8RTOS_InitSemaphore(&USING_SPI, 1);
-	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
     G8RTOS_AddThread(IdleThread, 250, "idle");
 

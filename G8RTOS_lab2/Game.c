@@ -81,6 +81,9 @@ void JoinGame(){
 	P2->OUT |= 4; // Solid blue, connection established
 
 	InitBoardState(); // The stuff
+	/* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
+	G8RTOS_InitSemaphore(&USING_SPI, 1);
+	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
 	G8RTOS_AddThread(ReadJoystickClient, 200, "readJoystick");
 	G8RTOS_AddThread(DrawObjects, 20, "updateObjects");
@@ -99,17 +102,14 @@ void ReceiveDataFromHost(){
     //Before receiving new host location, update the previous location of host
     prevHostLoc.Center = curGame.players[0].currentCenter;
 
-	int retval = 0;
 	while(1){
 		/*
 		• Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
-		while(retval <= 0){
-			retval = RX_Buffer((uint32_t *)&curGame, sizeof(curGame));
-		}
-		retval = 0; //resets retval
+		ReceiveData((uint8_t *)&curGame, sizeof(curGame));
+
 		sleep(1);
 		/*
 		• Empty the received packet
@@ -131,11 +131,7 @@ void ReceiveDataFromHost(){
 void SendDataToHost(){
 	while(1){
 		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
-		TX_Buffer(HOST_IP_ADDR, (uint32_t *)&clientToHostInfo, sizeof(clientToHostInfo));
-		//SendData(_u8 *data, _u32 IP, _u16 BUF_SIZE);
-	    uint32_t data = 8;
-	    TX_Buffer(0x3344, &data, sizeof(data));
-
+	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
 		sleep(2);
 	}
 }
@@ -266,12 +262,16 @@ void CreateGame(){
 
 	InitBoardState();
 
+	/* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
+	G8RTOS_InitSemaphore(&USING_SPI, 1);
+	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+
 	/* Add these threads. (Need better priority definitions) */
 	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
 	G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
 	G8RTOS_AddThread(ReadJoystickHost, 201, "ReadJoystickHost");
-	//G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
-	//G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
+	G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
+	G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
 	G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
 	G8RTOS_AddThread(IdleThread, 254, "Idle");
 
@@ -290,7 +290,7 @@ void SendDataToClient(){
 		o If done, Add EndOfGameHost thread with highest priority
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
-		TX_Buffer(clientIP, (uint32_t *)&curGame, sizeof(curGame));
+		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
 
 		if(curGame.gameDone == true){
 			G8RTOS_AddThread(EndOfGameHost, 0, "desolation"); //The end is approaching
@@ -308,24 +308,21 @@ void SendDataToClient(){
 void ReceiveDataFromClient(){
     //Before receiving new client location update previous location
     prevClientLoc.Center = curGame.players[1].currentCenter;
-
-	int retval = 0;
 	while(1){
 		/*
 		• Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
-		while(retval <= 0){
-			retval = RX_Buffer((uint32_t *)&clientToHostInfo, sizeof(clientToHostInfo)); //Gets the client specific info and stores it in a struct
-		}
-		retval = 0; //resets retval
+		ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+
 		sleep(1);
 		/*
 		• Update the player’s current center with the displacement received from the client
 		• Sleep for 2ms (again found experimentally)
 		*/
 		//FIXME: Update player's position with displacement from client
+
 		sleep(2);
 	}
 }
