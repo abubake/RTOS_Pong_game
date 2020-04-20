@@ -80,17 +80,17 @@ void JoinGame(){
 	P2->DIR |= 0x04;         /* P2.2 set as output */
 	P2->OUT |= 4; // Solid blue, connection established
 
-	InitBoardState(); // The stuff
 	/* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 	G8RTOS_InitSemaphore(&USING_SPI, 1);
 	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
+	InitBoardState(); // The stuff
+
 	G8RTOS_AddThread(ReadJoystickClient, 200, "readJoystick");
 	G8RTOS_AddThread(DrawObjects, 20, "updateObjects");
-	//G8RTOS_AddThread(SendDataToHost, 150, "sendData");
-	//G8RTOS_AddThread(ReceiveDataFromHost, 30, "recieveData");
+	G8RTOS_AddThread(SendDataToHost, 150, "sendData");
+	G8RTOS_AddThread(ReceiveDataFromHost, 30, "recieveData");
 	G8RTOS_AddThread(MoveLEDs, 30, "Update leds");
-	G8RTOS_AddThread(IdleThread, 250, "idle");
 	//sleep(1); // idles before killing self (may not need)
 	G8RTOS_KillSelf();
 }
@@ -255,18 +255,18 @@ void CreateGame(){
 	int retval = -1;
 	while(retval < 0){//RECIEVING THE IP ADDRESS
 	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+	    sleep(50);
 	}
 	SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame)); //Sends gameState to client
-
 
 		P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
 		P2->OUT ^= 0x04;         /* turn blue ON */
 
-	InitBoardState();
-
 	/* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 	G8RTOS_InitSemaphore(&USING_SPI, 1);
 	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+
+	InitBoardState();
 
 	/* Add these threads. (Need better priority definitions) */
 	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
@@ -275,7 +275,6 @@ void CreateGame(){
 	G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
 	G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
 	G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
-	G8RTOS_AddThread(IdleThread, 254, "Idle");
 
 	G8RTOS_KillSelf();
 }
