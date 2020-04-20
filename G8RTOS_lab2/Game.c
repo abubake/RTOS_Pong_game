@@ -64,32 +64,29 @@ void JoinGame(){
 	clientToHostInfo.IP_address = getLocalIP();
 	clientToHostInfo.acknowledge = false;
 	clientToHostInfo.displacement = 0;
-	clientToHostInfo.joined = false;
-	clientToHostInfo.playerNumber = 0;
-	clientToHostInfo.ready = false;
+	clientToHostInfo.joined = true;
+	clientToHostInfo.playerNumber = 1;
+	clientToHostInfo.ready = true;
 	clientToHostInfo.playerNumber = TOP;
 
-	uint32_t ack = 0;
+	/* Sends the Client's IP address to the host */
+	int retval = -1;
+	while(retval < 0){
+		SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+		retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame)); // Recieves the GameState from Host
+		sleep(50);
+	}
+	/* Connection established, launch RTOS */
 	P2->DIR |= 0x04;         /* P2.2 set as output */
-		while(ack == 0){
-			/* Client transmits the data so host has the address*/
-			/* first is sending to addy, 2nd is data, which is the client address */
-			TX_Buffer(HOST_IP_ADDR, &clientToHostInfo.IP_address, 4); //FIXME: Make it transmit the struct, need to test before implementing
-			/* Blue LED indicates established connection */
-				P2->OUT ^= 0x04;         /* turn blue LED on */
-			sleep(50);
-			/* Client is notified through the acknowledge sent from the host, that it is connected to the host */
-			RX_Buffer(&ack, 4);
-		}
-		P2->OUT |= 4; // Solid blue, connection established
+	P2->OUT |= 4; // Solid blue, connection established
 
+	InitBoardState(); // The stuff
 
 	G8RTOS_AddThread(ReadJoystickClient, 200, "readJoystick");
 	G8RTOS_AddThread(DrawObjects, 20, "updateObjects");
 	G8RTOS_AddThread(SendDataToHost, 150, "sendData");
 	G8RTOS_AddThread(ReceiveDataFromHost, 30, "recieveData");
 	G8RTOS_AddThread(MoveLEDs, 30, "Update leds");
-	G8RTOS_AddThread(EndOfGameClient, 0, "EOGHandler");
 	G8RTOS_AddThread(IdleThread, 250, "idle");
 	//sleep(1); // idles before killing self (may not need)
 	G8RTOS_KillSelf();
@@ -99,6 +96,9 @@ void JoinGame(){
  * Thread that receives game state packets from host
  */
 void ReceiveDataFromHost(){
+    //Before receiving new host location, update the previous location of host
+    prevHostLoc.Center = curGame.players[0].currentCenter;
+
 	int retval = 0;
 	while(1){
 		/*
@@ -254,43 +254,23 @@ void CreateGame(){
 	• Initialize the board (draw arena, players, and scores)
 	*/
 
-	//if(NewGame == true){ //THIS SHOULD GET SET IN THE APERIODIC FOR STARTING A NEW GAME
-		//TX_Buffer(clientIP, (uint32_t *)NewGame, 4); // sends this to tell the client it's a new game
-		//SendData((uint8_t *), IP_ADDR, dataSize);
+	int retval = -1;
+	while(retval < 0){//RECIEVING THE IP ADDRESS
+	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+	}
+	SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame)); //Sends gameState to client
 
-	//}
-	//else
-	{
-		/* Recieves the IP address from the player so it can send to it */
+
 		P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
-
-		while(clientIP == 0){
-			RX_Buffer(&clientIP, 4);
-			sleep(50);
-			P2->OUT ^= 0x04;         /* turn blue toggle */
-		}
+		P2->OUT ^= 0x04;         /* turn blue ON */
 
 	InitBoardState();
-		/* Blue LED indicates established connection */
-		P2->OUT |= 0x04;         /* turn blue LED on */
-
-		/* Transmit an acknowledge back to Client to indicate successful connection */
-		/* Transmits to ensure it is recieved and client can function */
-		uint32_t ack = 1;
-		int i = 100000;
-		while(i > 0){
-		TX_Buffer(clientIP, &ack, 4);
-		i--;
-		}
-	}
-
-	/* Connection is now complete if client gets acknowledge */
 
 	/* Add these threads. (Need better priority definitions) */
 	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
 	G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
 	G8RTOS_AddThread(ReadJoystickHost, 201, "ReadJoystickHost");
-	G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
+	//G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
 	//G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
 	G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
 	G8RTOS_AddThread(IdleThread, 254, "Idle");
@@ -326,6 +306,9 @@ void SendDataToClient(){
  * Thread that receives UDP packets from client
  */
 void ReceiveDataFromClient(){
+    //Before receiving new client location update previous location
+    prevClientLoc.Center = curGame.players[1].currentCenter;
+
 	int retval = 0;
 	while(1){
 		/*
