@@ -647,8 +647,8 @@ void EndOfGameHost(){
     readyForGame = false;
     while(!readyForGame);
 
-
     //TODO Notify client
+    SendData((uint8_t*)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
 
     //Reinitialize game with new scores
     InitBoardState();
@@ -862,6 +862,7 @@ playerType GetPlayerRole(){
 	            DelayMs(10);
 	            if(!(P4->IN & BIT5))
 	            {
+	                readyForGame = true;
 	                return Host;
 	            }
 	        }
@@ -1104,77 +1105,4 @@ inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex){
     scoreArray[1] = curScore%10 + 0x30;
     scoreArray[2] = 0x00;   //Terminating character
 }
-
-
-//can transmit packets of size 1 - 4 bytes
-static inline void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize){
-
-    const uint8_t size = dataSize;
-    uint8_t buffer[size];
-
-    uint32_t mask = (0xFF << ((dataSize-1)*8));
-
-    for(uint8_t i = 0; i < dataSize; i++){
-        buffer[i] = (uint8_t)( (*tx_data & mask) >> (8*(dataSize-1 - i)) );
-        mask =  mask >> 8;
-    }
-
-    SendData(buffer, IP_ADDR, dataSize);
-
-}
-
-//can receive packets of size 1 - 4 bytes
-static inline int RX_Buffer(uint32_t* rx_data, uint8_t dataSize){
-
-    const uint8_t size = dataSize;
-    uint8_t buffer[size];
-
-    int8_t retval = -1;
-    while(retval < 0){
-        retval = ReceiveData(buffer, dataSize);
-    }
-
-    uint32_t data = 0;
-    for(uint8_t i = 0; i < dataSize; i++){
-        data = data | (uint32_t) ( buffer[i] << (8*(size - 1 - i)) );
-    }
-
-    *rx_data = data;
-
-    return retval;
-}
-
-
-void setClk3Meg(){
-    /* Set GPIO to be Crystal In/Out for HFXT */
-    MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ, GPIO_PIN3 | GPIO_PIN2, GPIO_PRIMARY_MODULE_FUNCTION);
-
-    /* Set Core Voltage Level to VCORE1 to handle 48 MHz Speed */
-    while(!PCM_setCoreVoltageLevel(PCM_VCORE1));
-
-    /* Set frequency of HFXT and LFXT */
-    MAP_CS_setExternalClockSourceFrequency(32000, 3000000);
-
-    /* Set 2 Flash Wait States */
-    MAP_FlashCtl_setWaitState(FLASH_BANK0, 2);
-    MAP_FlashCtl_setWaitState(FLASH_BANK1, 2);
-
-    /* Danny added this for Wi-Fi */
-    FLCTL->BANK0_RDCTL |= (FLCTL_BANK0_RDCTL_BUFI | FLCTL_BANK0_RDCTL_BUFD );
-    FLCTL->BANK1_RDCTL |= (FLCTL_BANK1_RDCTL_BUFI | FLCTL_BANK1_RDCTL_BUFD );
-
-    /* Start HFXT */
-    MAP_CS_startHFXT(0);
-
-    /* Initialize MCLK to HFXT */
-    //MAP_CS_initClockSignal(CS_MCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_1);
-
-    /* Initialize HSMCLK to HFXT/2 */
-   // MAP_CS_initClockSignal(CS_HSMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_2);
-
-    /* Initialize SMCLK to HFXT/1 */ //changed from Initialize SMCLK to HFXT/4
- //   MAP_CS_initClockSignal(CS_SMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_1);
-
-}
-
 /*********************************************** Public Functions *********************************************************************/
