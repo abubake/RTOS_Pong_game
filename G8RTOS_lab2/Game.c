@@ -108,15 +108,7 @@ void ReceiveDataFromHost(){
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
-<<<<<<< HEAD
-		while(retval <= 0){
-			//retval = RX_Buffer((uint32_t *)&curGame, sizeof(curGame));
-		}
-		retval = 0; //resets retval
-=======
 		ReceiveData((uint8_t *)&curGame, sizeof(curGame));
-
->>>>>>> 994b0cc5ded6986edda554dd398c12121201fede
 		sleep(1);
 		/*
 		• Empty the received packet
@@ -138,15 +130,7 @@ void ReceiveDataFromHost(){
 void SendDataToHost(){
 	while(1){
 		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
-<<<<<<< HEAD
-		//TX_Buffer(HOST_IP_ADDR, (uint32_t *)&clientToHostInfo, sizeof(clientToHostInfo));
-		//SendData(_u8 *data, _u32 IP, _u16 BUF_SIZE);
-	    uint32_t data = 8;
-	   // TX_Buffer(0x3344, &data, sizeof(data));
-
-=======
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
->>>>>>> 994b0cc5ded6986edda554dd398c12121201fede
 		sleep(2);
 	}
 }
@@ -308,11 +292,7 @@ void SendDataToClient(){
 		o If done, Add EndOfGameHost thread with highest priority
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
-<<<<<<< HEAD
-		//TX_Buffer(clientIP, (uint32_t *)&curGame, sizeof(curGame));
-=======
 		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
->>>>>>> 994b0cc5ded6986edda554dd398c12121201fede
 
 		if(curGame.gameDone == true){
 			G8RTOS_AddThread(EndOfGameHost, 0, "desolation"); //The end is approaching
@@ -336,15 +316,8 @@ void ReceiveDataFromClient(){
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
-<<<<<<< HEAD
-		while(retval <= 0){
-			//retval = RX_Buffer((uint32_t *)&clientToHostInfo, sizeof(clientToHostInfo)); //Gets the client specific info and stores it in a struct
-		}
-		retval = 0; //resets retval
-=======
 		ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 
->>>>>>> 994b0cc5ded6986edda554dd398c12121201fede
 		sleep(1);
 		/*
 		• Update the player’s current center with the displacement received from the client
@@ -1115,49 +1088,4 @@ inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex){
     scoreArray[1] = curScore%10 + 0x30;
     scoreArray[2] = 0x00;   //Terminating character
 }
-<<<<<<< HEAD
-=======
-
-
-//can transmit packets of size 1 - 4 bytes
-static inline void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize){
-
-    const uint8_t size = dataSize;
-    uint8_t buffer[size];
-
-    uint32_t mask = (0xFF << ((dataSize-1)*8));
-
-    for(uint8_t i = 0; i < dataSize; i++){
-        buffer[i] = (uint8_t)( (*tx_data & mask) >> (8*(dataSize-1 - i)) );
-        mask =  mask >> 8;
-    }
-
-    SendData(buffer, IP_ADDR, dataSize);
-
-}
-
-//can receive packets of size 1 - 4 bytes
-static inline int RX_Buffer(uint32_t* rx_data, uint8_t dataSize){
-
-    const uint8_t size = dataSize;
-    uint8_t buffer[size];
-
-    int8_t retval = -1;
-    while(retval < 0){
-        retval = ReceiveData(buffer, dataSize);
-    }
-
-    uint32_t data = 0;
-    for(uint8_t i = 0; i < dataSize; i++){
-        data = data | (uint32_t) ( buffer[i] << (8*(size - 1 - i)) );
-    }
-
-    *rx_data = data;
-
-    return retval;
-}
-
-
-
->>>>>>> 994b0cc5ded6986edda554dd398c12121201fede
 /*********************************************** Public Functions *********************************************************************/

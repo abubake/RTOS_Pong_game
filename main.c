@@ -24,23 +24,13 @@ void main(void){
 
     //Button taps
 
-<<<<<<< HEAD
-    //LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_BLACK);
-    //LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_BLACK);
-=======
     G8RTOS_Init();
     LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_BLACK);
     LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_BLACK);
->>>>>>> 994b0cc5ded6986edda554dd398c12121201fede
+
     playerType gameRole = GetPlayerRole();
     LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_BLACK);
     initCC3100(gameRole);
-<<<<<<< HEAD
-    //LCD_Clear(BACK_COLOR);
-    G8RTOS_Init();
-=======
->>>>>>> 994b0cc5ded6986edda554dd398c12121201fede
-
 
     LCD_Init(false);
 	/* For the color randomness */
