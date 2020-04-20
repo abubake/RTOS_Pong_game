@@ -41,8 +41,15 @@ void main(void){
 	G8RTOS_InitSemaphore(&USING_SPI, 1);
 	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
-    G8RTOS_AddThread(CreateGame, 1, "genesis");
-    G8RTOS_AddThread(JoinGame, 1, "genesis");
+	//Add the appropriate starter thread for the chosen role
+	if(gameRole == Host){
+	    G8RTOS_AddThread(CreateGame, 1, "genesis");
+	}
+	else if(gameRole == Client){
+	    G8RTOS_AddThread(JoinGame, 1, "genesis");
+	}
+
+
 
 
 	/* Initializes the Systick to trigger every 1ms and sets the priority for both PendSV and Systick  */
