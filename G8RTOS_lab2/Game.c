@@ -28,7 +28,7 @@ int displayVal = 1; //No so that first LED comes on correctly
 GeneralPlayerInfo_t PlayerPaddle;
 GeneralPlayerInfo_t ClientPaddle;
 
-//Previous Locations of Players
+//Previous Locations of Players for updating drawings
 PrevPlayer_t prevHostLoc;
 PrevPlayer_t prevClientLoc;
 
@@ -174,8 +174,12 @@ void ReadJoystickClient(){
 	        clientDifference = 0;
 	    }
 
-	    //Update displacement
+	    //Set previous location as old location
+	    prevClientLoc.Center = clientToHostInfo.displacement;
+
+	    //Update current location in struct
 		clientToHostInfo.displacement += clientDifference;
+		//Check and fix if out of bounds
         if(clientToHostInfo.displacement < HORIZ_CENTER_MIN_PL){
             clientToHostInfo.displacement = HORIZ_CENTER_MIN_PL;
         }
@@ -398,34 +402,19 @@ void ReadJoystickHost(){
 		    difference = 0;
 		}
 
-		PlayerPaddle.currentCenter += difference;
-		//Stop from going outside arena
-		if(PlayerPaddle.currentCenter < HORIZ_CENTER_MIN_PL){
-		    PlayerPaddle.currentCenter = HORIZ_CENTER_MIN_PL;
-		}
-		else if(PlayerPaddle.currentCenter > HORIZ_CENTER_MAX_PL){
-		    PlayerPaddle.currentCenter = HORIZ_CENTER_MAX_PL;
-		}
-
-
 		sleep(10); // makes game for fair
 
-        /*
-        • Then add the displacement to the bottom player in the list of players (general list that’s sent to the client and used for drawing) i.e. players[0].position += self.displacement
-        • By sleeping before updating the bottom player’s position, it makes the game more fair between client and host
-        */
-		curGame.players[0].currentCenter += difference;
+		//Update prev location as current location
+		prevHostLoc.Center = curGame.players[0].currentCenter;
 
-
-		prevHostLoc.Center += difference;
-        if(prevHostLoc.Center < HORIZ_CENTER_MIN_PL){
-            prevHostLoc.Center = HORIZ_CENTER_MIN_PL;
+		//Update current location
+        curGame.players[0].currentCenter += difference;
+        if(curGame.players[0].currentCenter < HORIZ_CENTER_MIN_PL){
+            curGame.players[0].currentCenter  = HORIZ_CENTER_MIN_PL;
         }
-        else if(prevHostLoc.Center > HORIZ_CENTER_MAX_PL){
-            prevHostLoc.Center = HORIZ_CENTER_MAX_PL;
+        else if(curGame.players[0].currentCenter  > HORIZ_CENTER_MAX_PL){
+            curGame.players[0].currentCenter  = HORIZ_CENTER_MAX_PL;
         }
-
-
 	}
 }
 
@@ -514,11 +503,11 @@ void MoveBall(){
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
 		} //Checks if low enough on y-axis and between paddle left and right bounds to see if a collision occurs
-		else if((myBalls[ind].yPos >= 232)&&(myBalls[ind].xPos > PlayerPaddle.currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < PlayerPaddle.currentCenter + PADDLE_LEN_D2 + 2)){
+		else if((myBalls[ind].yPos >= 232)&&(myBalls[ind].xPos > curGame.players[0].currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < curGame.players[0].currentCenter + PADDLE_LEN_D2 + 2)){
 			collision = true;
 			paddle = true;
 		}
-		else if((myBalls[ind].yPos <= 9)&&(myBalls[ind].xPos > ClientPaddle.currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < ClientPaddle.currentCenter + PADDLE_LEN_D2 + 2)){
+		else if((myBalls[ind].yPos <= 9)&&(myBalls[ind].xPos > curGame.players[1].currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < curGame.players[1].currentCenter + PADDLE_LEN_D2 + 2)){
 		    collision = true;
 		    paddle = true;
 		}
@@ -540,7 +529,7 @@ void MoveBall(){
 			 	        myBalls[ind].color = LCD_BLUE;
 			 	    }
 			 	    //Left Side
-			 		if(myBalls[ind].xPos < PlayerPaddle.currentCenter - PADDLE_LEN_D2 + 16 ){
+			 		if(myBalls[ind].xPos < curGame.players[0].currentCenter - PADDLE_LEN_D2 + 16 ){
 			 		    myBalls[ind].yVel = myBalls[ind].yVel * -1;
 			 		    if(myBalls[ind].xVel > 1){
 			 		        //Make ball go left
@@ -548,7 +537,7 @@ void MoveBall(){
 			 		    }
 			 		}
 			 		//Right side
-			 		else if(myBalls[ind].xPos > PlayerPaddle.currentCenter + PADDLE_LEN_D2 - 16){
+			 		else if(myBalls[ind].xPos > curGame.players[0].currentCenter + PADDLE_LEN_D2 - 16){
 			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
 			 			if(myBalls[ind].xVel < 1){
 			 			   myBalls[ind].xVel = myBalls[ind].xVel * -1;
@@ -811,9 +800,9 @@ void DrawObjects(){
 	    //Update Players
 	    //Update Location of Each Player
 	    //Host
-	    UpdatePlayerOnScreen(&prevHostLoc, &PlayerPaddle);
+	    UpdatePlayerOnScreen(&prevHostLoc, &curGame.players[0]);
 	    //Update Client Location
-	    UpdatePlayerOnScreen(&prevClientLoc, &ClientPaddle);
+	    UpdatePlayerOnScreen(&prevClientLoc, &curGame.players[1]);
 
 	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
 		sleep(20);
@@ -1093,15 +1082,15 @@ inline void InitBoardState(){
 
 	/* The initial paddle */
     /* Set Center of player paddle */
-    PlayerPaddle.currentCenter = PADDLE_X_CENTER;
-    PlayerPaddle.position = BOTTOM;
-    PlayerPaddle.color = PLAYER_RED;
-    DrawPlayer(&PlayerPaddle);
+    curGame.players[0].currentCenter = PADDLE_X_CENTER;
+    curGame.players[0].position = BOTTOM;
+    curGame.players[0].color = PLAYER_RED;
+    DrawPlayer(&curGame.players[0]);
 
-    ClientPaddle.currentCenter = PADDLE_X_CENTER;
-    ClientPaddle.position = TOP;
-    ClientPaddle.color = PLAYER_BLUE;
-    DrawPlayer(&ClientPaddle);
+    curGame.players[1].currentCenter = PADDLE_X_CENTER;
+    curGame.players[1].position = TOP;
+    curGame.players[1].color = PLAYER_BLUE;
+    DrawPlayer(&curGame.players[1]);
 
     //Save these in game state
     curGame.players[0].color = PLAYER_RED;
