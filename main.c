@@ -43,6 +43,7 @@ void main(void){
 
     G8RTOS_AddThread(CreateGame, 1, "genesis");
     G8RTOS_AddThread(JoinGame, 1, "genesis");
+    G8RTOS_AddThread(IdleThread, 250, "idle");
 
 
 	/* Initializes the Systick to trigger every 1ms and sets the priority for both PendSV and Systick  */

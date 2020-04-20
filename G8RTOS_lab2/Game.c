@@ -263,12 +263,13 @@ void CreateGame(){
 	o Should acknowledge client once client has joined
 	• Initialize the board (draw arena, players, and scores)
 	*/
-	InitBoardState();
 
-	if(NewGame == true){ //THIS SHOULD GET SET IN THE APERIODIC FOR STARTING A NEW GAME
-		TX_Buffer(clientIP, (uint32_t *)NewGame, 4); // sends this to tell the client it's a new game
-	}
-	else
+	//if(NewGame == true){ //THIS SHOULD GET SET IN THE APERIODIC FOR STARTING A NEW GAME
+		//TX_Buffer(clientIP, (uint32_t *)NewGame, 4); // sends this to tell the client it's a new game
+		//SendData((uint8_t *), IP_ADDR, dataSize);
+
+	//}
+	//else
 	{
 		/* Recieves the IP address from the player so it can send to it */
 		P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
@@ -279,6 +280,7 @@ void CreateGame(){
 			P2->OUT ^= 0x04;         /* turn blue toggle */
 		}
 
+	InitBoardState();
 		/* Blue LED indicates established connection */
 		P2->OUT |= 0x04;         /* turn blue LED on */
 
