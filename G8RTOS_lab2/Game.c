@@ -7,10 +7,6 @@
 #include "cc3100_usage.h"
 #include "demo_sysctl.h"
 
-
-SpecificPlayerInfo_t clientToHostInfo;
-uint32_t clientIP = 0; //the client's IP address that is recieved by the host
-
 /* Joystick Info */
 int16_t X_coord;
 int16_t Y_coord;
@@ -36,15 +32,20 @@ GeneralPlayerInfo_t ClientPaddle;
 PrevPlayer_t prevHostLoc;
 PrevPlayer_t prevClientLoc;
 
-int direction = 0; //Direction of the paddle
+int direction = 0; //Direction of the paddle for testing
 
 //Game state to be sent from host to client
 GameState_t curGame;
+//Player state that client sends to host
+SpecificPlayerInfo_t clientToHostInfo;
+
+uint32_t clientIP = 0; //the client's IP address that is recieved by the host
+
+
 
 //ISR bools
 bool isClient = false;
 bool readyForGame = false;
-
 bool NewGame = false;
 
 
@@ -172,7 +173,16 @@ void ReadJoystickClient(){
 	    else{
 	        clientDifference = 0;
 	    }
+
+	    //Update displacement
 		clientToHostInfo.displacement += clientDifference;
+        if(clientToHostInfo.displacement < HORIZ_CENTER_MIN_PL){
+            clientToHostInfo.displacement = HORIZ_CENTER_MIN_PL;
+        }
+        else if(clientToHostInfo.displacement > HORIZ_CENTER_MAX_PL){
+            clientToHostInfo.displacement = HORIZ_CENTER_MAX_PL;
+        }
+
 		sleep(10);
 	}
 }
@@ -414,6 +424,7 @@ void ReadJoystickHost(){
         else if(prevHostLoc.Center > HORIZ_CENTER_MAX_PL){
             prevHostLoc.Center = HORIZ_CENTER_MAX_PL;
         }
+
 
 	}
 }
@@ -667,11 +678,6 @@ void EndOfGameHost(){
         LCD_Clear(curGame.players[1].color);
         LCD_Text(95, 75, "Host Press Button", curGame.players[0].color);
     }
-
-
-
-
-
 
     //Create aperiodic thread waiting for host's action
     //TODO Button interrupt
