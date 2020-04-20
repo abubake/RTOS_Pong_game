@@ -71,8 +71,11 @@ void JoinGame(){
 
 	/* Sends the Client's IP address to the host */
 	int retval = -1;
+	//uint8_t C2H_ack;
 	while(retval < 0){
+        //SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
 		SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+		sleep(50);
 		retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame)); // Recieves the GameState from Host
 		sleep(50);
 	}
@@ -80,17 +83,17 @@ void JoinGame(){
 	P2->DIR |= 0x04;         /* P2.2 set as output */
 	P2->OUT |= 4; // Solid blue, connection established
 
-	InitBoardState(); // The stuff
 	/* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 	G8RTOS_InitSemaphore(&USING_SPI, 1);
 	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
+    InitBoardState(); // The stuff
+
 	G8RTOS_AddThread(ReadJoystickClient, 200, "readJoystick");
 	G8RTOS_AddThread(DrawObjects, 20, "updateObjects");
-	//G8RTOS_AddThread(SendDataToHost, 150, "sendData");
-	//G8RTOS_AddThread(ReceiveDataFromHost, 30, "recieveData");
+	G8RTOS_AddThread(SendDataToHost, 150, "sendData");
+	G8RTOS_AddThread(ReceiveDataFromHost, 30, "recieveData");
 	G8RTOS_AddThread(MoveLEDs, 30, "Update leds");
-	G8RTOS_AddThread(IdleThread, 250, "idle");
 	//sleep(1); // idles before killing self (may not need)
 	G8RTOS_KillSelf();
 }
@@ -255,6 +258,7 @@ void CreateGame(){
 	int retval = -1;
 	while(retval < 0){//RECIEVING THE IP ADDRESS
 	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+	    sleep(50);
 	}
 	SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame)); //Sends gameState to client
 
