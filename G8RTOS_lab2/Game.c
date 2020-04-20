@@ -75,7 +75,7 @@ void JoinGame(){
 
 	/* Sends the Client's IP address to the host */
 	int retval = -1;
-	uint8_t read_ack = -1;
+	uint8_t read_ack = 255;
 	while(retval < 0 && read_ack != H2C_ack){
         SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
 		SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
@@ -265,13 +265,16 @@ void CreateGame(){
 	*/
 
 	int retval = -1;
-    uint8_t read_ack = -1;
-	while(retval < 0 && read_ack != C2H_ack){//RECIEVING THE IP ADDRESS
+    uint8_t read_ack = 255;
+	while(retval < 0 || read_ack != C2H_ack){//RECIEVING THE IP ADDRESS
         retval = ReceiveData(&read_ack, sizeof(read_ack));
 	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 	    sleep(50);
+		SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack)); //Sends gameState to client
+		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame)); //Sends gameState to client
+	    sleep(50);
 	}
-	SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame)); //Sends gameState to client
+
 
 		P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
 		P2->OUT ^= 0x04;         /* turn blue ON */
