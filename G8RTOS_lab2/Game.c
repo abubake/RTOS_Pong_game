@@ -99,6 +99,9 @@ void JoinGame(){
  * Thread that receives game state packets from host
  */
 void ReceiveDataFromHost(){
+    //Before receiving new host location, update the previous location of host
+    prevHostLoc.Center = curGame.players[0].currentCenter;
+
 	int retval = 0;
 	while(1){
 		/*
@@ -326,6 +329,9 @@ void SendDataToClient(){
  * Thread that receives UDP packets from client
  */
 void ReceiveDataFromClient(){
+    //Before receiving new client location update previous location
+    prevClientLoc.Center = curGame.players[1].currentCenter;
+
 	int retval = 0;
 	while(1){
 		/*
