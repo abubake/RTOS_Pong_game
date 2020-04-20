@@ -51,10 +51,6 @@ void main(void){
 	    G8RTOS_AddThread(JoinGame, 1, "genesis");
 	}
 
-
-
-
-
 	/* Initializes the Systick to trigger every 1ms and sets the priority for both PendSV and Systick  */
 	/* Sets the first thread control block as the current thread, and calls the start_os assembly function */
 	G8RTOS_Launch();

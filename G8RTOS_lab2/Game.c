@@ -63,7 +63,7 @@ void JoinGame(){
 	/* NEED TO SET ALL THESE WITH REAL VALUES */
 	clientToHostInfo.IP_address = getLocalIP();
 	clientToHostInfo.acknowledge = false;
-	clientToHostInfo.displacement = 0;
+	clientToHostInfo.displacement = MAX_SCREEN_X/2;
 	clientToHostInfo.joined = true;
 	clientToHostInfo.playerNumber = 1;
 	clientToHostInfo.ready = true;
@@ -222,8 +222,11 @@ void EndOfGameClient(){
     	//RX_Buffer(rx_data, dataSize);
     }
 
-    //Reset game variables
-    clientToHostInfo.displacement = 0;
+    //Redraw arena- Assumes host sent new packet with overall game scores in it
+    InitBoardState();
+
+    //Reset game variables for sending
+    clientToHostInfo.displacement = MAX_SCREEN_X/2;
 
     /* Add back client threads */
     G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
@@ -325,7 +328,8 @@ void ReceiveDataFromClient(){
 		• Update the player’s current center with the displacement received from the client
 		• Sleep for 2ms (again found experimentally)
 		*/
-		//FIXME: Update player's position with displacement from client
+		//Update player's position with displacement from client
+		curGame.players[1].currentCenter = clientToHostInfo.displacement;
 		sleep(2);
 	}
 }
@@ -1128,36 +1132,5 @@ static inline int RX_Buffer(uint32_t* rx_data, uint8_t dataSize){
 }
 
 
-void setClk3Meg(){
-    /* Set GPIO to be Crystal In/Out for HFXT */
-    MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ, GPIO_PIN3 | GPIO_PIN2, GPIO_PRIMARY_MODULE_FUNCTION);
-
-    /* Set Core Voltage Level to VCORE1 to handle 48 MHz Speed */
-    while(!PCM_setCoreVoltageLevel(PCM_VCORE1));
-
-    /* Set frequency of HFXT and LFXT */
-    MAP_CS_setExternalClockSourceFrequency(32000, 3000000);
-
-    /* Set 2 Flash Wait States */
-    MAP_FlashCtl_setWaitState(FLASH_BANK0, 2);
-    MAP_FlashCtl_setWaitState(FLASH_BANK1, 2);
-
-    /* Danny added this for Wi-Fi */
-    FLCTL->BANK0_RDCTL |= (FLCTL_BANK0_RDCTL_BUFI | FLCTL_BANK0_RDCTL_BUFD );
-    FLCTL->BANK1_RDCTL |= (FLCTL_BANK1_RDCTL_BUFI | FLCTL_BANK1_RDCTL_BUFD );
-
-    /* Start HFXT */
-    MAP_CS_startHFXT(0);
-
-    /* Initialize MCLK to HFXT */
-    //MAP_CS_initClockSignal(CS_MCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_1);
-
-    /* Initialize HSMCLK to HFXT/2 */
-   // MAP_CS_initClockSignal(CS_HSMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_2);
-
-    /* Initialize SMCLK to HFXT/1 */ //changed from Initialize SMCLK to HFXT/4
- //   MAP_CS_initClockSignal(CS_SMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_1);
-
-}
 
 /*********************************************** Public Functions *********************************************************************/
