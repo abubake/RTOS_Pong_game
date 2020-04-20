@@ -215,8 +215,13 @@ void EndOfGameClient(){
     //TODO Wait for host to restart game
     while(NewGame == false){
     	//RX_Buffer(rx_data, dataSize);
-    }
 
+        if(curGame.gameDone == false){
+            //I think this should work as long as curGame has been updated with a new game status
+            NewGame = true;
+        }
+    }
+    resetGameExScores();
     //Redraw arena- Assumes host sent new packet with overall game scores in it
     InitBoardState();
 
@@ -650,52 +655,36 @@ void EndOfGameHost(){
 
 }
 
-/*
- * ISR for button taps
- * B0   4.4
- * B1   4.5
- * B2   5.4
- * B3   5.5
- */
-void TOP_BUTTON_TAP(){
-    if(!readyForGame){
-        readyForGame = true;
-        if(!isClient){
-            //Make the device the host (Create Game)
-            G8RTOS_AddThread(CreateGame, 150, "Create Game");
-        }
-        else{
-            LCD_Clear(LCD_GRAY);
-            LCD_Text(95, 75, "ERROR: Only Host may restart game", LCD_RED);
-        }
-    }
-    else{
-        //Role already assigned
-        readyForGame = true;
 
+inline void resetGameExScores(){
+    //Make LED scores 0
+    curGame.LEDScores[0] = 0;
+    curGame.LEDScores[1] = 1;
+
+    //Clear each ball
+    for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
+        curGame.balls[i].alive = false;
+        curGame.balls[i].color = LCD_WHITE;
+        curGame.balls[i].newBall = true;
     }
 
-    //Clear Flag
-    P4->IFG &= ~BIT4;
-}
+    curGame.winner = false;
+    curGame.gameDone = false;
+    curGame.numberOfBalls = 0;
 
-void BOTTOM_BUTTON_TAP(){
-    if(!readyForGame){
-    isClient = true;
-    readyForGame = true;
+    curGame.players[0].color = PLAYER_RED;
+    curGame.players[1].color = PLAYER_BLUE;
 
-    //Make the device the client (Join Game)
-    G8RTOS_AddThread(JoinGame, 150, "Join Game");
+    curGame.players[0].position = BOTTOM;
+    curGame.players[1].position = TOP;
 
-    }
-    else{
-        //Role already assigned
+    curGame.players[0].currentCenter = PADDLE_X_CENTER;
+    curGame.players[1].currentCenter = PADDLE_X_CENTER;
 
-        readyForGame = true;
+    prevHostLoc.Center = PADDLE_X_CENTER;
+    prevClientLoc.Center = PADDLE_X_CENTER;
 
-    }
-    //Clear Flag
-    P5->IFG &= ~BIT4;
+    //curGame.overallScores[]   Scores not reset between games
 }
 
 /*********************************************** Host Threads *********************************************************************/
