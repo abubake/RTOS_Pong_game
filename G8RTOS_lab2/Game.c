@@ -84,8 +84,8 @@ void JoinGame(){
 
 	G8RTOS_AddThread(ReadJoystickClient, 200, "readJoystick");
 	G8RTOS_AddThread(DrawObjects, 20, "updateObjects");
-	G8RTOS_AddThread(SendDataToHost, 150, "sendData");
-	G8RTOS_AddThread(ReceiveDataFromHost, 30, "recieveData");
+	//G8RTOS_AddThread(SendDataToHost, 150, "sendData");
+	//G8RTOS_AddThread(ReceiveDataFromHost, 30, "recieveData");
 	G8RTOS_AddThread(MoveLEDs, 30, "Update leds");
 	G8RTOS_AddThread(IdleThread, 250, "idle");
 	//sleep(1); // idles before killing self (may not need)
@@ -107,7 +107,7 @@ void ReceiveDataFromHost(){
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
 		while(retval <= 0){
-			retval = RX_Buffer((uint32_t *)&curGame, sizeof(curGame));
+			//retval = RX_Buffer((uint32_t *)&curGame, sizeof(curGame));
 		}
 		retval = 0; //resets retval
 		sleep(1);
@@ -131,10 +131,10 @@ void ReceiveDataFromHost(){
 void SendDataToHost(){
 	while(1){
 		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
-		TX_Buffer(HOST_IP_ADDR, (uint32_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+		//TX_Buffer(HOST_IP_ADDR, (uint32_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 		//SendData(_u8 *data, _u32 IP, _u16 BUF_SIZE);
 	    uint32_t data = 8;
-	    TX_Buffer(0x3344, &data, sizeof(data));
+	   // TX_Buffer(0x3344, &data, sizeof(data));
 
 		sleep(2);
 	}
@@ -290,7 +290,7 @@ void SendDataToClient(){
 		o If done, Add EndOfGameHost thread with highest priority
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
-		TX_Buffer(clientIP, (uint32_t *)&curGame, sizeof(curGame));
+		//TX_Buffer(clientIP, (uint32_t *)&curGame, sizeof(curGame));
 
 		if(curGame.gameDone == true){
 			G8RTOS_AddThread(EndOfGameHost, 0, "desolation"); //The end is approaching
@@ -317,7 +317,7 @@ void ReceiveDataFromClient(){
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
 		while(retval <= 0){
-			retval = RX_Buffer((uint32_t *)&clientToHostInfo, sizeof(clientToHostInfo)); //Gets the client specific info and stores it in a struct
+			//retval = RX_Buffer((uint32_t *)&clientToHostInfo, sizeof(clientToHostInfo)); //Gets the client specific info and stores it in a struct
 		}
 		retval = 0; //resets retval
 		sleep(1);
