@@ -85,6 +85,8 @@ void JoinGame(){
         retval = ReceiveData((uint8_t*)&curGame, sizeof(curGame)); //Recieves the GameState from Host
 		sleep(50);
 	}
+	sleep(50);
+
 	/* Connection established, launch RTOS */
 	P2->DIR |= 0x04;         /* P2.2 set as output */
 	P2->OUT |= 4; // Solid blue, connection established
