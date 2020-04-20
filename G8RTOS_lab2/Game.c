@@ -38,6 +38,10 @@ bool isClient = false;
 bool readyForGame = false;
 bool NewGame = false;
 
+//acks for handshake
+uint8_t C2H_ack = 12;
+uint8_t H2C_ack = 9;
+
 
 /*********************************************** Client Threads *********************************************************************/
 /*
@@ -71,12 +75,12 @@ void JoinGame(){
 
 	/* Sends the Client's IP address to the host */
 	int retval = -1;
-	//uint8_t C2H_ack;
-	while(retval < 0){
-        //SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
+	uint8_t read_ack = -1;
+	while(retval < 0 && read_ack != H2C_ack){
+        SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
 		SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
 		sleep(50);
-		retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame)); // Recieves the GameState from Host
+		retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
 		sleep(50);
 	}
 	/* Connection established, launch RTOS */
@@ -262,7 +266,9 @@ void CreateGame(){
 	*/
 
 	int retval = -1;
-	while(retval < 0){//RECIEVING THE IP ADDRESS
+    uint8_t read_ack = -1;
+	while(retval < 0 && read_ack != C2H_ack){//RECIEVING THE IP ADDRESS
+        retval = ReceiveData(&read_ack, sizeof(read_ack));
 	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 	    sleep(50);
 	}
