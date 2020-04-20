@@ -85,6 +85,8 @@ void JoinGame(){
         retval = ReceiveData((uint8_t*)&curGame, sizeof(curGame)); //Recieves the GameState from Host
 		sleep(50);
 	}
+	sleep(50);
+
 	/* Connection established, launch RTOS */
 	P2->DIR |= 0x04;         /* P2.2 set as output */
 	P2->OUT |= 4; // Solid blue, connection established
@@ -277,7 +279,6 @@ void CreateGame(){
 		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame)); //Sends gameState to client
 	    sleep(50);
 	}
-
 
 		P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
 		P2->OUT ^= 0x04;         /* turn blue ON */
