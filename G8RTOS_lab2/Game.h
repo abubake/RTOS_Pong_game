@@ -293,7 +293,7 @@ void MoveBall();
  */
 void EndOfGameHost();
 
-void TOP_BUTTON_TAP();
+void HOST_TAP();
 /*********************************************** Host Threads *********************************************************************/
 
 

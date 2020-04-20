@@ -25,6 +25,11 @@ void main(void){
     //Button taps
 
     G8RTOS_Init();
+
+    /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
+    G8RTOS_InitSemaphore(&USING_SPI, 1);
+    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+
     LCD_Init(false);
 
     LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_WHITE);
