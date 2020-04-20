@@ -209,8 +209,9 @@ void EndOfGameClient(){
     G8RTOS_KillAllOthers();
 
     //Reinitialize semaphores
-    G8RTOS_InitSemaphore(&USING_SPI, 1);
     G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+    G8RTOS_InitSemaphore(&USING_SPI, 1);
+
 
     if(curGame.LEDScores[0] > curGame.LEDScores[1]){
         //Player 0 won, make screen their color
@@ -225,19 +226,22 @@ void EndOfGameClient(){
 
     //TODO Wait for host to restart game
     while(NewGame == false){
-    	//RX_Buffer(rx_data, dataSize);
-
-        if(curGame.gameDone == false){
+        //TODO semaphore
+        ReceiveData((uint8_t *)&curGame , sizeof(curGame));
+        if(curGame.gameDone != false){
             //I think this should work as long as curGame has been updated with a new game status
             NewGame = true;
         }
     }
+
+    //Host has pressed
+
     resetGameExScores();
     //Redraw arena- Assumes host sent new packet with overall game scores in it
     InitBoardState();
 
     //Reset game variables for sending
-    clientToHostInfo.displacement = MAX_SCREEN_X/2;
+    clientToHostInfo.displacement = PADDLE_X_CENTER;
 
     /* Add back client threads */
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
@@ -645,12 +649,19 @@ void EndOfGameHost(){
     //Create aperiodic thread waiting for host's action
     //TODO Button interrupt
 
-    //When ready, notify client, reinitialize game, add threads back, kill self
-
+    //4.5
     readyForGame = false;
-    while(!readyForGame);
+    G8RTOS_AddAPeriodicEvent(HOST_TAP, 4, PORT4_IRQn);
+    while(!readyForGame){
+        //Send data showing game is over
+        //TODO semaphore
+        SendData((uint8_t*)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
+    }
 
-    //TODO Notify client
+
+    //When ready, notify client, reinitialize game, add threads back, kill self
+    //Notify client
+    //TODO Add semaphore
     SendData((uint8_t*)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
 
     //Reinitialize game with new scores
@@ -671,6 +682,10 @@ void EndOfGameHost(){
 
 }
 
+void HOST_TAP(){
+    readyForGame = true;
+    P4->IFG &= ~BIT5;       //May not need
+}
 
 inline void resetGameExScores(){
     //Make LED scores 0
@@ -1040,43 +1055,10 @@ inline void InitBoardState(){
 
 	/* The initial paddle */
     /* Set Center of player paddle */
-    curGame.players[0].currentCenter = PADDLE_X_CENTER;
-    curGame.players[0].position = BOTTOM;
-    curGame.players[0].color = PLAYER_RED;
+    resetGameExScores();
+
     DrawPlayer(&curGame.players[0]);
-
-    curGame.players[1].currentCenter = PADDLE_X_CENTER;
-    curGame.players[1].position = TOP;
-    curGame.players[1].color = PLAYER_BLUE;
     DrawPlayer(&curGame.players[1]);
-
-    //Save these in game state
-    curGame.players[0].color = PLAYER_RED;
-    curGame.players[0].currentCenter = PADDLE_X_CENTER;
-    curGame.players[0].position = BOTTOM;
-    curGame.LEDScores[0] = 0;
-
-    curGame.players[1].currentCenter = PADDLE_X_CENTER;
-    curGame.players[1].position = TOP;
-    curGame.players[1].color = PLAYER_BLUE;
-    curGame.LEDScores[1] = 0;
-
-    prevHostLoc.Center = PADDLE_X_CENTER;
-    prevClientLoc.Center = PADDLE_X_CENTER;
-
-    //Make sure all balls dead
-    for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
-        curGame.balls[i].alive = false;         //The game state to be sent
-        curGame.balls[i].color = LCD_WHITE;
-        curGame.balls[i].alive = false;               //The local copy of ball info
-        curGame.balls[i].color = LCD_WHITE;
-    }
-    //Make sure scores are all 0
-    curGame.LEDScores[0] = 0;
-    curGame.LEDScores[1] = 0;
-
-    curGame.gameDone = false;
-    curGame.winner = false;
 
 }
 
