@@ -90,9 +90,8 @@ void JoinGame(){
 	sleep(50);
 
 	/* Connection established, launch RTOS */
-	P2->DIR |= 0x04;         /* P2.2 set as output */
-	P2->OUT |= 4; // Solid blue, connection established
-
+	BITBAND_PERI(P2->DIR, 0) = 4;
+	BITBAND_PERI(P2->OUT, 0) = 4;
 
 	InitBoardState(); // The stuff
 
@@ -101,7 +100,7 @@ void JoinGame(){
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
     G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
-
+    DelayMs(1);
 	G8RTOS_KillSelf();
 }
 
@@ -289,8 +288,8 @@ void CreateGame(){
 	}
     G8RTOS_SignalSemaphore(&USING_SPI);
 
-		P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
-		P2->OUT ^= 0x04;         /* turn blue ON */
+    BITBAND_PERI(P2->DIR, 0) = 4;
+    BITBAND_PERI(P2->OUT, 0) = 4;
 
 	InitBoardState();
 
@@ -301,7 +300,7 @@ void CreateGame(){
     G8RTOS_AddThread(ReadJoystickHost, 5, "ReadJoystickHost");
     G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
     G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
-
+    DelayMs(1);
 	G8RTOS_KillSelf();
 }
 

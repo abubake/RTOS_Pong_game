@@ -49,24 +49,18 @@ void main(void){
 
     G8RTOS_Init();
 
-    uint32_t test = MAP_CS_getSMCLK;
-
     /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
     G8RTOS_InitSemaphore(&USING_SPI, 1);
     G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
     LCD_Init(false);
-/*
-    char* test = 0;
-    unsigned long test_flg = 0;
-    spi_Open(test, test_flg);
-*/
 
-    LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_WHITE);
-    LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_WHITE);
+
+    LCD_Text(100, (MAX_SCREEN_Y >> 1) - 20, "Client is top button", LCD_BLUE);
+    LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Host is bottom button", LCD_RED);
 
     playerType gameRole = GetPlayerRole();
-    LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
+    LCD_Text(150, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
     initCC3100(gameRole);
 
 	/* For the color randomness */
