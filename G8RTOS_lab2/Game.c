@@ -95,10 +95,10 @@ void JoinGame(){
 
 	InitBoardState(); // The stuff
 
+    G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
+    G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");
     //G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
-    G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
-    G8RTOS_AddThread(SendDataToHost, 2, "SendDataToHost");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
     DelayMs(1);
 	G8RTOS_KillSelf();
@@ -127,7 +127,6 @@ void ReceiveDataFromHost(){
             retval = ReceiveData(&read_ack, sizeof(read_ack));
             sleep(5);
             retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame));
-            sleep(50);
         }
         SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack)); //Sends gameState to client
 
@@ -159,9 +158,8 @@ void SendDataToHost(){
         SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
         while(retval < 0 || read_ack != H2C_ack){
             SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
-            sleep(50);
+            sleep(5);
             retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the acknowledge from Host
-            sleep(50);
         }
         G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(2);
@@ -317,7 +315,7 @@ void CreateGame(){
 
 	/* Add these threads. (Need better priority definitions) */
     //G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
-    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
+    G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
     //G8RTOS_AddThread(DrawObjects, 5, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
     G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
@@ -346,9 +344,8 @@ void SendDataToClient(){
         SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack));
         while(retval < 0 || read_ack != C2H_ack){
                 SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
-                sleep(50);
+                sleep(5);
                 retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
-                sleep(50);
         }
 
         G8RTOS_SignalSemaphore(&USING_WIFI);
@@ -381,7 +378,6 @@ void ReceiveDataFromClient(){
             retval = ReceiveData(&read_ack, sizeof(read_ack));
             sleep(5);
             retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
-            sleep(50);
         }
         SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack)); //Sends gameState to client
 
