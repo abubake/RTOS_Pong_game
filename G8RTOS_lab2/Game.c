@@ -77,7 +77,7 @@ void JoinGame(){
 	int retval = -1;
 	uint8_t read_ack = 255;
 
-    G8RTOS_WaitSemaphore(&USING_SPI);
+    //G8RTOS_WaitSemaphore(&USING_SPI);
 	while(retval < 0 || read_ack != H2C_ack){
 	    SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
@@ -86,7 +86,7 @@ void JoinGame(){
         retval = ReceiveData((uint8_t*)&curGame, sizeof(curGame)); //Recieves the GameState from Host
 		sleep(50);
 	}
-    G8RTOS_SignalSemaphore(&USING_SPI);
+    //G8RTOS_SignalSemaphore(&USING_SPI);
 	sleep(50);
 
 	/* Connection established, launch RTOS */
@@ -621,8 +621,8 @@ void EndOfGameHost(){
 		*/
 
     //Wait for semaphores to be available so that threads using them are not killed yet
-    G8RTOS_WaitSemaphore(&USING_SPI);
-    G8RTOS_WaitSemaphore(&USING_LED_I2C);
+    //G8RTOS_WaitSemaphore(&USING_SPI);
+    //G8RTOS_WaitSemaphore(&USING_LED_I2C);
 
     //Now has both semaphores, kill all other threads
     G8RTOS_KillAllOthers();
