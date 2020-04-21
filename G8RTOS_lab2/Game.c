@@ -363,7 +363,14 @@ void ReceiveDataFromClient(){
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
         G8RTOS_WaitSemaphore(&USING_WIFI);
-		ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+
+        int retval = -1;
+        while(retval < 0){
+            retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+            sleep(50);
+        }
+        SendData((uint8_t *)&C2H_ack, clientToHostInfo.IP_address, sizeof(C2H_ack));
+
         G8RTOS_SignalSemaphore(&USING_WIFI);
 
 		sleep(1);
