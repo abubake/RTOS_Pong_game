@@ -32,35 +32,9 @@ void main(void){
 
     LCD_Init(false);
 
-
-
-    /* P1.5 - CLK
-     * P1.6 - MOSI (to SDI of LCD)
-     * P1.7 - MISO (to SDO of LCD)
-     * P3.0 - WIFI CS (Assumed active high)
-     */
-
-    P1->DIR  |= 0x60;
-    P1->OUT  |= 0x00;
-    P1->SEL0 |= 0xE0;
-
-    P3->DIR  |= 0x01;
-    P3->OUT  |= 0x00;   //assume active high
-    P3->SEL0 |= 0x00;
-
-    eUSCI_SPI_MasterConfig master_WIFI;
-    master_WIFI.clockPhase = EUSCI_SPI_PHASE_DATA_CHANGED_ONFIRST_CAPTURED_ON_NEXT;
-    master_WIFI.clockPolarity = EUSCI_SPI_CLOCKPOLARITY_INACTIVITY_HIGH;
-    master_WIFI.clockSourceFrequency = 48000000;
-    master_WIFI.desiredSpiClock = 12000000;
-    master_WIFI.spiMode = EUSCI_A_SPI_3PIN;
-    master_WIFI.msbFirst = EUSCI_SPI_MSB_FIRST;
-    master_WIFI.selectClockSource = EUSCI_SPI_CLOCKSOURCE_SMCLK;
-
-    SPI_initMaster(EUSCI_B0_BASE, (&master_WIFI));
-    EUSCI_B_SPI_enable(EUSCI_B0_BASE);
-
-
+    char* test;
+    unsigned long test_flg = 0;
+    spi_Open(test, test_flg);
 
     LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_WHITE);
     LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_WHITE);
@@ -68,7 +42,6 @@ void main(void){
     playerType gameRole = GetPlayerRole();
     LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
     initCC3100(gameRole);
-    ClockSys_SetMaxFreq();
 
 	/* For the color randomness */
 	srand(time(NULL));
