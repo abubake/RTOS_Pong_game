@@ -36,7 +36,7 @@ void BSP_InitBoard()
 	Joystick_Init_Without_Interrupt();
 
 	/* Init Bme280 */
-	bme280_initialize_sensor();
+	//bme280_initialize_sensor();
 
 	/* Init BackChannel UART */
 	BackChannelInit();

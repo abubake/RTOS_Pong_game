@@ -66,8 +66,6 @@ void main(void){
 	/* For the color randomness */
 	srand(time(NULL));
 
-    G8RTOS_AddThread(IdleThread, 250, "idle");
-
 	//Add the appropriate starter thread for the chosen role
 	if(gameRole == Host){
 	    G8RTOS_AddThread(CreateGame, 1, "genesis");

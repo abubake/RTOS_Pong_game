@@ -6,6 +6,7 @@
 #include "RGBLeds.h"
 #include "cc3100_usage.h"
 #include "demo_sysctl.h"
+#include "G8RTOS_Scheduler.h"
 
 /* Joystick Info */
 int16_t X_coord;
@@ -100,6 +101,7 @@ void JoinGame(){
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");
     //G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
+    //G8RTOS_AddThread(IdleThread, 250, "idle");
     DelayMs(1);
 	G8RTOS_KillSelf();
 }
@@ -320,6 +322,7 @@ void CreateGame(){
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
     G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+    //G8RTOS_AddThread(IdleThread, 250, "idle");
     DelayMs(1);
 	G8RTOS_KillSelf();
 }
