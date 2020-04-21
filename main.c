@@ -14,7 +14,30 @@
 #include <DriverLib.h>
 #include "BSP.h"
 
-#define MAIN_LAB5
+#define Test_LAB5
+#ifdef Test_LAB5
+void main(void){
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
+
+    //Button taps
+
+    G8RTOS_Init();
+
+    LCD_Init(false);
+
+    //playerType gameRole = GetPlayerRole();
+
+    initCC3100(Host);
+
+    LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
+
+    while(1);
+}
+
+#endif
+
+
+
 #ifdef MAIN_LAB5
 
 test_t winning;
@@ -26,16 +49,18 @@ void main(void){
 
     G8RTOS_Init();
 
+    uint32_t test = MAP_CS_getSMCLK;
+
     /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
     G8RTOS_InitSemaphore(&USING_SPI, 1);
     G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
     LCD_Init(false);
-
+/*
     char* test = 0;
     unsigned long test_flg = 0;
     spi_Open(test, test_flg);
-
+*/
 
     LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_WHITE);
     LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_WHITE);
