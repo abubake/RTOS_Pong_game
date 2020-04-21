@@ -127,9 +127,8 @@ void ReceiveDataFromHost(){
             retval = ReceiveData(&read_ack, sizeof(read_ack));
             retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame));
             sleep(50);
-            SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack)); //Sends gameState to client
-            sleep(50);
         }
+        SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack)); //Sends gameState to client
 
 		G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(1);
