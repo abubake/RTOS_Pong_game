@@ -41,7 +41,7 @@ void main(void){
 #ifdef MAIN_LAB5
 
 test_t winning;
-
+uint32_t test;
 void main(void){
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
 
@@ -49,7 +49,7 @@ void main(void){
 
     G8RTOS_Init();
 
-    uint32_t test = MAP_CS_getSMCLK;
+    test = MAP_CS_getSMCLK;
 
     /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
     G8RTOS_InitSemaphore(&USING_SPI, 1);
