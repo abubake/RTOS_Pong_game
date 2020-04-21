@@ -95,7 +95,7 @@ void JoinGame(){
 
 	InitBoardState(); // The stuff
 
-    //G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");
+    G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");    //WAS ORGINALLY 2
     //G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
@@ -121,11 +121,16 @@ void ReceiveDataFromHost(){
         int retval = -1;
         uint8_t read_ack = 255;
         //assuming it is from host (no additional check)
-        while(retval < 0 || read_ack != ){
-            retval = ReceiveData((uint8_t*)&curGame, sizeof(curGame)); //Recieves the GameState from Host
+
+
+        while(retval < 0 || read_ack != H2C_ack){//RECIEVING THE IP ADDRESS
+            retval = ReceiveData(&read_ack, sizeof(read_ack));
+            retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame));
+            sleep(50);
+            SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack)); //Sends gameState to client
             sleep(50);
         }
-        SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
+
 		G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(1);
 		/*
@@ -310,10 +315,10 @@ void CreateGame(){
 
 	/* Add these threads. (Need better priority definitions) */
     //G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
-    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
+    G8RTOS_AddThread(ReceiveDataFromClient, 5, "ReceiveDataFromClient");
     //G8RTOS_AddThread(DrawObjects, 5, "DrawObjects");
-    //G8RTOS_AddThread(ReadJoystickHost, 5, "ReadJoystickHost");
-    //G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
+    G8RTOS_AddThread(ReadJoystickHost, 5, "ReadJoystickHost");
+    G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     DelayMs(1);
 	G8RTOS_KillSelf();
@@ -377,7 +382,7 @@ void ReceiveDataFromClient(){
             sleep(50);
         }
 
-        SendData((uint8_t *)&C2H_ack, clientToHostInfo.IP_address, sizeof(C2H_ack));
+//        SendData((uint8_t *)&C2H_ack, clientToHostInfo.IP_address, sizeof(C2H_ack));
 
         G8RTOS_SignalSemaphore(&USING_WIFI);
 
