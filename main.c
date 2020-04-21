@@ -56,9 +56,8 @@ void main(void){
 
     LCD_Init(false);
 
-
-    LCD_Text(100, (MAX_SCREEN_Y >> 1) - 20, "Client is top button", LCD_BLUE);
-    LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Host is bottom button", LCD_RED);
+    LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Client is top button", LCD_BLUE);
+    LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Host is right button", LCD_RED);
 
     playerType gameRole = GetPlayerRole();
     LCD_Text(150, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
