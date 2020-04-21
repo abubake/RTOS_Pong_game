@@ -315,7 +315,8 @@ sched_ErrCode_t G8RTOS_AddThread(void (*threadToAdd)(void), uint16_t priority, c
 			}
 		}
 	}
-	//NumberOfThreads--;
+	//Not added, sub from count
+	NumberOfThreads--;
 	EndCriticalSection(x);
 	return THREADS_INCORRECTLY_ALIVE;
 }

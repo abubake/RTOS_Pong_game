@@ -12,11 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "G8RTOS.h"
-<<<<<<< HEAD
-//#include "cc3100_usage.h"
-=======
 #include "cc3100_usage.h"
->>>>>>> master
 #include "LCD.h"
 /*********************************************** Includes ********************************************************************/
 
