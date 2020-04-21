@@ -155,9 +155,9 @@ void SendDataToHost(){
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
         int retval = -1;
         uint8_t read_ack = 255;
+
+        SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
         while(retval < 0 || read_ack != H2C_ack){
-            SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
-            sleep(5);
             SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
             sleep(50);
             retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the acknowledge from Host
@@ -382,9 +382,8 @@ void ReceiveDataFromClient(){
             sleep(5);
             retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
             sleep(50);
-            SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack)); //Sends gameState to client
-            sleep(50);
         }
+        SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack)); //Sends gameState to client
 
 //        SendData((uint8_t *)&C2H_ack, clientToHostInfo.IP_address, sizeof(C2H_ack));
 
