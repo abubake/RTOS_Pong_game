@@ -119,7 +119,13 @@ void ReceiveDataFromHost(){
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
-		ReceiveData((uint8_t *)&curGame, sizeof(curGame));
+        int retval = -1;
+        //assuming it is from host (no additional check)
+        while(retval < 0){
+            retval = ReceiveData((uint8_t*)&curGame, sizeof(curGame)); //Recieves the GameState from Host
+            sleep(50);
+        }
+        SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
 		G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(1);
 		/*
