@@ -10,6 +10,7 @@
 #include "G8RTOS_Structures.h"
 #include <DriverLib.h>
 #include "BSP.h"
+#include "cc3100_usage.h"
 
 /*
  * G8RTOS_Start exists in asm
@@ -111,22 +112,24 @@ static void InitSysTick(uint32_t numCycles)
  */
 void G8RTOS_Scheduler()
 {
-	uint16_t MaxPriority = 255;
-	uint32_t i = 0;
-	tcb_t * bestThreadPtr;
-	tcb_t * tempThreadPtr = CurrentlyRunningThread;
+    uint8_t currentMaxPriority = 255;
+    tcb_t *tempNextThread = CurrentlyRunningThread->Next;
 
-	do{ /* search for highest priority not blocked or sleeping */
-		tempThreadPtr = tempThreadPtr->Next;
-		if (((tempThreadPtr->priority) < MaxPriority)&&((tempThreadPtr->blocked) == 0 )&&((tempThreadPtr->asleep) == false)){
-			MaxPriority = tempThreadPtr->priority;
-			bestThreadPtr = tempThreadPtr;
-			}
-		i++;
-	}
-	while(i <= NumberOfThreads); // Look at all possible threads (CurrentlyRunningThread != tempThreadPtr)
-		CurrentlyRunningThread = bestThreadPtr;
+    //Iterate through the other threads to check for higher priorities
+    for(uint16_t i = 0; i < NumberOfThreads; i++){
+        if((tempNextThread->blocked == 0) && (tempNextThread->asleep == false)){
+            //If not blocked and not asleep, check if has higher priority
+            //If so, set CurrentlyRunningThread
+            if(tempNextThread->priority <= currentMaxPriority){
+                currentMaxPriority = tempNextThread->priority;
+                CurrentlyRunningThread =  tempNextThread;
+            }
+        }
+        //Update temp to check all threads
+        tempNextThread = tempNextThread->Previous;
+    }
 }
+
 
 /*
  * SysTick Handler
@@ -155,7 +158,7 @@ void SysTick_Handler()
 
 	tcb_t *threadPtr = CurrentlyRunningThread;
 	for(uint32_t i=0; i<NumberOfThreads; i++){
-		if(threadPtr->sleepCount >= SystemTime){ //CHANGED from ==
+		if(threadPtr->sleepCount <= SystemTime){ //Was >=
 			threadPtr->asleep = false;
 			threadPtr->sleepCount = 0;
 		}
@@ -188,6 +191,7 @@ void G8RTOS_Init()
 {
 	/* Turns off the watchdog timer with HOLD and sets a required password to avoid entering reset  */
 	WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
+
     //system time to 0 (holds current time for the whole system)
     SystemTime = 0;
     //# of threads = 0
@@ -201,8 +205,6 @@ void G8RTOS_Init()
 
     //init all hardware on the board
     BSP_InitBoard();
-
-
 }
 
 /*
@@ -261,10 +263,13 @@ sched_ErrCode_t G8RTOS_AddThread(void (*threadToAdd)(void), uint16_t priority, c
 	}
 
 	NumberOfThreads++; // preinc
+	//Find first dead
 	for(uint32_t addedThread = 0; addedThread < NumberOfThreads; addedThread++){
-
+	    //Check if dead
 		if(threadControlBlocks[addedThread].isAlive == false){
-			if(addedThread == 0){
+		    //Check if only living thread
+			if(NumberOfThreads == 1){
+			    //If it is the only living thread, it points to itself
 				threadControlBlocks[addedThread].Next = &threadControlBlocks[addedThread];
 				threadControlBlocks[addedThread].Previous = &threadControlBlocks[addedThread];
 
@@ -279,14 +284,23 @@ sched_ErrCode_t G8RTOS_AddThread(void (*threadToAdd)(void), uint16_t priority, c
 				return NO_ERROR; // success
 			}
 			else{
-				tcb_t * thread0;
-				thread0 = &threadControlBlocks[0];
+			    //If not the only living thread, needs to be added to linked list
+			    //Find a living thread to link to
+			    for(uint16_t i = 0; i < MAX_THREADS; i++){
+			        if(threadControlBlocks[i].isAlive){
+			            //If found block is alive, link to it as the next
+			            threadControlBlocks[addedThread].Next = &threadControlBlocks[i];
+			            //Make the previous of this thread the former previous of the next
+			            threadControlBlocks[addedThread].Previous = threadControlBlocks[i].Previous;
 
-				thread0->Previous->Next = &threadControlBlocks[addedThread];
-				threadControlBlocks[addedThread].Previous = thread0->Previous;
-				threadControlBlocks[0].Previous = &threadControlBlocks[addedThread];
-				threadControlBlocks[addedThread].Next = &threadControlBlocks[0];
 
+			            //Make this thread the next of the former next threads previous
+			            threadControlBlocks[addedThread].Previous->Next = &threadControlBlocks[addedThread];
+			            //Make this thread the new previous of the found one
+			            threadControlBlocks[i].Previous = &threadControlBlocks[addedThread];
+			            break;
+			        }
+			    }
 
 				threadControlBlocks[addedThread].priority = priority;
 				threadControlBlocks[addedThread].isAlive = true;
@@ -301,7 +315,7 @@ sched_ErrCode_t G8RTOS_AddThread(void (*threadToAdd)(void), uint16_t priority, c
 			}
 		}
 	}
-	NumberOfThreads--;
+	//NumberOfThreads--;
 	EndCriticalSection(x);
 	return THREADS_INCORRECTLY_ALIVE;
 }
@@ -502,3 +516,36 @@ sched_ErrCode_t G8RTOS_KillSelf(){
 	return NO_ERROR;
 	}
 }
+
+/*
+ * G8RTOS_KillAllOthers()
+ *   Kills all threads other than the current thread
+ */
+sched_ErrCode_t G8RTOS_KillAllOthers(){
+    //Start critical section so the killing is uninterrupted
+    int32_t x = StartCriticalSection();
+    sched_ErrCode_t errorCode = NO_ERROR;
+
+    //Get the ID of the thread NOT to kill
+    threadId_t curThread = G8RTOS_GetThreadId();
+
+    //Iterate through all other threads, looking for living threads with different IDs
+    for(uint16_t i = 0; i < MAX_THREADS; i++){
+        //If alive and has different ID, kill
+        if((threadControlBlocks[i].threadID != curThread) && threadControlBlocks[i].isAlive){
+            //Kill that thread
+            errorCode = G8RTOS_KillThread(threadControlBlocks[i].threadID);
+        }
+        if(errorCode != NO_ERROR){
+            //If errorCode is not NO_ERROR then something went wrong
+            break;
+        }
+    }
+
+
+    EndCriticalSection(x);
+    return errorCode;
+}
+
+
+

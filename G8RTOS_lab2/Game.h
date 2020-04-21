@@ -12,19 +12,27 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "G8RTOS.h"
+<<<<<<< HEAD
 //#include "cc3100_usage.h"
+=======
+#include "cc3100_usage.h"
+>>>>>>> master
 #include "LCD.h"
 /*********************************************** Includes ********************************************************************/
 
 /*********************************************** Externs ********************************************************************/
 
 /* Semaphores here */
+semaphore_t USING_SPI; // semaphore for SPI interface using EUSCIB3 with LCD/ Touchpad
+semaphore_t USING_LED_I2C;  //Semaphore for I2C LED Drivers
+semaphore_t USING_WIFI;
 
 /*********************************************** Externs ********************************************************************/
 
 /*********************************************** Global Defines ********************************************************************/
 #define MAX_NUM_OF_PLAYERS  2
 #define MAX_NUM_OF_BALLS    8
+#define POINTS_TO_WIN       4
 
 // This game can actually be played with 4 players... a little bit more challenging, but doable!
 #define NUM_OF_PLAYERS_PLAYING 2
@@ -40,7 +48,7 @@
 #define PADDLE_LEN_D2                (PADDLE_LEN >> 1)
 #define PADDLE_WID                   4
 #define PADDLE_WID_D2                (PADDLE_WID >> 1)
-#define BALL_SIZE                    4
+#define BALL_SIZE                    3
 #define BALL_SIZE_D2                 (BALL_SIZE >> 1)
 
 /* Centers for paddles at the center of the sides */
@@ -87,6 +95,10 @@
 #define BLUE_LED BIT2
 #define RED_LED BIT0
 
+typedef enum FIFO {
+	    JOYSTICKFIFO = 0
+}fifo_desig;
+
 /* Enums for player colors */
 typedef enum
 {
@@ -101,11 +113,24 @@ typedef enum
     TOP = 1
 }playerPosition;
 
+typedef enum
+{
+	LEFT = 1,
+	RIGHT = 2
+}playerDirection;
+
 /*********************************************** Global Defines ********************************************************************/
 
 /*********************************************** Data Structures ********************************************************************/
-/*********************************************** Data Structures ********************************************************************/
 #pragma pack ( push, 1)
+/*
+ * Test struct
+ */
+typedef struct test_t
+{
+	uint8_t greatSucsess;
+}test_t;
+
 /*
  * Struct to be sent from the client to the host
  */
@@ -128,6 +153,11 @@ typedef struct
     int16_t currentCenter;
     uint16_t color;
     playerPosition position;
+
+    /* Additional params added by Baker for individual play */
+    // uint16_t paddleRightEdge; // = currentCenter + 42
+    // uint16_t paddleLeftEdge; // = currentCenter - 42
+
 } GeneralPlayerInfo_t;
 
 /*
@@ -142,22 +172,6 @@ typedef struct
 } Ball_t;
 
 /*
- * Struct to be sent from the host to the client
- */
-typedef struct
-{
-    SpecificPlayerInfo_t player;
-    GeneralPlayerInfo_t players[MAX_NUM_OF_PLAYERS];
-    Ball_t balls[MAX_NUM_OF_BALLS];
-    uint16_t numberOfBalls;
-    bool winner;
-    bool gameDone;
-    uint8_t LEDScores[2];
-    uint8_t overallScores[2];
-} GameState_t;
-#pragma pack ( pop )
-
-/*
  * Struct of all the previous ball locations, only changed by self for drawing!
  */
 typedef struct
@@ -167,12 +181,55 @@ typedef struct
 }PrevBall_t;
 
 /*
+ * Struct of ball information, based upon lab 4 ball struct
+ */
+typedef struct balls_t
+{   /*The center of ball */
+        int16_t xPos;
+        int16_t yPos;
+        int16_t xVel;
+        int16_t yVel;
+
+        bool alive;
+        //threadId_t threadID;  //Not really used
+        uint16_t color;
+
+        PrevBall_t prevLoc;
+
+        //int16_t width;        //unused
+        //int16_t height;
+
+        bool newBall;           //For drawing the first time
+
+}balls_t;
+
+/*
+ * Struct to be sent from the host to the client
+ */
+typedef struct
+{
+    SpecificPlayerInfo_t player;
+    GeneralPlayerInfo_t players[MAX_NUM_OF_PLAYERS];
+    balls_t balls[MAX_NUM_OF_BALLS];                     //Nick changed Ball_t to balls_t
+    uint16_t numberOfBalls;
+    bool winner;
+    bool gameDone;
+    uint8_t LEDScores[2];
+    uint8_t overallScores[2];
+} GameState_t;
+#pragma pack ( pop )
+
+
+
+/*
  * Struct of all the previous players locations, only changed by self for drawing
  */
 typedef struct
 {
     int16_t Center;
 }PrevPlayer_t;
+
+
 /*********************************************** Data Structures ********************************************************************/
 
 
@@ -241,6 +298,7 @@ void MoveBall();
  */
 void EndOfGameHost();
 
+void HOST_TAP();
 /*********************************************** Host Threads *********************************************************************/
 
 
@@ -259,7 +317,11 @@ void DrawObjects();
  * Thread to update LEDs based on score
  */
 void MoveLEDs();
+inline uint16_t numToLitLEDS(uint8_t playerScore);
+void WaitScreen();
+void BOTTOM_BUTTON_TAP();
 
+inline void resetGameExScores();
 /*********************************************** Common Threads *********************************************************************/
 
 
@@ -272,22 +334,36 @@ void MoveLEDs();
 /*
  * Draw players given center X center coordinate
  */
-void DrawPlayer(GeneralPlayerInfo_t * player);
+inline void DrawPlayer(GeneralPlayerInfo_t * player);
 
 /*
  * Updates player's paddle based on current and new center
  */
-void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * outPlayer);
+inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * outPlayer);
 
 /*
  * Function updates ball position on screen
  */
-void UpdateBallOnScreen(PrevBall_t * previousBall, Ball_t * currentBall, uint16_t outColor);
+void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall, uint16_t outColor);
+
+/*
+ * detects if a collision occurs on a paddle
+ */
+inline void PaddleCollisionDetector(int ind, GeneralPlayerInfo_t paddle);
 
 /*
  * Initializes and prints initial game state
  */
-void InitBoardState();
+inline void InitBoardState();
+
+inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex);
+
+//can transmit packets of size 1 - 4 bytes
+static inline void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize);
+
+//can receive packets of size 1 - 4 bytes
+static inline int RX_Buffer(uint32_t* rx_data, uint8_t dataSize);
+
 
 /*********************************************** Public Functions *********************************************************************/
 

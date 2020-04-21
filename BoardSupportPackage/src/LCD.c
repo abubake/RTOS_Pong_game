@@ -372,15 +372,11 @@ void LCD_Text(uint16_t Xpos, uint16_t Ypos, uint8_t *str, uint16_t Color)
     uint8_t TempChar;
 
     /* Set area back to span the entire LCD */
-//    LCD_WriteReg(HOR_ADDR_START_POS, 0x0000);     /* Horizontal GRAM Start Address */
-//    LCD_WriteReg(HOR_ADDR_END_POS, (MAX_SCREEN_Y - 1));  /* Horizontal GRAM End Address */
-//    LCD_WriteReg(VERT_ADDR_START_POS, 0x0000);    /* Vertical GRAM Start Address */
-//    LCD_WriteReg(VERT_ADDR_END_POS, (MAX_SCREEN_X - 1)); /* Vertical GRAM Start Address */
-
-    LCD_WriteReg(VERT_ADDR_START_POS, 0x0000);     /* Horizontal GRAM Start Address */
-    LCD_WriteReg(VERT_ADDR_END_POS, (MAX_SCREEN_Y - 1));  /* Horizontal GRAM End Address */
-    LCD_WriteReg(HOR_ADDR_START_POS, 0x0000);    /* Vertical GRAM Start Address */
-    LCD_WriteReg(HOR_ADDR_END_POS, (MAX_SCREEN_X - 1)); /* Vertical GRAM Start Address */
+    /* Set area back to span the entire LCD */
+    LCD_WriteReg(HOR_ADDR_START_POS, 0x0000);     /* Horizontal GRAM Start Address */
+    LCD_WriteReg(HOR_ADDR_END_POS, (MAX_SCREEN_Y - 1));  /* Horizontal GRAM End Address */
+    LCD_WriteReg(VERT_ADDR_START_POS, 0x0000);    /* Vertical GRAM Start Address */
+    LCD_WriteReg(VERT_ADDR_END_POS, (MAX_SCREEN_X - 1)); /* Vertical GRAM Start Address */
 
     do
     {
@@ -416,16 +412,22 @@ void LCD_Text(uint16_t Xpos, uint16_t Ypos, uint8_t *str, uint16_t Color)
 void LCD_Clear(uint16_t Color)
 {
     /* Set area back to span the entire LCD */
-    
-    /* Set cursor to (0,0) */ 
-    LCD_SetCursor(MIN_SCREEN_X, MIN_SCREEN_Y);
-    /* Set write index to GRAM */     
+    LCD_WriteReg(HOR_ADDR_START_POS, MIN_SCREEN_Y);
+    LCD_WriteReg(HOR_ADDR_END_POS, MAX_SCREEN_Y-1);
+    LCD_WriteReg(VERT_ADDR_START_POS, MIN_SCREEN_X);
+    LCD_WriteReg(VERT_ADDR_END_POS, MAX_SCREEN_X-1);
+
+    /* Set cursor to (0,0) */
+    LCD_SetCursor(0,0);
+
+    /* Set write index to GRAM */
     LCD_WriteIndex(GRAM);
-    /* Start data transmittion */ 
+
+    /* Start data transmission */
     SPI_CS_LOW;
     LCD_Write_Data_Start();
-    for(uint32_t i = 0; i < 76800; i++){
-       LCD_Write_Data_Only(Color);
+    for(int i = 0; i < MAX_SCREEN_X*MAX_SCREEN_Y; i++){
+        LCD_Write_Data_Only(Color);
     }
     SPI_CS_HIGH;
     // You'll need to call LCD_Write_Data_Start() and then send out only data to fill entire screen with color 
