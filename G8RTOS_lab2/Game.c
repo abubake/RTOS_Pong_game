@@ -77,7 +77,6 @@ void JoinGame(){
 	int retval = -1;
 	uint8_t read_ack = 255;
 
-
 	while(retval < 0 || read_ack != H2C_ack){
 	    SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
