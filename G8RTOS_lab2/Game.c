@@ -80,9 +80,11 @@ void JoinGame(){
 
 	while(retval < 0 || read_ack != H2C_ack){
 	    SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
+        sleep(5);
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
 	    sleep(50);
 		retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
+        sleep(5);
         retval = ReceiveData((uint8_t*)&curGame, sizeof(curGame)); //Recieves the GameState from Host
 		sleep(50);
 	}
@@ -125,6 +127,7 @@ void ReceiveDataFromHost(){
 
         while(retval < 0 || read_ack != H2C_ack){//RECIEVING THE IP ADDRESS
             retval = ReceiveData(&read_ack, sizeof(read_ack));
+            sleep(5);
             retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame));
             sleep(50);
             SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack)); //Sends gameState to client
@@ -157,6 +160,7 @@ void SendDataToHost(){
         uint8_t read_ack = 255;
         while(retval < 0 || read_ack != H2C_ack){
             SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
+            sleep(5);
             SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
             sleep(50);
             retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the acknowledge from Host
@@ -299,9 +303,11 @@ void CreateGame(){
     //G8RTOS_WaitSemaphore(&USING_WIFI);
 	while(retval < 0 || read_ack != C2H_ack){//RECIEVING THE IP ADDRESS
         retval = ReceiveData(&read_ack, sizeof(read_ack));
+        sleep(5);
 	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 	    sleep(50);
 		SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack)); //Sends gameState to client
+        sleep(5);
 		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame)); //Sends gameState to client
 	    sleep(50);
 	}
@@ -341,6 +347,7 @@ void SendDataToClient(){
         uint8_t read_ack = 255;
         while(retval < 0 || read_ack != C2H_ack){
                 SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack));
+                sleep(5);
                 SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
                 sleep(50);
                 retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
@@ -375,6 +382,7 @@ void ReceiveDataFromClient(){
 
         while(retval < 0 || read_ack != C2H_ack){//RECIEVING THE IP ADDRESS
             retval = ReceiveData(&read_ack, sizeof(read_ack));
+            sleep(5);
             retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
             sleep(50);
             SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack)); //Sends gameState to client
