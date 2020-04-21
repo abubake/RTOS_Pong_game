@@ -61,7 +61,6 @@ void main(void){
     EUSCI_B_SPI_enable(EUSCI_B0_BASE);
 
 
-
     LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_WHITE);
     LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_WHITE);
 
