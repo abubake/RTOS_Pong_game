@@ -14,7 +14,7 @@
 #include <DriverLib.h>
 #include "BSP.h"
 
-#define Test_LAB5
+#define MAIN_LAB5
 #ifdef Test_LAB5
 void main(void){
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
