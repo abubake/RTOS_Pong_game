@@ -95,10 +95,10 @@ void JoinGame(){
 
 	InitBoardState(); // The stuff
 
-    G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");    //WAS ORGINALLY 2
+    G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");
     //G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
-    //G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
-    //G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
+    G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
+    G8RTOS_AddThread(SendDataToHost, 2, "SendDataToHost");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
     DelayMs(1);
 	G8RTOS_KillSelf();
@@ -162,8 +162,7 @@ void SendDataToHost(){
             retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the acknowledge from Host
             sleep(50);
         }
-	    G8RTOS_SignalSemaphore(&USING_WIFI);
-
+        G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(2);
 	}
 }
@@ -315,10 +314,10 @@ void CreateGame(){
 
 	/* Add these threads. (Need better priority definitions) */
     //G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
-    //G8RTOS_AddThread(ReceiveDataFromClient, 5, "ReceiveDataFromClient");
+    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
     //G8RTOS_AddThread(DrawObjects, 5, "DrawObjects");
-    G8RTOS_AddThread(ReadJoystickHost, 5, "ReadJoystickHost");
-    G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
+    G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
+    G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     DelayMs(1);
 	G8RTOS_KillSelf();
