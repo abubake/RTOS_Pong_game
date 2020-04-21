@@ -125,6 +125,7 @@ void ReceiveDataFromHost(){
 
         while(retval < 0 || read_ack != H2C_ack){//RECIEVING THE IP ADDRESS
             retval = ReceiveData(&read_ack, sizeof(read_ack));
+            sleep(5);
             retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame));
             sleep(50);
         }
@@ -341,9 +342,9 @@ void SendDataToClient(){
 
         int retval = -1;
         uint8_t read_ack = 255;
+
+        SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack));
         while(retval < 0 || read_ack != C2H_ack){
-                SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack));
-                sleep(5);
                 SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
                 sleep(50);
                 retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
