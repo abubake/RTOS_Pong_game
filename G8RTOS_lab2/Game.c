@@ -148,7 +148,14 @@ void SendDataToHost(){
 	while(1){
 		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
-	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+        int retval = -1;
+        uint8_t read_ack = 255;
+        while(retval < 0 || read_ack != H2C_ack){
+            SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+            sleep(50);
+            retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
+            sleep(50);
+        }
 	    G8RTOS_SignalSemaphore(&USING_WIFI);
 
 		sleep(2);
