@@ -38,7 +38,6 @@ void main(void){
     playerType gameRole = GetPlayerRole();
     LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
     initCC3100(gameRole);
-    ClockSys_SetMaxFreq();
 
 	/* For the color randomness */
 	srand(time(NULL));
