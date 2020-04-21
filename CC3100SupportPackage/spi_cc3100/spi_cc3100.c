@@ -100,7 +100,7 @@ Fd_t spi_Open(char *ifName, unsigned long flags)
     Delay(50);
 
     /* Enable WLAN interrupt */
-    CC3100_InterruptEnable();
+    //CC3100_InterruptEnable();
 
     return NONOS_RET_OK;
 }
