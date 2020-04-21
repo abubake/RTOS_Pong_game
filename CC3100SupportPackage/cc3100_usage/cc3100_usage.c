@@ -82,8 +82,8 @@ static inline _i32 BsdUdpServer(_u16 Port, _u8 *data, _u16 BUF_SIZE)
 
     Status = sl_Select( SockIDRx + 1, &readfds, NULL, NULL, &timeVal ) ;
 
-//    if (Status == NULL)`                                  COMMENTING THIS OUT SHOULD PREVENT TIMEOUT FROM EVER OCCURING
-//        return NOTHING_RECEIVED;
+    if (Status == NULL)
+        return NOTHING_RECEIVED;
 
     if ( SL_FD_ISSET( SockIDRx, &readfds ) )
     {

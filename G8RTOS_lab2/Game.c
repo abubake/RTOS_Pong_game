@@ -90,8 +90,8 @@ void JoinGame(){
 	sleep(50);
 
 	/* Connection established, launch RTOS */
-	BITBAND_PERI(P2->DIR, 0) = 4;
-	BITBAND_PERI(P2->OUT, 0) = 4;
+	BITBAND_PERI(P2->DIR, 0) = 1;
+	BITBAND_PERI(P2->OUT, 0) = 1;
 
 	InitBoardState(); // The stuff
 
@@ -119,8 +119,9 @@ void ReceiveDataFromHost(){
 		*/
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
         int retval = -1;
+        uint8_t read_ack = 255;
         //assuming it is from host (no additional check)
-        while(retval < 0){
+        while(retval < 0 || read_ack != ){
             retval = ReceiveData((uint8_t*)&curGame, sizeof(curGame)); //Recieves the GameState from Host
             sleep(50);
         }
@@ -150,9 +151,10 @@ void SendDataToHost(){
         int retval = -1;
         uint8_t read_ack = 255;
         while(retval < 0 || read_ack != H2C_ack){
+            SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
             SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
             sleep(50);
-            retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
+            retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the acknowledge from Host
             sleep(50);
         }
 	    G8RTOS_SignalSemaphore(&USING_WIFI);
@@ -301,8 +303,8 @@ void CreateGame(){
 	}
     //G8RTOS_SignalSemaphore(&USING_WIFI);
 
-    BITBAND_PERI(P2->DIR, 0) = 4;
-    BITBAND_PERI(P2->OUT, 0) = 4;
+    BITBAND_PERI(P2->DIR, 0) = 1;
+    BITBAND_PERI(P2->OUT, 0) = 1;
 
 	InitBoardState();
 
@@ -334,6 +336,7 @@ void SendDataToClient(){
         int retval = -1;
         uint8_t read_ack = 255;
         while(retval < 0 || read_ack != C2H_ack){
+                SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack));
                 SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
                 sleep(50);
                 retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
@@ -364,10 +367,16 @@ void ReceiveDataFromClient(){
         G8RTOS_WaitSemaphore(&USING_WIFI);
 
         int retval = -1;
-        while(retval < 0){
+        uint8_t read_ack = 255;
+
+        while(retval < 0 || read_ack != C2H_ack){//RECIEVING THE IP ADDRESS
+            retval = ReceiveData(&read_ack, sizeof(read_ack));
             retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
             sleep(50);
+            SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack)); //Sends gameState to client
+            sleep(50);
         }
+
         SendData((uint8_t *)&C2H_ack, clientToHostInfo.IP_address, sizeof(C2H_ack));
 
         G8RTOS_SignalSemaphore(&USING_WIFI);
