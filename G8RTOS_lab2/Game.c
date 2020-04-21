@@ -127,7 +127,7 @@ void ReceiveDataFromHost(){
 
         while(retval < 0 || read_ack != H2C_ack){//RECIEVING THE IP ADDRESS
             retval = ReceiveData(&read_ack, sizeof(read_ack));
-            sleep(5);
+            //sleep(5);
             retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame));
         }
         SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack)); //Sends gameState to client
@@ -160,7 +160,7 @@ void SendDataToHost(){
         SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
         while(retval < 0 || read_ack != H2C_ack){
             SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
-            sleep(5);
+            //sleep(5);
             retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the acknowledge from Host
         }
         G8RTOS_SignalSemaphore(&USING_WIFI);
@@ -347,7 +347,7 @@ void SendDataToClient(){
         SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack));
         while(retval < 0 || read_ack != C2H_ack){
                 SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
-                sleep(5);
+                //sleep(5);
                 retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
         }
 
@@ -379,7 +379,7 @@ void ReceiveDataFromClient(){
 
         while(retval < 0 || read_ack != C2H_ack){//RECIEVING THE IP ADDRESS
             retval = ReceiveData(&read_ack, sizeof(read_ack));
-            sleep(5);
+            //sleep(5);
             retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
         }
         SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack)); //Sends gameState to client
