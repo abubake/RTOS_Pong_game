@@ -54,6 +54,7 @@ void main(void){
     /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
     G8RTOS_InitSemaphore(&USING_SPI, 1);
     G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+    G8RTOS_InitSemaphore(&USING_WIFI, 1);
 
     LCD_Init(false);
 /*

@@ -21,6 +21,7 @@
 /* Semaphores here */
 semaphore_t USING_SPI; // semaphore for SPI interface using EUSCIB3 with LCD/ Touchpad
 semaphore_t USING_LED_I2C;  //Semaphore for I2C LED Drivers
+semaphore_t USING_WIFI;
 
 /*********************************************** Externs ********************************************************************/
 
