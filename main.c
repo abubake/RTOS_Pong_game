@@ -9,104 +9,84 @@
 #include "sl_common.h"
 #include "Game.h"
 #include "G8RTOS_Scheduler.h"
+#include "demo_sysctl.h"
 
 #include <DriverLib.h>
 #include "BSP.h"
 
 #define MAIN_LAB5
+#ifdef Test_LAB5
+void main(void){
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
+
+    //Button taps
+
+    G8RTOS_Init();
+
+    LCD_Init(false);
+
+    //playerType gameRole = GetPlayerRole();
+
+    initCC3100(Host);
+
+    LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
+
+    while(1);
+}
+
+#endif
+
+
+
 #ifdef MAIN_LAB5
 
-int waitingForHost = 0x55;
-int hostFlag = 0x55;
-
 test_t winning;
-
+uint32_t test;
 void main(void){
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
 
+    //Button taps
 
-	//initCC3100(Host);
+    G8RTOS_Init();
 
-	WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD; //
+    test = MAP_CS_getSMCLK;
 
-	winning.greatSucsess = 55;
-	initCC3100(Host);
+    /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
+    G8RTOS_InitSemaphore(&USING_SPI, 1);
+    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
 
-	/* Initializes all the hardware resources on the board and sets the amount of threads and system time to 0 */
+    LCD_Init(false);
 /*
-	uint8_t ip_addy[4];
-
-	int retval = -1;
-	while(retval < 0){
-		retval = ReceiveData(ip_addy, 4);
-	}
-
-	const uint8_t bufferSize = 4;
-	unsigned char buffer[bufferSize] = {4, 0, 0 , 4};
-
-
-	uint32_t client_IP = 0;
-
-
-	for(uint8_t i = 0; i < bufferSize; i++){
-		client_IP = client_IP | (uint32_t)(ip_addy[i]<<8*(bufferSize - 1 - i));
-	}
-
-	SendData(buffer, client_IP, 4);
-*/
-	//while(1);
-/*
-	P4DIR &= ~BIT4;
-	P4IFG &= ~BIT4; // clear interrupt flag bit
-	P4IE |= BIT4; // enable interrupt on pin 4
-	P4IES |= BIT4; //enables low to high transition
-	P4REN |= BIT4; // pull up resistor
-	P4OUT |= BIT4; // sets resistor to pull up
+    char* test = 0;
+    unsigned long test_flg = 0;
+    spi_Open(test, test_flg);
 */
 
-	G8RTOS_Init();
+    LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_WHITE);
+    LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_WHITE);
 
-	LCD_Init(false);
+    playerType gameRole = GetPlayerRole();
+    LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
+    initCC3100(gameRole);
 
 	/* For the color randomness */
 	srand(time(NULL));
 
-	/* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
-	G8RTOS_InitSemaphore(&USING_SPI, 1);
-	G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+    G8RTOS_AddThread(IdleThread, 250, "idle");
 
-
-    P4->SEL1 &= ~BIT4;
-    P4->SEL0 &= ~BIT4;
-    P4->DIR &= ~BIT4;
-    P4->IFG &= ~BIT4;   //Clears P4.4
-    P4->IE |= BIT4;     //Enables interrupt
-    P4->IES |= BIT4;    //High to low transition
-    P4->REN |= BIT4;    //Pull-up resistor
-    P4->OUT |= BIT4;    //Sets res to pull-up
-    NVIC_SetPriority(PORT4_IRQn, 6);
-    NVIC_EnableIRQ(PORT4_IRQn);
-    G8RTOS_AddAPeriodicEvent(TOP_BUTTON_TAP, 6, PORT4_IRQn);
-
-
-	/* Adds each task individually to the system */
-	G8RTOS_AddThread(CreateGame, 150, "CreateGame"); //NEEDS real PRI and maybe better nam
-	//G8RTOS_AddAPeriodicEvent(LCD_Tap, 3,  PORT4_IRQn);
-
-	G8RTOS_InitFIFO(JOYSTICKFIFO);
+	//Add the appropriate starter thread for the chosen role
+	if(gameRole == Host){
+	    G8RTOS_AddThread(CreateGame, 1, "genesis");
+	}
+	else if(gameRole == Client){
+	    G8RTOS_AddThread(JoinGame, 1, "genesis");
+	}
 
 	/* Initializes the Systick to trigger every 1ms and sets the priority for both PendSV and Systick  */
 	/* Sets the first thread control block as the current thread, and calls the start_os assembly function */
 	G8RTOS_Launch();
 
 }
-
-/*
-void PORT4_IRQHandler(void){
-        P4IE &= ~BIT4; // disables interrupt on pin 4
-        P4IFG &= ~BIT4; // must clear IFG flag to operate
-        P4IE |= BIT4; // enable interrupt on pin 4
-    }
-*/
 
 #endif /* MAIN_LAB5 */
 

@@ -27,7 +27,7 @@ semaphore_t USING_LED_I2C;  //Semaphore for I2C LED Drivers
 /*********************************************** Global Defines ********************************************************************/
 #define MAX_NUM_OF_PLAYERS  2
 #define MAX_NUM_OF_BALLS    8
-#define POINTS_TO_WIN       1
+#define POINTS_TO_WIN       4
 
 // This game can actually be played with 4 players... a little bit more challenging, but doable!
 #define NUM_OF_PLAYERS_PLAYING 2
@@ -117,7 +117,6 @@ typedef enum
 /*********************************************** Global Defines ********************************************************************/
 
 /*********************************************** Data Structures ********************************************************************/
-/*********************************************** Data Structures ********************************************************************/
 #pragma pack ( push, 1)
 /*
  * Test struct
@@ -187,15 +186,15 @@ typedef struct balls_t
         int16_t yVel;
 
         bool alive;
-        threadId_t threadID;
+        //threadId_t threadID;  //Not really used
         uint16_t color;
 
         PrevBall_t prevLoc;
 
-        int16_t width;
-        int16_t height;
+        //int16_t width;        //unused
+        //int16_t height;
 
-        bool newBall;
+        bool newBall;           //For drawing the first time
 
 }balls_t;
 
@@ -294,7 +293,7 @@ void MoveBall();
  */
 void EndOfGameHost();
 
-void TOP_BUTTON_TAP();
+void HOST_TAP();
 /*********************************************** Host Threads *********************************************************************/
 
 
@@ -314,6 +313,10 @@ void DrawObjects();
  */
 void MoveLEDs();
 inline uint16_t numToLitLEDS(uint8_t playerScore);
+void WaitScreen();
+void BOTTOM_BUTTON_TAP();
+
+inline void resetGameExScores();
 /*********************************************** Common Threads *********************************************************************/
 
 
@@ -351,10 +354,10 @@ inline void InitBoardState();
 inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex);
 
 //can transmit packets of size 1 - 4 bytes
-static void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize);
+static inline void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize);
 
 //can receive packets of size 1 - 4 bytes
-static void RX_Buffer(uint32_t* rx_data, uint8_t dataSize);
+static inline int RX_Buffer(uint32_t* rx_data, uint8_t dataSize);
 
 
 /*********************************************** Public Functions *********************************************************************/

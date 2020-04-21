@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include "LCD.h"
 #include "RGBLeds.h"
-
-SpecificPlayerInfo_t clientToHostInfo;
+#include "cc3100_usage.h"
+#include "demo_sysctl.h"
 
 /* Joystick Info */
 int16_t X_coord;
@@ -14,33 +14,33 @@ int16_t host_X_coord; // Since I have two joystick read functions, shouldn't be 
 						//other board won't
 int16_t host_Y_coord;
 
-/*Ball related Info */
-balls_t myBalls[MAX_NUM_OF_BALLS];
-int ballNumber;
-int curBalls = 0;
 
 int HostPoints = 0; // Number of points (i.e. LED's that are on)
 bool pointScored = false;
 bool iterated = false; //for the LEDs
 int displayVal = 1; //No so that first LED comes on correctly
 
-/* The paddles */
-GeneralPlayerInfo_t PlayerPaddle;
-GeneralPlayerInfo_t ClientPaddle;
-
-//Previous Locations of Players
+//Previous Locations of Players for updating drawings
 PrevPlayer_t prevHostLoc;
 PrevPlayer_t prevClientLoc;
 
-int direction = 0; //Direction of the paddle
+int direction = 0; //Direction of the paddle for testing
 
 //Game state to be sent from host to client
 GameState_t curGame;
+//Player state that client sends to host
+SpecificPlayerInfo_t clientToHostInfo;
+
+uint32_t clientIP = 0; //the client's IP address that is recieved by the host
 
 //ISR bools
-bool roleAssigned = false;
 bool isClient = false;
-bool readyForNextGame = false;
+bool readyForGame = false;
+bool NewGame = false;
+
+//acks for handshake
+uint8_t C2H_ack = 12;
+uint8_t H2C_ack = 9;
 
 
 /*********************************************** Client Threads *********************************************************************/
@@ -51,8 +51,8 @@ void JoinGame(){
 		/*
 		Only thread to run after launching the OS
 		• Set initial SpecificPlayerInfo_t struct attributes (you can get the IP address by calling getLocalIP() (SETUP)
-		• Send player info to the host (?)
-		• Wait for server response (?)
+		• Send player info to the host
+		• Wait for server response
 		• If you’ve joined the game, acknowledge you’ve joined to the host and show connection with an LED (?)
 		• Initialize the board state, semaphores, and add the following threads (?)
 		o ReadJoystickClient
@@ -63,50 +63,75 @@ void JoinGame(){
 		o Idle (SETUP)
 		• Kill self (SETUP)
 		*/
-	initCC3100(Client);
 
 	/* NEED TO SET ALL THESE WITH REAL VALUES */
 	clientToHostInfo.IP_address = getLocalIP();
 	clientToHostInfo.acknowledge = false;
-	clientToHostInfo.displacement = 0;
-	clientToHostInfo.joined = false;
-	clientToHostInfo.playerNumber = 0;
-	clientToHostInfo.ready = false;
+	clientToHostInfo.displacement = MAX_SCREEN_X/2;
+	clientToHostInfo.joined = true;
+	clientToHostInfo.playerNumber = 1;
+	clientToHostInfo.ready = true;
 	clientToHostInfo.playerNumber = TOP;
 
-	/* Client transmits the data so host has the address*/
-	/* first is sending to addy, 2nd is data, which is the client address */
-	TX_Buffer(0x0A140033, &clientToHostInfo.IP_address, 4);
+	/* Sends the Client's IP address to the host */
+	int retval = -1;
+	uint8_t read_ack = 255;
 
-	G8RTOS_AddThread(ReadJoystickClient, 200, "readJoystick");
-	G8RTOS_AddThread(DrawObjects, 20, "updateObjects");
-	G8RTOS_AddThread(SendDataToHost, 150, "sendData");
-	G8RTOS_AddThread(ReceiveDataFromHost, 30, "recieveData");
-	G8RTOS_AddThread(MoveLEDs, 30, "Update leds");
-	G8RTOS_AddThread(EndOfGameClient, 0, "EOGHandler");
+    G8RTOS_WaitSemaphore(&USING_SPI);
+	while(retval < 0 || read_ack != H2C_ack){
+	    SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
+	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+	    sleep(50);
+		retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
+        retval = ReceiveData((uint8_t*)&curGame, sizeof(curGame)); //Recieves the GameState from Host
+		sleep(50);
+	}
+    G8RTOS_SignalSemaphore(&USING_SPI);
+	sleep(50);
+
+	/* Connection established, launch RTOS */
+	P2->DIR |= 0x04;         /* P2.2 set as output */
+	P2->OUT |= 4; // Solid blue, connection established
+
+
+	InitBoardState(); // The stuff
+
+    G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");
+    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
+    G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
+    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
 
 	G8RTOS_KillSelf();
-	while(1); // feeling cute, might delete later
 }
 
 /*
  * Thread that receives game state packets from host
  */
 void ReceiveDataFromHost(){
+    //Before receiving new host location, update the previous location of host
+    prevHostLoc.Center = curGame.players[0].currentCenter;
+
 	while(1){
 		/*
-		• (?) Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
+		• Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
+	    G8RTOS_WaitSemaphore(&USING_SPI);
+		ReceiveData((uint8_t *)&curGame, sizeof(curGame));
+		G8RTOS_SignalSemaphore(&USING_SPI);
 		sleep(1);
 		/*
 		• Empty the received packet
 		• If the game is done, add EndOfGameClient thread with the highest priority
 		• Sleep for 5ms
 		*/
-		sleep(5);
+		if(curGame.gameDone == true){
+			G8RTOS_AddThread(EndOfGameClient, 1, "enditallPLZ");
+		}
 
+		sleep(5);
 	}
 }
 
@@ -116,8 +141,10 @@ void ReceiveDataFromHost(){
 void SendDataToHost(){
 	while(1){
 		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
+	    G8RTOS_WaitSemaphore(&USING_SPI);
+	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+	    G8RTOS_SignalSemaphore(&USING_SPI);
 
-		//SendData(_u8 *data, _u32 IP, _u16 BUF_SIZE);
 		sleep(2);
 	}
 }
@@ -145,7 +172,20 @@ void ReadJoystickClient(){
 	    else{
 	        clientDifference = 0;
 	    }
+
+	    //Set previous location as old location
+	    prevClientLoc.Center = clientToHostInfo.displacement;
+
+	    //Update current location in struct
 		clientToHostInfo.displacement += clientDifference;
+		//Check and fix if out of bounds
+        if(clientToHostInfo.displacement < HORIZ_CENTER_MIN_PL){
+            clientToHostInfo.displacement = HORIZ_CENTER_MIN_PL;
+        }
+        else if(clientToHostInfo.displacement > HORIZ_CENTER_MAX_PL){
+            clientToHostInfo.displacement = HORIZ_CENTER_MAX_PL;
+        }
+
 		sleep(10);
 	}
 }
@@ -154,17 +194,68 @@ void ReadJoystickClient(){
  * End of game for the client
  */
 void EndOfGameClient(){
-	/*
-	• Wait for all semaphores to be released
-	• Kill all other threads
-	• Re-initialize semaphores
-	• Clear screen with winner’s color
-	• Wait for host to restart game
-	• Add all threads back and restart game variables
-	• Kill Self
-	*/
-	LCD_Clear(LCD_RED); //should clear with player's color
-	G8RTOS_KillSelf();
+    /*
+    • Wait for all semaphores to be released
+    • Kill all other threads
+    • Re-initialize semaphores
+    • Clear screen with winner’s color
+    • Wait for host to restart game
+    • Add all threads back and restart game variables
+    • Kill Self
+    */
+
+    //Wait for semaphores to be available so that threads using them are not killed yet
+    G8RTOS_WaitSemaphore(&USING_SPI);
+    G8RTOS_WaitSemaphore(&USING_LED_I2C);
+
+    //Now has both semaphores, kill all other threads
+    G8RTOS_KillAllOthers();
+
+    if(curGame.LEDScores[0] > curGame.LEDScores[1]){
+        //Player 0 won, make screen their color
+        LCD_Clear(curGame.players[0].color);
+        LCD_Text(90, 75, "Wait for Host Push", curGame.players[1].color);
+    }
+    else if(curGame.LEDScores[0] < curGame.LEDScores[1]){
+        //Player 1 won, make screen their color
+        LCD_Clear(curGame.players[1].color);
+        LCD_Text(90, 75, "Wait for Host Push", curGame.players[0].color);
+    }
+
+    //TODO Wait for host to restart game
+    while(NewGame == false){
+        /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
+        G8RTOS_WaitSemaphore(&USING_SPI);
+        ReceiveData((uint8_t *)&curGame , sizeof(curGame));
+        G8RTOS_SignalSemaphore(&USING_SPI);
+        if(curGame.gameDone != false){
+            //I think this should work as long as curGame has been updated with a new game status
+            NewGame = true;
+        }
+    }
+
+    //Host has pressed
+
+    resetGameExScores();
+    //Redraw arena- Assumes host sent new packet with overall game scores in it
+    InitBoardState();
+
+    //Reset game variables for sending
+    clientToHostInfo.displacement = PADDLE_X_CENTER;
+
+    /* Add back client threads */
+    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
+    G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
+    G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");
+    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+    G8RTOS_AddThread(IdleThread, 254, "Idle");
+
+    G8RTOS_SignalSemaphore(&USING_LED_I2C);
+    G8RTOS_SignalSemaphore(&USING_SPI);
+
+    //Kill self
+    G8RTOS_KillSelf();
 }
 
 /*********************************************** Client Threads *********************************************************************/
@@ -181,23 +272,35 @@ void CreateGame(){
 	• Establish connection with client (use an LED on the Launchpad to indicate Wi-Fi connection)
 	o Should be trying to receive a packet from the client
 	o Should acknowledge client once client has joined
-	*/
-
-	/* W/O WIFI
 	• Initialize the board (draw arena, players, and scores)
 	*/
+    /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
+
+	int retval = -1;
+    uint8_t read_ack = 255;
+    G8RTOS_WaitSemaphore(&USING_SPI);
+	while(retval < 0 || read_ack != C2H_ack){//RECIEVING THE IP ADDRESS
+        retval = ReceiveData(&read_ack, sizeof(read_ack));
+	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+	    sleep(50);
+		SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack)); //Sends gameState to client
+		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame)); //Sends gameState to client
+	    sleep(50);
+	}
+    G8RTOS_SignalSemaphore(&USING_SPI);
+
+		P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
+		P2->OUT ^= 0x04;         /* turn blue ON */
+
 	InitBoardState();
 
-		//RX_Buffer(, 1);
-
 	/* Add these threads. (Need better priority definitions) */
-	G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
-	G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
-	G8RTOS_AddThread(ReadJoystickHost, 201, "ReadJoystickHost");
-	//G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
-	//G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
-	G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
-	G8RTOS_AddThread(IdleThread, 254, "Idle");
+    G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
+    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
+    G8RTOS_AddThread(DrawObjects, 5, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickHost, 5, "ReadJoystickHost");
+    G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
+    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
 
 	G8RTOS_KillSelf();
 }
@@ -214,6 +317,13 @@ void SendDataToClient(){
 		o If done, Add EndOfGameHost thread with highest priority
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
+        G8RTOS_WaitSemaphore(&USING_SPI);
+		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
+        G8RTOS_SignalSemaphore(&USING_SPI);
+		if(curGame.gameDone == true){
+			G8RTOS_AddThread(EndOfGameHost, 0, "desolation"); //The end is approaching
+		}
+
 		sleep(5);
 	}
 }
@@ -222,17 +332,26 @@ void SendDataToClient(){
  * Thread that receives UDP packets from client
  */
 void ReceiveDataFromClient(){
+    //Before receiving new client location update previous location
+    prevClientLoc.Center = curGame.players[1].currentCenter;
 	while(1){
 		/*
 		• Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
+        G8RTOS_WaitSemaphore(&USING_SPI);
+		ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+        G8RTOS_SignalSemaphore(&USING_SPI);
+
 		sleep(1);
 		/*
 		• Update the player’s current center with the displacement received from the client
 		• Sleep for 2ms (again found experimentally)
 		*/
+		//Update player's position with displacement from client
+		curGame.players[1].currentCenter = clientToHostInfo.displacement;
+
 		sleep(2);
 	}
 }
@@ -246,12 +365,12 @@ void GenerateBall(){
 		• Adds another MoveBall thread if the number of balls is less than the max
 		• Sleeps proportional to the number of balls currently in play
 		*/
-	    if(curBalls < MAX_NUM_OF_BALLS){
-	        curBalls++;
-	        G8RTOS_AddThread(MoveBall, 30, "MoveBall");
+	    if(curGame.numberOfBalls < MAX_NUM_OF_BALLS){
+	        curGame.numberOfBalls++;
+	        G8RTOS_AddThread(MoveBall, 5, "MoveBall");
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
-	    sleep(curBalls*2500);
+	    sleep(curGame.numberOfBalls*2500);
 	}
 }
 
@@ -283,33 +402,19 @@ void ReadJoystickHost(){
 		    difference = 0;
 		}
 
-		PlayerPaddle.currentCenter += difference;
-		//Stop from going outside arena
-		if(PlayerPaddle.currentCenter < HORIZ_CENTER_MIN_PL){
-		    PlayerPaddle.currentCenter = HORIZ_CENTER_MIN_PL;
-		}
-		else if(PlayerPaddle.currentCenter > HORIZ_CENTER_MAX_PL){
-		    PlayerPaddle.currentCenter = HORIZ_CENTER_MAX_PL;
-		}
-
-
 		sleep(10); // makes game for fair
 
-        /*
-        • Then add the displacement to the bottom player in the list of players (general list that’s sent to the client and used for drawing) i.e. players[0].position += self.displacement
-        • By sleeping before updating the bottom player’s position, it makes the game more fair between client and host
-        */
-		curGame.players[0].currentCenter += difference;
+		//Update prev location as current location
+		prevHostLoc.Center = curGame.players[0].currentCenter;
 
-
-		prevHostLoc.Center += difference;
-        if(prevHostLoc.Center < HORIZ_CENTER_MIN_PL){
-            prevHostLoc.Center = HORIZ_CENTER_MIN_PL;
+		//Update current location
+        curGame.players[0].currentCenter += difference;
+        if(curGame.players[0].currentCenter < HORIZ_CENTER_MIN_PL){
+            curGame.players[0].currentCenter  = HORIZ_CENTER_MIN_PL;
         }
-        else if(prevHostLoc.Center > HORIZ_CENTER_MAX_PL){
-            prevHostLoc.Center = HORIZ_CENTER_MAX_PL;
+        else if(curGame.players[0].currentCenter  > HORIZ_CENTER_MAX_PL){
+            curGame.players[0].currentCenter  = HORIZ_CENTER_MAX_PL;
         }
-
 	}
 }
 
@@ -330,15 +435,14 @@ void MoveBall(){
 	//Initialize ball if it was newly made
     uint8_t ind;
     for (int i = 0; i < MAX_NUM_OF_BALLS; i++){
-        if(myBalls[i].alive == false){ // Searching for the first dead ball
+        if(curGame.balls[i].alive == false){ // Searching for the first dead ball
 
         	//• Once found, initialize random position and X and Y velocities, as well as color and alive attributes
             /* Gives random position */
-
             //Random x that will be within arena bounds and not too close to a wall
-            myBalls[i].xPos = (rand() % (ARENA_MAX_X - ARENA_MIN_X - 20)) + ARENA_MIN_X + 10;
+            curGame.balls[i].xPos = (rand() % (ARENA_MAX_X - ARENA_MIN_X - 20)) + ARENA_MIN_X + 10;
             //Random y that won't be too close to the paddles
-            myBalls[i].yPos = (rand() % MAX_SCREEN_Y - 60) + 30;
+            curGame.balls[i].yPos = (rand() % MAX_SCREEN_Y - 60) + 30;
 
             /* Getting a random speed */
             //TODO Experimentally determine a good max speed
@@ -347,35 +451,26 @@ void MoveBall(){
 
             //Get random x-direction
             if(rand() % 2){
-                myBalls[i].xVel = xMag * -1;
+                curGame.balls[i].xVel = xMag * -1;
             }
             else{
-                myBalls[i].xVel = xMag;
+                curGame.balls[i].xVel = xMag;
             }
             //Get random y-direction
             if(rand() % 2){
-                myBalls[i].yVel = yMag * -1;
+                curGame.balls[i].yVel = yMag * -1;
             }
             else{
-                myBalls[i].yVel = yMag;
+                curGame.balls[i].yVel = yMag;
             }
 
             //Ball is initially white
-            myBalls[i].color = LCD_WHITE;
-            myBalls[i].alive = true;
-
-            myBalls[i].prevLoc.CenterX = myBalls[i].xPos;
-            myBalls[i].prevLoc.CenterY = myBalls[i].yPos;
-            myBalls[i].newBall = true;
-
-            //Update structure to be sent
-            curGame.numberOfBalls++;
-            curGame.balls[i].alive = true;
             curGame.balls[i].color = LCD_WHITE;
-            curGame.balls[i].xPos = myBalls[i].xPos;
-            curGame.balls[i].yPos = myBalls[i].yPos;
-            curGame.balls[i].prevLoc.CenterX = myBalls[i].xPos;
-            curGame.balls[i].prevLoc.CenterY = myBalls[i].yPos;
+            curGame.balls[i].alive = true;
+
+            //Set previous location as this location
+            curGame.balls[i].prevLoc.CenterX = curGame.balls[i].xPos;
+            curGame.balls[i].prevLoc.CenterY = curGame.balls[i].yPos;
             curGame.balls[i].newBall = true;
 
             ind = i;
@@ -394,15 +489,15 @@ void MoveBall(){
 
 		//Check if it collided with a wall
 		//TODO mess with values until they are nice
-		if((myBalls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4) || (myBalls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
+		if((curGame.balls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4) || (curGame.balls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
 		} //Checks if low enough on y-axis and between paddle left and right bounds to see if a collision occurs
-		else if((myBalls[ind].yPos >= 232)&&(myBalls[ind].xPos > PlayerPaddle.currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < PlayerPaddle.currentCenter + PADDLE_LEN_D2 + 2)){
+		else if((curGame.balls[ind].yPos >= 232)&&(curGame.balls[ind].xPos > curGame.players[0].currentCenter - PADDLE_LEN_D2 - 2)&&(curGame.balls[ind].xPos < curGame.players[0].currentCenter + PADDLE_LEN_D2 + 2)){
 			collision = true;
 			paddle = true;
 		}
-		else if((myBalls[ind].yPos <= 9)&&(myBalls[ind].xPos > ClientPaddle.currentCenter - PADDLE_LEN_D2 - 2)&&(myBalls[ind].xPos < ClientPaddle.currentCenter + PADDLE_LEN_D2 + 2)){
+		else if((curGame.balls[ind].yPos <= 9)&&(curGame.balls[ind].xPos > curGame.players[1].currentCenter - PADDLE_LEN_D2 - 2)&&(curGame.balls[ind].xPos < curGame.players[1].currentCenter + PADDLE_LEN_D2 + 2)){
 		    collision = true;
 		    paddle = true;
 		}
@@ -410,62 +505,60 @@ void MoveBall(){
 		if(collision){
 			 	if(wall){
 			 		//If wall is hit, maintain vertical velocity, but reflect horizontally
-			 		myBalls[ind].xVel = myBalls[ind].xVel * -1;
+			 		curGame.balls[ind].xVel = curGame.balls[ind].xVel * -1;
 			 	}
 			 	//Can be both paddle and wall
 			 	if(paddle){
 			 	    //Check which paddle it hits
-			 	    if(myBalls[ind].yPos > MAX_SCREEN_Y - PADDLE_WID - BALL_SIZE - 7){
+			 	    if(curGame.balls[ind].yPos > MAX_SCREEN_Y - PADDLE_WID - BALL_SIZE - 7){
 			 	        //Hit bottom paddle
-			 	        myBalls[ind].color = LCD_RED;
+			 	        curGame.balls[ind].color = LCD_RED;
 			 	    }
-			 	    else if(myBalls[ind].yPos < PADDLE_WID + BALL_SIZE + 7){
+			 	    else if(curGame.balls[ind].yPos < PADDLE_WID + BALL_SIZE + 7){
 			 	        //Collided with top paddle
-			 	        myBalls[ind].color = LCD_BLUE;
+			 	        curGame.balls[ind].color = LCD_BLUE;
 			 	    }
 			 	    //Left Side
-			 		if(myBalls[ind].xPos < PlayerPaddle.currentCenter - PADDLE_LEN_D2 + 16 ){
-			 		    myBalls[ind].yVel = myBalls[ind].yVel * -1;
-			 		    if(myBalls[ind].xVel > 1){
+			 		if(curGame.balls[ind].xPos < curGame.players[0].currentCenter - PADDLE_LEN_D2 + 16 ){
+			 		    curGame.balls[ind].yVel = curGame.balls[ind].yVel * -1;
+			 		    if(curGame.balls[ind].xVel > 1){
 			 		        //Make ball go left
-			 		       myBalls[ind].xVel = myBalls[ind].xVel * -1;
+			 		       curGame.balls[ind].xVel = curGame.balls[ind].xVel * -1;
 			 		    }
 			 		}
 			 		//Right side
-			 		else if(myBalls[ind].xPos > PlayerPaddle.currentCenter + PADDLE_LEN_D2 - 16){
-			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
-			 			if(myBalls[ind].xVel < 1){
-			 			   myBalls[ind].xVel = myBalls[ind].xVel * -1;
+			 		else if(curGame.balls[ind].xPos > curGame.players[0].currentCenter + PADDLE_LEN_D2 - 16){
+			 			curGame.balls[ind].yVel = curGame.balls[ind].yVel * -1;
+			 			if(curGame.balls[ind].xVel < 1){
+			 			   curGame.balls[ind].xVel = curGame.balls[ind].xVel * -1;
 			 			}
 			 		}
 			 		//Middle
 			 		else{ //This is the center of the paddle's area, a space of 24
-			 			myBalls[ind].yVel = myBalls[ind].yVel * -1;
+			 			curGame.balls[ind].yVel = curGame.balls[ind].yVel * -1;
 			 		}
 			 	}
 		}
 
 	    //If ball has passed boundary, adjust score
 		bool passedBoundary = false;
-		if((myBalls[ind].yPos < ARENA_MIN_Y) || (myBalls[ind].yPos > ARENA_MAX_X)){
-		    if(myBalls[ind].color == LCD_RED){
+		if((curGame.balls[ind].yPos < ARENA_MIN_Y) || (curGame.balls[ind].yPos > ARENA_MAX_X)){
+		    //Has passed boundary and will kill itself
+		    if(curGame.balls[ind].color == LCD_RED){
 		        //Red Ball Scored
-		        curBalls--;
-		        curGame.numberOfBalls -= 1;
+		        curGame.numberOfBalls--;
 		        curGame.LEDScores[0] += 1;
 		        passedBoundary = true;
 		    }
-		    else if(myBalls[ind].color == LCD_BLUE){
+		    else if(curGame.balls[ind].color == LCD_BLUE){
 		        //Blue Ball Scored
-                curBalls--;
-                curGame.numberOfBalls -= 1;
+                curGame.numberOfBalls--;
 		        curGame.LEDScores[1] += 1;
 		        passedBoundary = true;
 		    }
 		    else{
 		        //White Ball fell through- No one scores but ball still is killed
-                curBalls--;
-                curGame.numberOfBalls -= 1;
+                curGame.numberOfBalls--;
 		        passedBoundary = true;
 		    }
 		}
@@ -484,41 +577,33 @@ void MoveBall(){
 		if(passedBoundary){
 		    if(curGame.gameDone == true){
                 //If this was the final point, add ending thread
-                G8RTOS_AddThread(EndOfGameHost, 4, "EndOfGame");
+                G8RTOS_AddThread(EndOfGameHost, 1, "EndOfGame");
 		    }
 		    else{
                 //Kill this MoveBall
-                myBalls[ind].alive = false;
+                curGame.balls[ind].alive = false;
                 G8RTOS_KillSelf();
 		    }
 
 		}
 		else{
-	        //Save old position
-	        myBalls[ind].prevLoc.CenterX = myBalls[ind].xPos;
-	        myBalls[ind].prevLoc.CenterY = myBalls[ind].yPos;
+	        //Save position as the now previous position
+	        curGame.balls[ind].prevLoc.CenterX = curGame.balls[ind].xPos;
+	        curGame.balls[ind].prevLoc.CenterY = curGame.balls[ind].yPos;
 
-	        //If not killed, move ball to position according to its velocity
-	        myBalls[ind].xPos = myBalls[ind].xPos + myBalls[ind].xVel;
-	        myBalls[ind].yPos = myBalls[ind].yPos + myBalls[ind].yVel;
+	        //Update current location of the ball
+	        curGame.balls[ind].xPos = curGame.balls[ind].xPos + curGame.balls[ind].xVel;
+	        curGame.balls[ind].yPos = curGame.balls[ind].yPos + curGame.balls[ind].yVel;
 
 	        //If went beyond boundary, adjust so it is on boundary
 	        //I did this to try to stop the balls from eroding walls
-	        if(myBalls[ind].xPos > ARENA_MAX_X - BALL_SIZE){
-	            myBalls[ind].xPos = ARENA_MAX_X - BALL_SIZE;
+	        if(curGame.balls[ind].xPos > ARENA_MAX_X - BALL_SIZE){
+	            curGame.balls[ind].xPos = ARENA_MAX_X - BALL_SIZE;
 	        }
-	        else if(myBalls[ind].xPos < ARENA_MIN_X + BALL_SIZE){
-	            myBalls[ind].xPos = ARENA_MAX_X + BALL_SIZE;
+	        else if(curGame.balls[ind].xPos < ARENA_MIN_X + BALL_SIZE){
+	            curGame.balls[ind].xPos = ARENA_MAX_X + BALL_SIZE;
 	        }
-	        //Update GameState to be sent
-	        curGame.balls[ind].alive = myBalls[ind].alive;
-	        curGame.balls[ind].color = myBalls[ind].color;
-	        curGame.balls[ind].xPos = myBalls[ind].xPos;
-	        curGame.balls[ind].yPos = myBalls[ind].yPos;
-	        curGame.balls[ind].prevLoc.CenterX = myBalls[ind].xPos;
-	        curGame.balls[ind].prevLoc.CenterY = myBalls[ind].yPos;
 		}
-
 		sleep(35);
 	}
 }
@@ -543,10 +628,6 @@ void EndOfGameHost(){
     //Now has both semaphores, kill all other threads
     G8RTOS_KillAllOthers();
 
-    //Reinitialize semaphores
-    G8RTOS_InitSemaphore(&USING_SPI, 1);
-    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
-
     //Clear screen with winner's color and print message
     if(curGame.LEDScores[0] > curGame.LEDScores[1]){
         //Player 0 won, make screen their color
@@ -563,33 +644,40 @@ void EndOfGameHost(){
         LCD_Text(95, 75, "Host Press Button", curGame.players[0].color);
     }
 
-
-
-
-
-
     //Create aperiodic thread waiting for host's action
     //TODO Button interrupt
 
+    //4.5
+    readyForGame = false;
+    G8RTOS_AddAPeriodicEvent(HOST_TAP, 4, PORT4_IRQn);
+    while(!readyForGame){
+        //Send data showing game is over
+        //TODO semaphore
+        SendData((uint8_t*)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
+    }
+
+
     //When ready, notify client, reinitialize game, add threads back, kill self
-
-    readyForNextGame = false;
-    while(!readyForNextGame);
-
-
-    //TODO Notify client
+    //Notify client
+    //TODO Add semaphore
+    SendData((uint8_t*)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
 
     //Reinitialize game with new scores
     InitBoardState();
 
     /* Add these threads. (Need better priority definitions) */
-    G8RTOS_AddThread(GenerateBall, 100, "GenerateBall");
-    G8RTOS_AddThread(DrawObjects, 200, "DrawObjects");
-    G8RTOS_AddThread(ReadJoystickHost, 201, "ReadJoystickHost");
-    //G8RTOS_AddThread(SendDataToClient, 200, "SendDataToClient");
-    //G8RTOS_AddThread(ReceiveDataFromClient, 200, "ReceiveDataFromClient");
+    G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
+    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
+    G8RTOS_AddThread(DrawObjects, 5, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickHost, 5, "ReadJoystickHost");
+    G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
     G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 254, "Idle");
+
+
+    //Reinitialize semaphores
+    G8RTOS_SignalSemaphore(&USING_LED_I2C);
+    G8RTOS_SignalSemaphore(&USING_SPI);
 
     G8RTOS_KillSelf();
 
@@ -597,34 +685,42 @@ void EndOfGameHost(){
 
 }
 
-/*
- * ISR for button taps
- * B0   4.4
- * B1   4.5
- * B2   5.2
- * B3   5.5
- */
-void TOP_BUTTON_TAP(){
-    if(!roleAssigned){
-
-    }
-    else{
-        //Role already assigned
-
-        readyForNextGame = true;
-
-    }
-    //Acknowledge
-    P4->IFG &= ~BIT4;
-    //P4->IE &= ~BIT0;
-
+void HOST_TAP(){
+    readyForGame = true;
+    P4->IFG &= ~BIT5;       //May not need
 }
 
-void PORT4_IRQHandler(void)
-{
-    P4 -> IFG = 0; // ~BIT0;         // clear the interrupt flag
-    //P4 -> IE &= ~(1 << 0);          // disable interrupt
+inline void resetGameExScores(){
+    //Make LED scores 0
+    curGame.LEDScores[0] = 0;
+    curGame.LEDScores[1] = 0;
+
+    //Clear each ball
+    for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
+        curGame.balls[i].alive = false;
+        curGame.balls[i].color = LCD_WHITE;
+        curGame.balls[i].newBall = true;
+    }
+
+    curGame.winner = false;
+    curGame.gameDone = false;
+    curGame.numberOfBalls = 0;
+
+    curGame.players[0].color = PLAYER_RED;
+    curGame.players[1].color = PLAYER_BLUE;
+
+    curGame.players[0].position = BOTTOM;
+    curGame.players[1].position = TOP;
+
+    curGame.players[0].currentCenter = PADDLE_X_CENTER;
+    curGame.players[1].currentCenter = PADDLE_X_CENTER;
+
+    prevHostLoc.Center = PADDLE_X_CENTER;
+    prevClientLoc.Center = PADDLE_X_CENTER;
+
+    //curGame.overallScores[]   Scores not reset between games
 }
+
 /*********************************************** Host Threads *********************************************************************/
 
 
@@ -656,33 +752,32 @@ void DrawObjects(){
 	    //Update Ball Locations
 	    for(uint8_t i = 0; i < MAX_NUM_OF_BALLS; i++){
 	        //Check if ball is alive
-	        if(myBalls[i].alive){
-	            if(myBalls[i].newBall){
+	        if(curGame.balls[i].alive){
+	            if(curGame.balls[i].newBall){
 	                //If a new ball, paint its initial location
-	                int16_t xCoord = myBalls[i].xPos;
-	                int16_t yCoord = myBalls[i].yPos;
+	                int16_t xCoord = curGame.balls[i].xPos;
+	                int16_t yCoord = curGame.balls[i].yPos;
 
 	                G8RTOS_WaitSemaphore(&USING_SPI);
 	                LCD_DrawRectangle(xCoord - BALL_SIZE_D2, xCoord + BALL_SIZE_D2, yCoord - BALL_SIZE_D2, yCoord + BALL_SIZE_D2, LCD_WHITE);
 	                G8RTOS_SignalSemaphore(&USING_SPI);
 
 	                //Not new anymore
-	                myBalls[i].newBall = false;
+	                curGame.balls[i].newBall = false;
 	                curGame.balls[i].newBall = false;
 	            }
 	            else{
 	                //If not a new ball, update its location
-	                UpdateBallOnScreen(&myBalls[i].prevLoc, &myBalls[i], myBalls[i].color);
+	                UpdateBallOnScreen(&curGame.balls[i].prevLoc, &curGame.balls[i], curGame.balls[i].color);
 	            }
 	        }
 	    }
-
 	    //Update Players
 	    //Update Location of Each Player
 	    //Host
-	    UpdatePlayerOnScreen(&prevHostLoc, &PlayerPaddle);
+	    UpdatePlayerOnScreen(&prevHostLoc, &curGame.players[0]);
 	    //Update Client Location
-	    UpdatePlayerOnScreen(&prevClientLoc, &ClientPaddle);
+	    UpdatePlayerOnScreen(&prevClientLoc, &curGame.players[1]);
 
 	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
 		sleep(20);
@@ -731,7 +826,6 @@ inline uint16_t numToLitLEDS(uint8_t playerScore){
     }
     return toSend;
 }
-
 /*********************************************** Common Threads *********************************************************************/
 
 /*********************************************** Public Functions *********************************************************************/
@@ -740,6 +834,29 @@ inline uint16_t numToLitLEDS(uint8_t playerScore){
  */
 playerType GetPlayerRole(){
 
+		P4->DIR &= ~(BIT4 | BIT5);
+	    P4->REN |= BIT4|BIT5; //Pull-up resistor
+	    P4->OUT |= BIT4|BIT5; //Set resistor to pull-up
+	    while(1)
+	    {
+	        if(!(P4->IN & BIT4))
+	        {
+	            DelayMs(10);
+	            if(!(P4->IN & BIT4))
+	            {
+	                return Client;
+	            }
+	        }
+	        if(!(P4->IN & BIT5))
+	        {
+	            DelayMs(10);
+	            if(!(P4->IN & BIT5))
+	            {
+	                readyForGame = true;
+	                return Host;
+	            }
+	        }
+	    }
 }
 
 /*
@@ -893,7 +1010,6 @@ inline void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall,
 
 }
 
-
 /*
  * Initializes and prints initial game state
  */
@@ -927,43 +1043,10 @@ inline void InitBoardState(){
 
 	/* The initial paddle */
     /* Set Center of player paddle */
-    PlayerPaddle.currentCenter = PADDLE_X_CENTER;
-    PlayerPaddle.position = BOTTOM;
-    PlayerPaddle.color = PLAYER_RED;
-    DrawPlayer(&PlayerPaddle);
+    resetGameExScores();
 
-    ClientPaddle.currentCenter = PADDLE_X_CENTER;
-    ClientPaddle.position = TOP;
-    ClientPaddle.color = PLAYER_BLUE;
-    DrawPlayer(&ClientPaddle);
-
-    //Save these in game state
-    curGame.players[0].color = PLAYER_RED;
-    curGame.players[0].currentCenter = PADDLE_X_CENTER;
-    curGame.players[0].position = BOTTOM;
-    curGame.LEDScores[0] = 0;
-
-    curGame.players[1].currentCenter = PADDLE_X_CENTER;
-    curGame.players[1].position = TOP;
-    curGame.players[1].color = PLAYER_BLUE;
-    curGame.LEDScores[1] = 0;
-
-    prevHostLoc.Center = PADDLE_X_CENTER;
-    prevClientLoc.Center = PADDLE_X_CENTER;
-
-    //Make sure all balls dead
-    for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
-        curGame.balls[i].alive = false;         //The game state to be sent
-        curGame.balls[i].color = LCD_WHITE;
-        myBalls[i].alive = false;               //The local copy of ball info
-        myBalls[i].color = LCD_WHITE;
-    }
-    //Make sure scores are all 0
-    curGame.LEDScores[0] = 0;
-    curGame.LEDScores[1] = 0;
-
-    curGame.gameDone = false;
-    curGame.winner = false;
+    DrawPlayer(&curGame.players[0]);
+    DrawPlayer(&curGame.players[1]);
 
 }
 
@@ -979,43 +1062,4 @@ inline void setScoreString(uint8_t scoreArray[3], uint16_t playerIndex){
     scoreArray[1] = curScore%10 + 0x30;
     scoreArray[2] = 0x00;   //Terminating character
 }
-
-
-//can transmit packets of size 1 - 4 bytes
-static void TX_Buffer(uint32_t IP_ADDR, uint32_t* tx_data, uint8_t dataSize){
-
-    const uint8_t size = dataSize;
-    uint8_t buffer[size];
-
-    uint32_t mask = (0xFF << ((dataSize-1)*8));
-
-    for(uint8_t i = 0; i < dataSize; i++){
-        buffer[i] = (uint8_t)( (*tx_data & mask) >> (8*(dataSize-1 - i)) );
-        mask =  mask >> 8;
-    }
-
-    SendData(buffer, IP_ADDR, dataSize);
-
-}
-
-//can receive packets of size 1 - 4 bytes
-static void RX_Buffer(uint32_t* rx_data, uint8_t dataSize){
-
-    const uint8_t size = dataSize;
-    uint8_t buffer[size];
-
-    int8_t retval = -1;
-    while(retval < 0){
-        retval = ReceiveData(buffer, dataSize);
-    }
-
-    uint32_t data = 0;
-    for(uint8_t i = 0; i < dataSize; i++){
-        data = data | (uint32_t) ( buffer[i] << (8*(size - 1 - i)) );
-    }
-
-    *rx_data = data;
-}
-
-
 /*********************************************** Public Functions *********************************************************************/

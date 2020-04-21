@@ -52,8 +52,8 @@ void ClockSys_SetMaxFreq()
 	/* Initialize HSMCLK to HFXT/2 */
 	MAP_CS_initClockSignal(CS_HSMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_2);
 
-	/* Initialize SMCLK to HFXT/1 */ //changed from Initialize SMCLK to HFXT/4
-	MAP_CS_initClockSignal(CS_SMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_1);
+	/* Initialize SMCLK to HFXT/1 */
+	MAP_CS_initClockSignal(CS_SMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_4);
 }
 
 /* Gets the Main Clock System Frequency */
