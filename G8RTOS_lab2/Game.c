@@ -331,7 +331,16 @@ void SendDataToClient(){
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
         G8RTOS_WaitSemaphore(&USING_WIFI);
-		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
+
+        int retval = -1;
+        uint8_t read_ack = 255;
+        while(retval < 0 || read_ack != C2H_ack){
+                SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
+                sleep(50);
+                retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
+                sleep(50);
+        }
+
         G8RTOS_SignalSemaphore(&USING_WIFI);
 		if(curGame.gameDone == true){
 			G8RTOS_AddThread(EndOfGameHost, 0, "desolation"); //The end is approaching
