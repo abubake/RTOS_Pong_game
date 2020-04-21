@@ -63,7 +63,7 @@ static int32_t threadStacks[MAX_THREADS][STACKSIZE];
 static uint32_t NumberOfThreads = 0;
 static uint32_t NumberOfPeriodics = 0;
 static uint16_t currentMaxPriortity = 256;
-static uint16_t deathCount = 0;
+//static uint16_t deathCount = 0;
 static uint16_t IDCounter = 0;
 static bool RTOS_Launched = false;
 
@@ -105,7 +105,7 @@ void G8RTOS_Scheduler()
     /******************************PERIODIC THREADS************************************/
     //sleep evalulation
     tcb_t* ptr = CurrentlyRunningThread;
-    tcb_t* end = CurrentlyRunningThread;
+    //tcb_t* end = CurrentlyRunningThread;
 
     for(uint8_t i = 0; i < NumberOfThreads; i++){
         if(ptr->asleep){

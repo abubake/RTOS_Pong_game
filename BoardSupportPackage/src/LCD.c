@@ -133,7 +133,7 @@ void LCD_Init(bool usingTP)
     LCD_Clear(LCD_BACKGROUNDCOLOR);
 }
 
-static void LCD_initSPI()
+void LCD_initSPI()
 {
     /* P10.1 - CLK
      * P10.2 - MOSI (to SDI of LCD)
@@ -166,7 +166,7 @@ static void LCD_initSPI()
  * Return         : None
  * Attention      : Uses P10.0 for reset
  *******************************************************************************/
-static void LCD_reset()
+void LCD_reset()
 {
     P10DIR |= BIT0;
     P10OUT |= BIT0;  // high
