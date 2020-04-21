@@ -117,7 +117,7 @@ void ReceiveDataFromHost(){
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
-	   // G8RTOS_WaitSemaphore(&USING_WIFI);
+	    G8RTOS_WaitSemaphore(&USING_WIFI);
         int retval = -1;
         uint8_t read_ack = 255;
         //assuming it is from host (no additional check)
@@ -162,7 +162,7 @@ void SendDataToHost(){
             retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the acknowledge from Host
             sleep(50);
         }
-      //  G8RTOS_SignalSemaphore(&USING_WIFI);
+        G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(2);
 	}
 }
@@ -335,7 +335,7 @@ void SendDataToClient(){
 		o If done, Add EndOfGameHost thread with highest priority
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
-      //  G8RTOS_WaitSemaphore(&USING_WIFI);
+        G8RTOS_WaitSemaphore(&USING_WIFI);
 
         int retval = -1;
         uint8_t read_ack = 255;
@@ -383,7 +383,7 @@ void ReceiveDataFromClient(){
 
 //        SendData((uint8_t *)&C2H_ack, clientToHostInfo.IP_address, sizeof(C2H_ack));
 
-//        G8RTOS_SignalSemaphore(&USING_WIFI);
+        G8RTOS_SignalSemaphore(&USING_WIFI);
 
 		sleep(1);
 		/*
