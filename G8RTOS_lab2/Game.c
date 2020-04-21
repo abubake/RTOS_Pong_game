@@ -226,9 +226,7 @@ void EndOfGameClient(){
     //TODO Wait for host to restart game
     while(NewGame == false){
         /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
-        //G8RTOS_WaitSemaphore(&USING_WIFI);    //Should already hold the semaphore
         ReceiveData((uint8_t *)&curGame , sizeof(curGame));
-        //G8RTOS_SignalSemaphore(&USING_WIFI);
         if(curGame.gameDone != false){
             //I think this should work as long as curGame has been updated with a new game status
             NewGame = true;
@@ -252,9 +250,9 @@ void EndOfGameClient(){
     G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 254, "Idle");
 
-    G8RTOS_SignalSemaphore(&USING_LED_I2C);
-    G8RTOS_SignalSemaphore(&USING_SPI);
-    G8RTOS_SignalSemaphore(&USING_WIFI);
+    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+    G8RTOS_InitSemaphore(&USING_SPI, 1);
+    G8RTOS_InitSemaphore(&USING_WIFI, 1);
 
     //Kill self
     G8RTOS_KillSelf();
@@ -624,9 +622,14 @@ void EndOfGameHost(){
 		*/
 
     //Wait for semaphores to be available so that threads using them are not killed yet
+    G8RTOS_WaitSemaphore(&USING_WIFI);
+    G8RTOS_WaitSemaphore(&USING_LED_I2C);
+    G8RTOS_WaitSemaphore(&USING_SPI);
 
     //Now has both semaphores, kill all other threads
     G8RTOS_KillAllOthers();
+
+
 
     //Clear screen with winner's color and print message
     if(curGame.LEDScores[0] > curGame.LEDScores[1]){
@@ -649,17 +652,13 @@ void EndOfGameHost(){
     G8RTOS_AddAPeriodicEvent(HOST_TAP, 4, PORT4_IRQn);
     while(!readyForGame){
         //Send data showing game is over
-        G8RTOS_WaitSemaphore(&USING_WIFI);
         SendData((uint8_t*)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
-        G8RTOS_SignalSemaphore(&USING_WIFI);
     }
 
 
     //When ready, notify client, reinitialize game, add threads back, kill self
     //Notify client
-    G8RTOS_WaitSemaphore(&USING_WIFI);
     SendData((uint8_t*)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
-    G8RTOS_SignalSemaphore(&USING_WIFI);
 
     //Reinitialize game with new scores
     InitBoardState();
@@ -675,9 +674,10 @@ void EndOfGameHost(){
 
 
     //Reinitialize semaphores
-    G8RTOS_SignalSemaphore(&USING_LED_I2C);
-    G8RTOS_SignalSemaphore(&USING_SPI);
-    G8RTOS_SignalSemaphore(&USING_WIFI);
+    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+    G8RTOS_InitSemaphore(&USING_SPI, 1);
+    G8RTOS_InitSemaphore(&USING_WIFI, 1);
+
 
     G8RTOS_KillSelf();
 
