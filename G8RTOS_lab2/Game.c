@@ -99,7 +99,7 @@ void JoinGame(){
 	InitBoardState(); // The stuff
 
 	G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");//3
-	G8RTOS_AddThread(ReadJoystickClient, 2, "ReadJoystickClient"); //3
+	G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient"); //3
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");//2
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");//3
     G8RTOS_AddThread(IdleThread, 5, "idle");//5
@@ -122,7 +122,7 @@ void ReceiveDataFromHost(){
 	    prevHostLoc.Center = curGame.players[0].currentCenter;
         G8RTOS_WaitSemaphore(&USING_WIFI);
 	    G8RTOS_WaitSemaphore(&USING_SPI);
-        ReceiveData((uint8_t *)&curGame, sizeof(curGame));
+	    ReceiveData((uint8_t *)&curGame, sizeof(curGame));
         G8RTOS_SignalSemaphore(&USING_WIFI);
         G8RTOS_SignalSemaphore(&USING_SPI);
 
@@ -823,7 +823,7 @@ void DrawObjects(){
 	    prevClientLoc.Center = curGame.players[1].currentCenter;
 
 	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
-		sleep(10);
+		sleep(25);
 	}
 }
 
