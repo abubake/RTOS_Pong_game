@@ -256,7 +256,7 @@ void EndOfGameClient(){
     G8RTOS_InitSemaphore(&USING_SPI, 1);
     G8RTOS_InitSemaphore(&USING_WIFI, 1);
     /* Add back client threads */
-    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");//2
+    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");//2
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");//2
@@ -313,7 +313,7 @@ void CreateGame(){
 	/* Add these threads. (Need better priority definitions) */
     G8RTOS_AddThread(GenerateBall, 3, "GenerateBall");
     G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
-    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
+    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
     G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs"); //lower priority
@@ -699,7 +699,7 @@ void EndOfGameHost(){
     /* Add these threads. (Need better priority definitions) */
     G8RTOS_AddThread(GenerateBall, 3, "GenerateBall"); //3
     G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
-    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects"); //3
+    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects"); //3
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost"); //5
     G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs"); //lower priority
@@ -718,10 +718,10 @@ void EndOfGameHost(){
 }
 
 void HOST_TAP(){
-	P4->IE |= ~BIT5;
+	//P4->IE |= ~BIT5;
     readyForGame = true;
-    P4->IFG &= ~BIT5;       //May not need
-    P4->IE |= BIT5;
+    //P4->IFG &= ~BIT5;
+   // P4->IE |= BIT5;
 }
 
 inline void resetGameExScores(){
