@@ -97,8 +97,8 @@ void JoinGame(){
 	InitBoardState(); // The stuff
 
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
-    G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");
+    G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
     G8RTOS_AddThread(IdleThread, 250, "idle");
@@ -279,12 +279,8 @@ void CreateGame(){
 	*/
     /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 
-    clientToHostInfo.acknowledge = false;
-
 	int retval = -1;
-    //uint8_t read_ack = 255;
-    //G8RTOS_WaitSemaphore(&USING_WIFI);
-
+    clientToHostInfo.acknowledge = false;
     //waiting for a client to connect
 	    //Not Received  OR  not Acknowledged
     while(retval < 0 || !clientToHostInfo.acknowledge){

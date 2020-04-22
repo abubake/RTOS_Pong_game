@@ -40,12 +40,8 @@ void main(void){
 
 #ifdef MAIN_LAB5
 
-test_t winning;
-uint32_t test;
 void main(void){
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
-
-    //Button taps
 
     G8RTOS_Init();
 
