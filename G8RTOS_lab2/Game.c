@@ -706,10 +706,15 @@ void EndOfGameHost(){
 }
 
 void HOST_TAP(){
-	//P4->IE |= ~BIT5;
-    readyForGame = true;
-    //P4->IFG &= ~BIT5;
-   // P4->IE |= BIT5;
+    //how to debounce
+    __disable_irq();
+    DelayMs(50);
+    if((P4->IN & BIT5) != BIT5){    //if button is actually low
+        readyForGame = true;
+    }
+    //otherwise do nothing
+    P4->IFG &= ~BIT5;
+    __enable_irq();
 }
 
 inline void resetGameExScores(){
