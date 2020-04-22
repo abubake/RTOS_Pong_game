@@ -119,11 +119,7 @@ void ReceiveDataFromHost(){
 		*/
 	    //Before receiving new host location, update the previous location of host
 	    prevHostLoc.Center = curGame.players[0].currentCenter;
-	    for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
-	        //Save ball locations as previous balls
-	        prevBallLocs[i].CenterX = curGame.balls[i].xPos;
-	        prevBallLocs[i].CenterY = curGame.balls[i].yPos;
-	    }
+
 
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
         ReceiveData((uint8_t *)&curGame, sizeof(curGame));
@@ -147,7 +143,7 @@ void ReceiveDataFromHost(){
  */
 void SendDataToHost(){
 	while(1){
-		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
+		//send data to host and sleep (need to fill in parameters of function (from cc3100_usage.h))
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
         SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
         G8RTOS_SignalSemaphore(&USING_WIFI);
@@ -250,7 +246,7 @@ void EndOfGameClient(){
     clientToHostInfo.displacement = PADDLE_X_CENTER;
 
     /* Add back client threads */
-    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
+    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
     G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");
@@ -451,7 +447,7 @@ void MoveBall(){
     for (int i = 0; i < MAX_NUM_OF_BALLS; i++){
         if(curGame.balls[i].alive == false){ // Searching for the first dead ball
 
-        	//• Once found, initialize random position and X and Y velocities, as well as color and alive attributes
+        	//Once found, initialize random position and X and Y velocities, as well as color and alive attributes
             /* Gives random position */
             //Random x that will be within arena bounds and not too close to a wall
             curGame.balls[i].xPos = (rand() % (ARENA_MAX_X - ARENA_MIN_X - 20)) + ARENA_MIN_X + 10;
@@ -601,8 +597,8 @@ void MoveBall(){
 		}
 		else{
 	        //Save position as the now previous position
-		    prevBallLocs[ind].CenterX = curGame.balls[ind].xPos;
-	        prevBallLocs[ind].CenterY = curGame.balls[ind].yPos;
+		    //prevBallLocs[ind].CenterX = curGame.balls[ind].xPos;
+	        //prevBallLocs[ind].CenterY = curGame.balls[ind].yPos;
 
 	        //Update current location of the ball
 	        curGame.balls[ind].xPos = curGame.balls[ind].xPos + curGame.balls[ind].xVel;
@@ -782,6 +778,11 @@ void DrawObjects(){
 	            else{
 	                //If not a new ball, update its location
 	                UpdateBallOnScreen(&prevBallLocs[i], &curGame.balls[i], curGame.balls[i].color);
+                    for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
+                        //Save ball locations as previous balls
+                        prevBallLocs[i].CenterX = curGame.balls[i].xPos;
+                        prevBallLocs[i].CenterY = curGame.balls[i].yPos;
+                    }
 	            }
 	        }
 	    }
