@@ -67,7 +67,7 @@ void JoinGame(){
 
 	/* NEED TO SET ALL THESE WITH REAL VALUES */
 	clientToHostInfo.IP_address = getLocalIP();
-	clientToHostInfo.acknowledge = false;
+	clientToHostInfo.acknowledge = true;
 	clientToHostInfo.displacement = MAX_SCREEN_X/2;
 	clientToHostInfo.joined = true;
 	clientToHostInfo.playerNumber = 1;
@@ -79,7 +79,9 @@ void JoinGame(){
 
 	//pinging
 	while(retval < 0 || !clientToHostInfo.acknowledge){
+	    clientToHost.acknowledge = true;
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+        clientToHost.acknowledge = false;
 	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 	}
 
@@ -284,6 +286,7 @@ void CreateGame(){
     //G8RTOS_WaitSemaphore(&USING_WIFI);
 
     //waiting for a client to connect
+	    //Not Received  OR  not Acknowledged
     while(retval < 0 || !clientToHostInfo.acknowledge){
         retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
     }
