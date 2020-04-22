@@ -523,6 +523,13 @@ void MoveBall(){
 		if((curGame.balls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4) || (curGame.balls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
+			if(curGame.balls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4){
+	            curGame.balls[ind].xPos = ARENA_MAX_X - BALL_SIZE -8);
+			}
+			else if(curGame.balls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4){
+			    curGame.balls[ind].xPos = ARENA_MIN_X + BALL_SIZE + 8);
+			}
+
 		} //Checks if low enough on y-axis and between paddle left and right bounds to see if a collision occurs
 		else if((curGame.balls[ind].yPos >= 232)&&(curGame.balls[ind].xPos > curGame.players[0].currentCenter - PADDLE_LEN_D2 - 2)&&(curGame.balls[ind].xPos < curGame.players[0].currentCenter + PADDLE_LEN_D2 + 2)){
 			collision = true;
@@ -573,7 +580,7 @@ void MoveBall(){
 
 	    //If ball has passed boundary, adjust score
 		bool passedBoundary = false;
-		if((curGame.balls[ind].yPos < ARENA_MIN_Y) || (curGame.balls[ind].yPos > ARENA_MAX_X)){
+		if((curGame.balls[ind].yPos < ARENA_MIN_Y) || (curGame.balls[ind].yPos > ARENA_MAX_Y)){
 		    //Has passed boundary and will kill itself
 		    if(curGame.balls[ind].color == LCD_RED){
 		        //Red Ball Scored
