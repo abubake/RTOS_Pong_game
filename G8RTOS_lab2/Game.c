@@ -98,7 +98,7 @@ void JoinGame(){
 
 	InitBoardState(); // The stuff
 
-	G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");//3
+	G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");//3
 	G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient"); //3
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");//2
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");//3
@@ -255,7 +255,7 @@ void EndOfGameClient(){
 
     /* Add back client threads */
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");//2
-    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");//2
+    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");//2
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs"); //lower priority
@@ -310,7 +310,7 @@ void CreateGame(){
 
 	/* Add these threads. (Need better priority definitions) */
     G8RTOS_AddThread(GenerateBall, 3, "GenerateBall");
-    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");
+    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
     G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
     G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
@@ -435,7 +435,7 @@ void ReadJoystickHost(){
             curGame.players[0].currentCenter  = HORIZ_CENTER_MAX_PL;
         }
         //G8RTOS_SignalSemaphore(&USING_WIFI);
-        sleep(5); //Sleep at the end, maybe we don't need it, may help
+        //sleep(5); //Sleep at the end, maybe we don't need it, may help
 	}
 }
 
@@ -688,7 +688,7 @@ void EndOfGameHost(){
     /* Add these threads. (Need better priority definitions) */
     G8RTOS_AddThread(GenerateBall, 3, "GenerateBall"); //3
     G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
-    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects"); //3
+    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects"); //3
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost"); //5
     G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs"); //lower priority
