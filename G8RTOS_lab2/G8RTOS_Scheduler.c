@@ -318,80 +318,11 @@ sched_ErrCode_t G8RTOS_AddThread(void (*threadToAdd)(void), uint8_t priority, ch
 
 int G8RTOS_AddPeriodic(void (*periodicToAdd)(void), uint32_t period)
 {
-<<<<<<< HEAD
-	static uint16_t IDCounter = 0;
-	uint32_t x = StartCriticalSection();
-
-	if (NumberOfThreads == MAX_THREADS){
-		EndCriticalSection(x);
-		return THREAD_LIMIT_REACHED;
-	}
-
-	NumberOfThreads++; // preinc
-	//Find first dead
-	for(uint32_t addedThread = 0; addedThread < NumberOfThreads; addedThread++){
-	    //Check if dead
-		if(threadControlBlocks[addedThread].isAlive == false){
-		    //Check if only living thread
-			if(NumberOfThreads == 1){
-			    //If it is the only living thread, it points to itself
-				threadControlBlocks[addedThread].Next = &threadControlBlocks[addedThread];
-				threadControlBlocks[addedThread].Previous = &threadControlBlocks[addedThread];
-
-				threadControlBlocks[addedThread].isAlive = true;
-				threadControlBlocks[addedThread].priority = priority;
-				threadControlBlocks[addedThread].threadID = ((uint32_t) IDCounter++ << 16) | addedThread;
-				SetInitialStack(addedThread);
-				threadStacks[addedThread][STACKSIZE-2] = (uint32_t)threadToAdd; // PC
-				threadControlBlocks[addedThread].blocked = 0;
-				(*threadControlBlocks[addedThread].threadName) = *name; //maybe not pointer tho and cast
-				EndCriticalSection(x);
-				return NO_ERROR; // success
-			}
-			else{
-			    //If not the only living thread, needs to be added to linked list
-			    //Find a living thread to link to
-			    for(uint16_t i = 0; i < MAX_THREADS; i++){
-			        if(threadControlBlocks[i].isAlive){
-			            //If found block is alive, link to it as the next
-			            threadControlBlocks[addedThread].Next = &threadControlBlocks[i];
-			            //Make the previous of this thread the former previous of the next
-			            threadControlBlocks[addedThread].Previous = threadControlBlocks[i].Previous;
-
-
-			            //Make this thread the next of the former next threads previous
-			            threadControlBlocks[addedThread].Previous->Next = &threadControlBlocks[addedThread];
-			            //Make this thread the new previous of the found one
-			            threadControlBlocks[i].Previous = &threadControlBlocks[addedThread];
-			            break;
-			        }
-			    }
-
-				threadControlBlocks[addedThread].priority = priority;
-				threadControlBlocks[addedThread].isAlive = true;
-				threadControlBlocks[addedThread].threadID = ((uint32_t) IDCounter++ << 16) | addedThread;
-				SetInitialStack(addedThread);
-				threadStacks[addedThread][STACKSIZE-2] = (uint32_t)threadToAdd; // PC
-				threadControlBlocks[addedThread].blocked = 0;
-				*(threadControlBlocks[addedThread].threadName) = *name;
-				EndCriticalSection(x);
-				return NO_ERROR; // success
-
-			}
-		}
-	}
-	//Not added, sub from count
-	NumberOfThreads--;
-	EndCriticalSection(x);
-	return THREADS_INCORRECTLY_ALIVE;
-}
-=======
     if(MAX_PERIODICS > NumberOfPeriodics){
         int32_t status = StartCriticalSection();
             //initialize periodic
             periodicControlBlocks[NumberOfPeriodics].cur_time = 0;
             periodicControlBlocks[NumberOfPeriodics].exec_time = NumberOfPeriodics;
->>>>>>> WIFI_Bones
 
             periodicControlBlocks[NumberOfPeriodics].handler = periodicToAdd;
             periodicControlBlocks[NumberOfPeriodics].period = period;
