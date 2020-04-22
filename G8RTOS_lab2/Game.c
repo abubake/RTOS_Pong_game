@@ -716,8 +716,10 @@ void EndOfGameHost(){
 }
 
 void HOST_TAP(){
+	P4->IE |= ~BIT5;
     readyForGame = true;
     P4->IFG &= ~BIT5;       //May not need
+    P4->IE |= BIT5;
 }
 
 inline void resetGameExScores(){
