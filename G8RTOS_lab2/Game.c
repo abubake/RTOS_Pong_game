@@ -143,19 +143,18 @@ void ReceiveDataFromHost(){
  * Thread that sends UDP packets to host
  */
 void SendDataToHost(){
-    uint16_t count = 0;
+    //uint16_t count = 0;
 	while(1){
 		//send data to host and sleep (need to fill in parameters of function (from cc3100_usage.h))
-	    if(count == 5){
+	    //if(count == 5){
 	        G8RTOS_WaitSemaphore(&USING_WIFI);
 	        SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
 	        G8RTOS_SignalSemaphore(&USING_WIFI);
-	        count = 0;
+	        //count = 0;
+	        sleep(15); //2
 	    }
-	    count++;
-
-		sleep(2);
-	}
+	    //count++;
+	//}
 }
 
 /*
@@ -327,7 +326,6 @@ void CreateGame(){
  * Thread that sends game state to client
  */
 void SendDataToClient(){
-    uint16_t count = 0;
 	while(1){
 		/*
 		• Fill packet for client
@@ -336,7 +334,7 @@ void SendDataToClient(){
 		o If done, Add EndOfGameHost thread with highest priority
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
-	    if(count == 5){
+	    //if(count == 2){
 	        G8RTOS_WaitSemaphore(&USING_WIFI);
 	        SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
 	        G8RTOS_SignalSemaphore(&USING_WIFI);
@@ -344,10 +342,11 @@ void SendDataToClient(){
 	        if(curGame.gameDone == true){
 	            G8RTOS_AddThread(EndOfGameHost, 1, "desolation"); //The end is approaching
 	        }
-	        count = 0;
-	    }
-	    count++;
-		sleep(5);
+	        //count = 0;
+	    //}
+	    //count++;
+		sleep(15); //5
+
 	}
 }
 
@@ -442,7 +441,7 @@ void ReadJoystickHost(){
             curGame.players[0].currentCenter  = HORIZ_CENTER_MAX_PL;
         }
         //G8RTOS_SignalSemaphore(&USING_WIFI);
-        sleep(10); //Sleep at the end, maybe we don't need it, may help
+        sleep(5); //Sleep at the end, maybe we don't need it, may help
 	}
 }
 
@@ -855,7 +854,7 @@ void MoveLEDs(){
             G8RTOS_SignalSemaphore(&USING_LED_I2C);
 
 	    }
-            sleep(500);
+            sleep(200);
 	}
 }
 
