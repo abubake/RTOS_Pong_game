@@ -185,16 +185,8 @@ typedef struct balls_t
         int16_t yPos;
         int16_t xVel;
         int16_t yVel;
-
-        bool alive;
-        //threadId_t threadID;  //Not really used
         uint16_t color;
-
-        PrevBall_t prevLoc;
-
-        //int16_t width;        //unused
-        //int16_t height;
-
+        bool alive;
         bool newBall;           //For drawing the first time
 
 }balls_t;
