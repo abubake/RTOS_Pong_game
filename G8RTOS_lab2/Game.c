@@ -277,12 +277,8 @@ void CreateGame(){
 	*/
     /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 
-    clientToHostInfo.acknowledge = false;
-
 	int retval = -1;
-    //uint8_t read_ack = 255;
-    //G8RTOS_WaitSemaphore(&USING_WIFI);
-
+    clientToHostInfo.acknowledge = false;
     //waiting for a client to connect
     while(retval < 0 || !clientToHostInfo.acknowledge){
         retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
