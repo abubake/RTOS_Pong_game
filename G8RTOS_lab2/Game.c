@@ -357,9 +357,11 @@ void ReceiveDataFromClient(){
 		/*
 		• Update the player’s current center with the displacement received from the client
 		*/
+		G8RTOS_WaitSemaphore(&USING_WIFI);
 		if((clientToHostInfo.displacement > ARENA_MIN_X + PADDLE_LEN_D2) && (clientToHostInfo.displacement < ARENA_MAX_X - PADDLE_LEN_D2)){
 			curGame.players[1].currentCenter = clientToHostInfo.displacement;
 		}
+		G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(2);
 	}
 }
@@ -374,7 +376,9 @@ void GenerateBall(){
 		• Sleeps proportional to the number of balls currently in play
 		*/
 	    if(curGame.numberOfBalls < MAX_NUM_OF_BALLS){
+	        G8RTOS_WaitSemaphore(&USING_WIFI);
 	        curGame.numberOfBalls++;
+	        G8RTOS_SignalSemaphore(&USING_WIFI);
 	        G8RTOS_AddThread(MoveBall, 5, "MoveBall");
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
@@ -416,6 +420,7 @@ void ReadJoystickHost(){
 		prevHostLoc.Center = curGame.players[0].currentCenter;
 
 		//Update current location
+		G8RTOS_WaitSemaphore(&USING_WIFI);
         curGame.players[0].currentCenter += difference;
         if(curGame.players[0].currentCenter < HORIZ_CENTER_MIN_PL){
             curGame.players[0].currentCenter  = HORIZ_CENTER_MIN_PL;
@@ -423,7 +428,7 @@ void ReadJoystickHost(){
         else if(curGame.players[0].currentCenter  > HORIZ_CENTER_MAX_PL){
             curGame.players[0].currentCenter  = HORIZ_CENTER_MAX_PL;
         }
-
+        G8RTOS_SignalSemaphore(&USING_WIFI);
         sleep(10); //Sleep at the end, maybe we don't need it, may help
 	}
 }
@@ -443,6 +448,7 @@ void MoveBall(){
 	• Sleep for 35ms
 	*/
 	//Initialize ball if it was newly made
+    G8RTOS_WaitSemaphore(&USING_WIFI);
     uint8_t ind;
     for (int i = 0; i < MAX_NUM_OF_BALLS; i++){
         if(curGame.balls[i].alive == false){ // Searching for the first dead ball
@@ -479,19 +485,24 @@ void MoveBall(){
             curGame.balls[i].alive = true;
 
             //Set previous location as this location
+            G8R
             prevBallLocs[i].CenterX = curGame.balls[i].xPos;
             prevBallLocs[i].CenterY = curGame.balls[i].yPos;
             curGame.balls[i].newBall = true;
 
             ind = i;
+
             break;
         }
     }
+    G8RTOS_SignalSemaphore(&USING_WIFI);
+
     	/*
         • If the ball passes the boundary edge, adjust score, account for the game possibly ending, and kill self
         • Otherwise, just move the ball in its current direction according to its velocity
         */
 	while(1){
+	    G8RTOS_WaitSemaphore(&USING_WIFI);
 		/* WALL COLLISION DETECTION */
 		bool collision = false; //maybe make this global
 		bool wall = false; //both variables get reset
@@ -613,6 +624,7 @@ void MoveBall(){
 	            curGame.balls[ind].xPos = ARENA_MAX_X + BALL_SIZE;
 	        }
 		}
+		G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(35);
 	}
 }
@@ -700,6 +712,7 @@ void HOST_TAP(){
 }
 
 inline void resetGameExScores(){
+    G8RTOS_WaitSemaphore(&USING_WIFI);
     //Make LED scores 0
     curGame.LEDScores[0] = 0;
     curGame.LEDScores[1] = 0;
@@ -726,7 +739,7 @@ inline void resetGameExScores(){
 
     prevHostLoc.Center = PADDLE_X_CENTER;
     prevClientLoc.Center = PADDLE_X_CENTER;
-
+    G8RTOS_SignalSemaphore(&USING_WIFI);
     //curGame.overallScores[]   Scores not reset between games
 }
 
@@ -764,25 +777,30 @@ void DrawObjects(){
 	        if(curGame.balls[i].alive){
 	            if(curGame.balls[i].newBall){
 	                //If a new ball, paint its initial location
+	                G8RTOS_WaitSemaphore(&USING_WIFI);
 	                int16_t xCoord = curGame.balls[i].xPos;
 	                int16_t yCoord = curGame.balls[i].yPos;
-
+	                G8RTOS_SignalSemaphore(&USING_WIFI);
 	                G8RTOS_WaitSemaphore(&USING_SPI);
 	                LCD_DrawRectangle(xCoord - BALL_SIZE_D2, xCoord + BALL_SIZE_D2, yCoord - BALL_SIZE_D2, yCoord + BALL_SIZE_D2, LCD_WHITE);
 	                G8RTOS_SignalSemaphore(&USING_SPI);
 
+	                G8RTOS_WaitSemaphore(&USING_WIFI);
 	                //Not new anymore
 	                curGame.balls[i].newBall = false;
 	                curGame.balls[i].newBall = false;
+	                G8RTOS_SignalSemaphore(&USING_WIFI);
 	            }
 	            else{
 	                //If not a new ball, update its location
+	                G8RTOS_WaitSemaphore(&USING_WIFI);
 	                UpdateBallOnScreen(&prevBallLocs[i], &curGame.balls[i], curGame.balls[i].color);
                     for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
                         //Save ball locations as previous balls
                         prevBallLocs[i].CenterX = curGame.balls[i].xPos;
                         prevBallLocs[i].CenterY = curGame.balls[i].yPos;
                     }
+                    G8RTOS_SignalSemaphore(&USING_WIFI);
 	            }
 	        }
 	    }
