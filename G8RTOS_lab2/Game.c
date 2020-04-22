@@ -99,7 +99,7 @@ void JoinGame(){
 	InitBoardState(); // The stuff
 
 	G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");//3
-	G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient"); //3
+	G8RTOS_AddThread(ReadJoystickClient, 2, "ReadJoystickClient"); //3
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");//2
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");//3
     G8RTOS_AddThread(IdleThread, 5, "idle");//5
