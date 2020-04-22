@@ -1,34 +1,20 @@
 /*
  * G8RTOS_IPC.h
  *
- *  Created on: Jan 10, 2017
- *      Author: Daniel Gonzalez
+ *  Created on: Mar 3, 2020
+ *      Author: nicks
  */
 
-#ifndef G8RTOS_G8RTOS_IPC_H_
-#define G8RTOS_G8RTOS_IPC_H_
+#ifndef G8RTOS_LAB4_G8RTOS_IPC_H_
+#define G8RTOS_LAB4_G8RTOS_IPC_H_
+#include "msp.h"
 
-#include "G8RTOS.h"
 /*********************************************** Error Codes **************************************************************************/
-#define FIFOSIZE 16
-#define MAX_NUMBER_OF_FIFOS 4
+
 /*********************************************** Error Codes **************************************************************************/
 
 /*********************************************** Public Functions *********************************************************************/
-typedef struct FIFO_t{
 
-	int32_t Buffer[FIFOSIZE];
-	int32_t *Head;
-	int32_t *Tail;
-
-	uint32_t lostData;
-	semaphore_t CurrentSize;
-	semaphore_t Mutex;
-
-}FIFO_t;
-
-/* Array of FIFOS */
-static FIFO_t FIFOs[4];
 /*
  * Initializes One to One FIFO Struct
  */
@@ -39,8 +25,9 @@ int G8RTOS_InitFIFO(uint32_t FIFOIndex);
  *  - Waits until CurrentSize semaphore is greater than zero
  *  - Gets data and increments the head ptr (wraps if necessary)
  * Param "FIFOChoice": chooses which buffer we want to read from
- * Returns: uint32_t Data from FIFO */
-int32_t readFIFO(int32_t FIFO);
+ * Returns: uint32_t Data from FIFO
+ */
+uint32_t readFIFO(uint32_t FIFO);
 
 /*
  * Writes to FIFO
@@ -50,9 +37,10 @@ int32_t readFIFO(int32_t FIFO);
  *        "Data': Data being put into FIFO
  *  Returns: error code for full buffer if unable to write
  */
-int writeFIFO(int32_t FIFO, int32_t data);
+int writeFIFO(uint32_t FIFO, uint32_t data);
 
 /*********************************************** Public Functions *********************************************************************/
 
 
-#endif /* G8RTOS_G8RTOS_IPC_H_ */
+
+#endif /* G8RTOS_LAB4_G8RTOS_IPC_H_ */

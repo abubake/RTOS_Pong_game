@@ -1,16 +1,19 @@
 /*
  * G8RTOS_IPC.c
  *
- *  Created on: Jan 10, 2017
- *      Author: Daniel Gonzalez
+ *  Created on: Mar 3, 2020
+ *      Author: nicks
  */
-#include <stdint.h>
-#include "msp.h"
+
 #include "G8RTOS_IPC.h"
 #include "G8RTOS_Semaphores.h"
+#include <stdint.h>
+#include "msp.h"
 
 /*********************************************** Defines ******************************************************************************/
 
+#define FIFOSIZE 16
+#define MAX_NUMBER_OF_FIFOS 4
 
 /*********************************************** Defines ******************************************************************************/
 
@@ -28,6 +31,19 @@
  */
 
 /* Create FIFO struct here */
+typedef struct FIFO_t
+{
+    int32_t Buffer[FIFOSIZE];
+    int32_t *Head;
+    int32_t *Tail;
+    uint32_t LostData;
+    semaphore_t CurrentSize;
+    semaphore_t Mutex;
+}FIFO_t;
+
+
+/* Array of FIFOS */
+static FIFO_t FIFOs[4];
 
 
 /*********************************************** Data Structures Used *****************************************************************/
@@ -37,17 +53,21 @@
  */
 int G8RTOS_InitFIFO(uint32_t FIFOIndex)
 {
-	if (FIFOIndex > 4){
-		return -1;
-	}
-	else {
-				FIFOs[FIFOIndex].Head = &FIFOs[FIFOIndex].Buffer[0];
-				FIFOs[FIFOIndex].Tail = &FIFOs[FIFOIndex].Buffer[0];
-				G8RTOS_InitSemaphore(&(FIFOs[FIFOIndex].CurrentSize), 0); //this right?
-				G8RTOS_InitSemaphore(&(FIFOs[FIFOIndex].Mutex), 1);
-				FIFOs[FIFOIndex].lostData = 0;
-		return 0;
-	}
+    //Check we can add
+    if(FIFOIndex >= MAX_NUMBER_OF_FIFOS)
+    {
+        return 1;
+    }
+
+    FIFOs[FIFOIndex].LostData = 0;
+    FIFOs[FIFOIndex].Head = &FIFOs[FIFOIndex].Buffer[0];
+    FIFOs[FIFOIndex].Tail = &FIFOs[FIFOIndex].Buffer[0];
+
+    G8RTOS_InitSemaphore(&FIFOs[FIFOIndex].CurrentSize, 0);
+    G8RTOS_InitSemaphore(&FIFOs[FIFOIndex].Mutex, 1);
+
+    //Was successful
+    return 0;
 }
 
 /*
@@ -57,22 +77,27 @@ int G8RTOS_InitFIFO(uint32_t FIFOIndex)
  * Param: "FIFOChoice": chooses which buffer we want to read from
  * Returns: uint32_t Data from FIFO
  */
-int32_t readFIFO(int32_t FIFOChoice)
+uint32_t readFIFO(uint32_t FIFOChoice)
 {
-	int32_t data = 0;
+    //Wait in case being read from another thread
+    G8RTOS_WaitSemaphore(&FIFOs[FIFOChoice].Mutex);
+    //Wait for Current size to not be 0
+    G8RTOS_WaitSemaphore(&FIFOs[FIFOChoice].CurrentSize);
 
-    G8RTOS_WaitSemaphore(&(FIFOs[FIFOChoice].CurrentSize));
-    G8RTOS_WaitSemaphore(&(FIFOs[FIFOChoice].Mutex)); // The one causing the issue
+    //Read head value
+    uint32_t dataToRead = *FIFOs[FIFOChoice].Head;
 
-    data = *(FIFOs[FIFOChoice].Head); // is this value being retrieved correctly?
-    (FIFOs[FIFOChoice].Head)++;
-
-    if (FIFOs[FIFOChoice].Head == &FIFOs[FIFOChoice].Buffer[FIFOSIZE-1]){
-    	FIFOs[FIFOChoice].Head = &FIFOs[FIFOChoice].Buffer[0];
+    //Increment and wrap head pointer
+    FIFOs[FIFOChoice].Head++;
+    if(FIFOs[FIFOChoice].Head > &FIFOs[FIFOChoice].Buffer[FIFOSIZE-1])
+    {
+        FIFOs[FIFOChoice].Head = &FIFOs[FIFOChoice].Buffer[0];
     }
 
-    G8RTOS_SignalSemaphore(&(FIFOs[FIFOChoice].Mutex));
-    return data;
+    //Signal Mutex semaphore
+    G8RTOS_SignalSemaphore(&FIFOs[FIFOChoice].Mutex);
+
+    return dataToRead;
 }
 
 /*
@@ -81,21 +106,43 @@ int32_t readFIFO(int32_t FIFOChoice)
  *  Increments tail (wraps if ncessary)
  *  Param "FIFOChoice": chooses which buffer we want to read from
  *        "Data': Data being put into FIFO
- *  Returns: error code for full buffer if unable to write */
-int32_t writeFIFO(int32_t FIFOChoice, int32_t Data)
+ *  Returns: error code for full buffer if unable to write
+ */
+int writeFIFO(uint32_t FIFOChoice, uint32_t Data)
 {
-if(FIFOs[FIFOChoice].CurrentSize == FIFOSIZE-1){ // was FIFOSIZE -1
-	FIFOs[FIFOChoice].lostData++;
-	return -1;
-}
-	*(FIFOs[FIFOChoice].Tail) = Data; // a put
-	FIFOs[FIFOChoice].Tail++; //place for next
 
-	if (FIFOs[FIFOChoice].Tail == &FIFOs[FIFOChoice].Buffer[FIFOSIZE-1]){
-		FIFOs[FIFOChoice].Tail = &FIFOs[FIFOChoice].Buffer[0];
-	}
+    if(FIFOs[FIFOChoice].CurrentSize > FIFOSIZE-1)
+    {
+        //If larger than FIFOSIZE-1 then increment lost data and overwrite
+        FIFOs[FIFOChoice].LostData++;
+        *FIFOs[FIFOChoice].Tail = Data;
 
-		G8RTOS_SignalSemaphore(&FIFOs[FIFOChoice].CurrentSize); //should this be the old kind of signal semaphore? (MAY NOT BE APPROPRIATE)
-		return 0;
+        //Increment tail and wrap
+        FIFOs[FIFOChoice].Tail++;
+        if(FIFOs[FIFOChoice].Tail > &FIFOs[FIFOChoice].Buffer[FIFOSIZE-1])
+        {
+            FIFOs[FIFOChoice].Tail = &FIFOs[FIFOChoice].Buffer[0];
+        }
+
+        return 1;
+    }
+    else
+    {
+        //Else write the data
+        *FIFOs[FIFOChoice].Tail = Data;
+
+        //Increment tail and wrap
+        FIFOs[FIFOChoice].Tail++;
+        if(FIFOs[FIFOChoice].Tail > &FIFOs[FIFOChoice].Buffer[FIFOSIZE-1])
+        {
+            FIFOs[FIFOChoice].Tail = &FIFOs[FIFOChoice].Buffer[0];
+        }
+
+        //Signal CurrentSize to increase and notify other threads of it having data
+        G8RTOS_SignalSemaphore(&FIFOs[FIFOChoice].CurrentSize);
+
+        return 0;
+    }
+
 }
 

@@ -41,16 +41,10 @@ void main(void){
 
 #ifdef MAIN_LAB5
 
-test_t winning;
-uint32_t test;
 void main(void){
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
 
-    //Button taps
-
     G8RTOS_Init();
-
-    test = MAP_CS_getSMCLK;
 
     /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
     G8RTOS_InitSemaphore(&USING_SPI, 1);
@@ -58,23 +52,16 @@ void main(void){
     G8RTOS_InitSemaphore(&USING_WIFI, 1);
 
     LCD_Init(false);
-/*
-    char* test = 0;
-    unsigned long test_flg = 0;
-    spi_Open(test, test_flg);
-*/
 
-    LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Push Top Button To Be Client", LCD_WHITE);
-    LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Push Right Button To Be Host", LCD_WHITE);
+    LCD_Text(50, (MAX_SCREEN_Y >> 1) - 20, "Client is top button", LCD_BLUE);
+    LCD_Text(50, (MAX_SCREEN_Y >> 1) + 20, "Host is right button", LCD_RED);
 
     playerType gameRole = GetPlayerRole();
-    LCD_Text(120, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
+    LCD_Text(150, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
     initCC3100(gameRole);
 
 	/* For the color randomness */
 	srand(time(NULL));
-
-    G8RTOS_AddThread(IdleThread, 250, "idle");
 
 	//Add the appropriate starter thread for the chosen role
 	if(gameRole == Host){

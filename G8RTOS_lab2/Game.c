@@ -6,6 +6,7 @@
 #include "RGBLeds.h"
 #include "cc3100_usage.h"
 #include "demo_sysctl.h"
+#include "G8RTOS_Scheduler.h"
 
 /* Joystick Info */
 int16_t X_coord;
@@ -66,7 +67,7 @@ void JoinGame(){
 
 	/* NEED TO SET ALL THESE WITH REAL VALUES */
 	clientToHostInfo.IP_address = getLocalIP();
-	clientToHostInfo.acknowledge = false;
+	clientToHostInfo.acknowledge = true;
 	clientToHostInfo.displacement = MAX_SCREEN_X/2;
 	clientToHostInfo.joined = true;
 	clientToHostInfo.playerNumber = 1;
@@ -75,51 +76,52 @@ void JoinGame(){
 
 	/* Sends the Client's IP address to the host */
 	int retval = -1;
-	uint8_t read_ack = 255;
 
-	G8RTOS_WaitSemaphore(&USING_WIFI);
-	while(retval < 0 || read_ack != H2C_ack){
-	    SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
+	//pinging
+	while(retval < 0 || !clientToHostInfo.acknowledge){
+	    clientToHostInfo.acknowledge = true;
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
-	    sleep(50);
-		retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
-        retval = ReceiveData((uint8_t*)&curGame, sizeof(curGame)); //Recieves the GameState from Host
-		sleep(50);
+        clientToHostInfo.acknowledge = false;
+	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 	}
-    G8RTOS_SignalSemaphore(&USING_WIFI);
-	sleep(50);
+
+	//tell the host that I am ready to join
+    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+
+
 
 	/* Connection established, launch RTOS */
-	P2->DIR |= 0x04;         /* P2.2 set as output */
-	P2->OUT |= 4; // Solid blue, connection established
-
+	BITBAND_PERI(P2->DIR, 0) = 1;
+	BITBAND_PERI(P2->OUT, 0) = 1;
 
 	InitBoardState(); // The stuff
 
-    G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");
-    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
+    G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
-    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
-
+    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
+    //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
+    G8RTOS_AddThread(IdleThread, 250, "idle");
 	G8RTOS_KillSelf();
+	DelayMs(1);
 }
 
 /*
  * Thread that receives game state packets from host
  */
 void ReceiveDataFromHost(){
-    //Before receiving new host location, update the previous location of host
-    prevHostLoc.Center = curGame.players[0].currentCenter;
-
 	while(1){
 		/*
 		• Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
+	    //Before receiving new host location, update the previous location of host
+	    prevHostLoc.Center = curGame.players[0].currentCenter;
+
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
-		ReceiveData((uint8_t *)&curGame, sizeof(curGame));
+        int retval = -1;
+        retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame));
 		G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(1);
 		/*
@@ -142,9 +144,10 @@ void SendDataToHost(){
 	while(1){
 		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
-	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
-	    G8RTOS_SignalSemaphore(&USING_WIFI);
+        int retval = -1;
 
+        SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+        G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(2);
 	}
 }
@@ -226,9 +229,7 @@ void EndOfGameClient(){
     //TODO Wait for host to restart game
     while(NewGame == false){
         /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
-        //G8RTOS_WaitSemaphore(&USING_WIFI);    //Should already hold the semaphore
         ReceiveData((uint8_t *)&curGame , sizeof(curGame));
-        //G8RTOS_SignalSemaphore(&USING_WIFI);
         if(curGame.gameDone != false){
             //I think this should work as long as curGame has been updated with a new game status
             NewGame = true;
@@ -252,9 +253,9 @@ void EndOfGameClient(){
     G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 254, "Idle");
 
-    G8RTOS_SignalSemaphore(&USING_LED_I2C);
-    G8RTOS_SignalSemaphore(&USING_SPI);
-    G8RTOS_SignalSemaphore(&USING_WIFI);
+    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+    G8RTOS_InitSemaphore(&USING_SPI, 1);
+    G8RTOS_InitSemaphore(&USING_WIFI, 1);
 
     //Kill self
     G8RTOS_KillSelf();
@@ -279,32 +280,38 @@ void CreateGame(){
     /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 
 	int retval = -1;
-    uint8_t read_ack = 255;
-    G8RTOS_WaitSemaphore(&USING_WIFI);
-	while(retval < 0 || read_ack != C2H_ack){//RECIEVING THE IP ADDRESS
-        retval = ReceiveData(&read_ack, sizeof(read_ack));
-	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
-	    sleep(50);
-		SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack)); //Sends gameState to client
-		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame)); //Sends gameState to client
-	    sleep(50);
-	}
-    G8RTOS_SignalSemaphore(&USING_WIFI);
+    clientToHostInfo.acknowledge = false;
+    //waiting for a client to connect
+	    //Not Received  OR  not Acknowledged
+    while(retval < 0 || !clientToHostInfo.acknowledge){
+        retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+    }
 
-	P2->DIR |= 0x04;         /* P2.2 set as output for WIFI connect LED */
-	P2->OUT ^= 0x04;         /* turn blue ON */
+    //Send acknowledge to client allowing to connect
+    clientToHostInfo.acknowledge = true;
+    SendData((uint8_t *)&clientToHostInfo, clientToHostInfo.IP_address, sizeof(clientToHostInfo));
+    clientToHostInfo.acknowledge = false;
+
+    //wait until the client says it has joined
+    while(retval < 0 || !clientToHostInfo.acknowledge){
+        retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+    }
+
+    BITBAND_PERI(P2->DIR, 0) = 1;
+    BITBAND_PERI(P2->OUT, 0) = 1;
 
 	InitBoardState();
 
 	/* Add these threads. (Need better priority definitions) */
-    G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
-    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
-    G8RTOS_AddThread(DrawObjects, 5, "DrawObjects");
-    G8RTOS_AddThread(ReadJoystickHost, 5, "ReadJoystickHost");
-    G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
-    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
-
+    //G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
+    G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
+    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
+    G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
+    G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
+    //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+    //G8RTOS_AddThread(IdleThread, 250, "idle");
 	G8RTOS_KillSelf();
+	DelayMs(1);
 }
 
 /*
@@ -320,9 +327,10 @@ void SendDataToClient(){
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
         G8RTOS_WaitSemaphore(&USING_WIFI);
-		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
+        SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
         G8RTOS_SignalSemaphore(&USING_WIFI);
-		if(curGame.gameDone == true){
+
+        if(curGame.gameDone == true){
 			G8RTOS_AddThread(EndOfGameHost, 0, "desolation"); //The end is approaching
 		}
 
@@ -343,7 +351,11 @@ void ReceiveDataFromClient(){
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
         G8RTOS_WaitSemaphore(&USING_WIFI);
-		ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+
+        int retval = -1;
+        retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+
+
         G8RTOS_SignalSemaphore(&USING_WIFI);
 
 		sleep(1);
@@ -624,12 +636,14 @@ void EndOfGameHost(){
 		*/
 
     //Wait for semaphores to be available so that threads using them are not killed yet
-    G8RTOS_WaitSemaphore(&USING_SPI);
-    G8RTOS_WaitSemaphore(&USING_LED_I2C);
     G8RTOS_WaitSemaphore(&USING_WIFI);
+    G8RTOS_WaitSemaphore(&USING_LED_I2C);
+    G8RTOS_WaitSemaphore(&USING_SPI);
 
     //Now has both semaphores, kill all other threads
     G8RTOS_KillAllOthers();
+
+
 
     //Clear screen with winner's color and print message
     if(curGame.LEDScores[0] > curGame.LEDScores[1]){
@@ -647,25 +661,18 @@ void EndOfGameHost(){
         LCD_Text(95, 75, "Host Press Button", curGame.players[0].color);
     }
 
-    //Create aperiodic thread waiting for host's action
-    //TODO Button interrupt
-
     //4.5
     readyForGame = false;
     G8RTOS_AddAPeriodicEvent(HOST_TAP, 4, PORT4_IRQn);
     while(!readyForGame){
         //Send data showing game is over
-        //G8RTOS_WaitSemaphore(&USING_WIFI);
         SendData((uint8_t*)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
-        //G8RTOS_SignalSemaphore(&USING_WIFI);
     }
 
 
     //When ready, notify client, reinitialize game, add threads back, kill self
     //Notify client
-    //G8RTOS_WaitSemaphore(&USING_WIFI);
     SendData((uint8_t*)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
-    //G8RTOS_SignalSemaphore(&USING_WIFI);
 
     //Reinitialize game with new scores
     InitBoardState();
@@ -681,9 +688,10 @@ void EndOfGameHost(){
 
 
     //Reinitialize semaphores
-    G8RTOS_SignalSemaphore(&USING_LED_I2C);
-    G8RTOS_SignalSemaphore(&USING_SPI);
-    G8RTOS_SignalSemaphore(&USING_WIFI);
+    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+    G8RTOS_InitSemaphore(&USING_SPI, 1);
+    G8RTOS_InitSemaphore(&USING_WIFI, 1);
+
 
     G8RTOS_KillSelf();
 

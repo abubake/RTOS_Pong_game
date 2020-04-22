@@ -97,11 +97,11 @@ static inline _i32 BsdUdpServer(_u16 Port, _u8 *data, _u16 BUF_SIZE)
                 // Returns number of bytes received
                 Status = sl_RecvFrom(SockIDRx, temp, recvSize, 0,(SlSockAddr_t *)&Addr, (SlSocklen_t*)&AddrSize );
 
-                //                if(Status < 0)
-                //                {
-                //                    sl_Close(SockIDRx);
-                //                    ASSERT_ON_ERROR(Status);
-                //                }
+                                if(Status < 0)
+                                {
+                                    sl_Close(SockIDRx);
+                                    ASSERT_ON_ERROR(Status);
+                                }
 
                 recvSize -= Status;
                 temp += 1;

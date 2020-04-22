@@ -14,7 +14,7 @@
 
 ; Need to have the address defined in file 
 ; (label needs to be close enough to asm code to be reached with PC relative addressing)
-RunningPtr: .field CurrentlyRunningThread, 32 ;0x20006BB5 (C0 6B 00 20) what does that data mean?
+RunningPtr: .field CurrentlyRunningThread, 32
 
 ; G8RTOS_Start
 ;	Sets the first thread to be the currently running thread
@@ -22,24 +22,19 @@ RunningPtr: .field CurrentlyRunningThread, 32 ;0x20006BB5 (C0 6B 00 20) what doe
 G8RTOS_Start:
 
 	.asmfunc
-		; correct pushing here?
-	ldr r0, RunningPtr ; Takes in address of CurrentlyRunningThread (0x20006C80) which has the address if the TCB's in it (it's data)
-	ldr r1, [r0]	; loading the value at CurrentlyRunningThread's address into r1
-	ldr sp, [r1]	; load from r1 into stack pointer ; task0 is 0x00 01 31 68
-
-	pop {r4 - r11}	; restores
-	pop {r0 - r3}	; restores
-	pop {r12}
-	add sp, sp, #4	; discard LR from initial stack
-	pop {lr}	; the start location upon exiting
-
-	add sp, sp, #4 ; discard the PSR
-
-	cpsie I	; enable interrupts at level of the proccesor
-	bx lr	; start first thread
+	LDR     R0, RunningPtr    ;take preset intial thread ptr and put it into R0
+    LDR     R1, [R0]           ;R1 holds the thread now
+    LDR     SP, [R1]           ;main stack pointer will take in R1 data
+    POP     {R4-R11}           ;restore regs R4-R11
+    POP     {R0-R3}            ;restore regs R0-R3
+    POP     {R12}
+    ADD     SP,SP,#4           ;discard LR from initial stack
+    POP     {LR}               ;start location
+    ADD     SP,SP,#4           ;discard PSR (jump over PC)
+    CPSIE   I                  ;Enable interrupts at processor level
+    BX      LR                 ;start first thread
 
 	.endasmfunc
-
 
 ; PendSV_Handler
 ; - Performs a context switch in G8RTOS
@@ -48,27 +43,26 @@ G8RTOS_Start:
 ;	- Calls G8RTOS_Scheduler to get new tcb
 ;	- Set stack pointer to new stack pointer from new tcb
 ;	- Pops registers from thread stack
-; 1. save context 2. call scheduler 3. load next scheduled thread's context
 PendSV_Handler:
-	;.align 4
+	
 	.asmfunc
 
-	cpsid I
-	push {r4 - r11}	; save remaining registers r4 - r11
-	ldr r0, RunningPtr ; Takes in address of CurrentlyRunningThread (0x20006C80) which has the address if the TCB's in it (it's data)
-	ldr r1, [r0]	; loading the value at CurrentlyRunningThread's address into r1
-	str sp, [r1]	; load from r1 into stack pointer ; task0 is 0x00 01 31 68
-	push {r0, lr}
+	CPSID   I       			;disable interrupts dueing context switch
+    PUSH    {R4-R11}          	;saves remaining registers during context switch (others saved by branch already)
+    LDR     R0, RunningPtr		;R0 will be the pointer from the old thread (MAY NEED TO USE =RunningPtr instead of CRT)
+    LDR     R1, [R0]           	;R1 = the current thread
+    STR     SP, [R1]        	;save the main stack pointer into the tcb stack to pick up where the thread left off
 
-	bl G8RTOS_Scheduler
+    PUSH    {LR}				;use the scheduler to get a new currently running thread
+    BL      G8RTOS_Scheduler
+    POP     {LR}
 
-	pop {r0, lr}
-	;ldr r0, RunningPtr ; accessing the next TCB
-	ldr r1, [r0]	;
-	ldr sp, [r1]	;
-	pop {r4 - r11}
-	cpsie I
-	bx lr	; next thread
+    LDR     R0, RunningPtr
+    LDR     R1, [R0]         	;the new thread pointer is stored in R0 so put the addy of it in to R1
+    LDR     SP, [R1]          	;put the addy of the new thread into the main stack pointer
+    POP     {R4-R11}          	;restore r4-r11
+    CPSIE   I                 	;enable interrupts
+    BX      LR                	;branch to the new thread and restore R0-R3,r12,LR,PC, and PSR
 
 	.endasmfunc
 	

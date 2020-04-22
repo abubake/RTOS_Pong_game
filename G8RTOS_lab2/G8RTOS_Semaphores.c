@@ -1,102 +1,75 @@
 /*
  * G8RTOS_Semaphores.c
  */
+
 /*********************************************** Dependencies and Externs *************************************************************/
 
+#include <pong-lab/G8RTOS_lab2/G8RTOS_CriticalSection.h>
+#include <pong-lab/G8RTOS_lab2/G8RTOS_Scheduler.h>
+#include <pong-lab/G8RTOS_lab2/G8RTOS_Semaphores.h>
+#include <pong-lab/G8RTOS_lab2/G8RTOS_Structures.h>
 #include "msp.h"
-#include "G8RTOS.h"
 
 /*********************************************** Dependencies and Externs *************************************************************/
-
 
 
 /*********************************************** Public Functions *********************************************************************/
 
-/* Initializes a semaphore to a given value
+/*
+ * Initializes a semaphore to a given value
  * Param "s": Pointer to semaphore
  * Param "value": Value to initialize semaphore to
- * X holds the PRIMASK value
- * THIS IS A CRITICAL SECTION */
-void G8RTOS_InitSemaphore(semaphore_t *s, int32_t value)
+ * THIS IS A CRITICAL SECTION
+ */
+void G8RTOS_InitSemaphore(semaphore_t* s, int32_t value)
 {
-	uint32_t x; // used to have this as global
-	x = StartCriticalSection();
-	*s = value;
-	EndCriticalSection(x);
+    int32_t status;
+    status = StartCriticalSection();
+    *s = value;
+    EndCriticalSection(status);
 }
 
-/* No longer waits for semaphore
- *  - Decrements semaphore
- *  - Blocks thread if sempahore is unavalible
- * Param "s": Pointer to semaphore to wait on
- * THIS IS A CRITICAL SECTION */
-void G8RTOS_WaitSemaphore(semaphore_t *s)
-{
-	uint32_t x;
-	x = StartCriticalSection();
-	(*s) = (*s) - 1;
-	if ((*s) < 0){
-		CurrentlyRunningThread->blocked = s; // the "blocked" semaphore points to the blocked thread
-		EndCriticalSection(x);
-		StartContextSwitch(); // runs the next thread
-	}
-	EndCriticalSection(x);
-}
-
-
-/* Signals the completion of the usage of a semaphore
- *  - Increments the semaphore value by 1
- *  - Unblocks any threads waiting on that semaphore
- * Param "s": Pointer to semaphore to be signaled
- * THIS IS A CRITICAL SECTION */
-void G8RTOS_SignalSemaphore(semaphore_t *s)
-{
-	uint32_t x;
-	tcb_t *tempPt;
-	x = StartCriticalSection();
-	(*s)++;
-	if ((*s) <= 0){
-		tempPt = CurrentlyRunningThread->Next;
-
-		while(tempPt->blocked != s){
-			tempPt = tempPt->Next;
-		}
-		(tempPt->blocked) = 0; //unblock this
-	}
-	EndCriticalSection(x);
-}
-
-/* Waits for a semaphore to be available (value greater than 0)
+/*
+ * Waits for a semaphore to be available (value greater than 0)
  * 	- Decrements semaphore when available
  * 	- Spinlocks to wait for semaphore
- * 	- The resource is held and owned
  * Param "s": Pointer to semaphore to wait on
- * THIS IS A CRITICAL SECTION */
-void G8RTOS_WaitSemaphoreMutex(semaphore_t *s)
+ * THIS IS A CRITICAL SECTION
+ */
+void G8RTOS_WaitSemaphore(semaphore_t* s)
 {
-	uint32_t x;
-	x = StartCriticalSection();
-
-	while ((*s) == 0){
-		EndCriticalSection(x);
-		x = StartCriticalSection();
+    int32_t status;
+    status = StartCriticalSection();
+    *s = *s - 1;
+	if(*s < 0){
+	    CurrentlyRunningThread->blocked = s;
+	    EndCriticalSection(status);
+	    cntxt_switch();
 	}
-	(*s) = (*s) - 1;
-	EndCriticalSection(x);
+	EndCriticalSection(status);
 }
 
-/* Signals the completion of the usage of a semaphore
+/*
+ * Signals the completion of the usage of a semaphore
  * 	- Increments the semaphore value by 1
- * 	- The resource is now available
- * Param "s": Pointer to semaphore to be signaled
- * THIS IS A CRITICAL SECTION */
-void G8RTOS_SignalSemaphoreMutex(semaphore_t *s)
+ * Param "s": Pointer to semaphore to be signalled
+ * THIS IS A CRITICAL SECTION
+ */
+void G8RTOS_SignalSemaphore(semaphore_t* s)
 {
-	uint32_t x;
-	x = StartCriticalSection();
-	(*s)++;
-	EndCriticalSection(x);
+    int32_t status;
+    status = StartCriticalSection();
+	*s = *s + 1;
+	if(*s <= 0){    //if it is not blocked
+	    tcb_t* is_blocked_to_s = CurrentlyRunningThread->next;
+	    while(is_blocked_to_s->blocked != s){
+	        is_blocked_to_s = is_blocked_to_s -> next;
+	    }
+	    is_blocked_to_s->blocked = 0;
+	}
+	EndCriticalSection(status);
 }
-/**************************************************************************************************************************************/
+
+/*********************************************** Public Functions *********************************************************************/
 
 
