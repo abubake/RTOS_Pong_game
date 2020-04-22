@@ -895,6 +895,7 @@ inline void DrawPlayer(GeneralPlayerInfo_t * player){
  */
 inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_t * outPlayer){
     //Find how much the paddle has moved
+    G8RTOS_WaitSemaphore(&USING_SPI);
     int16_t pixelsMoved = outPlayer->currentCenter - prevPlayerIn->Center;
     //In current-previous, positive values mean moved rightward
     //FIXME Direction Changes sometimes leaves a small black line behind inside paddle
@@ -902,44 +903,44 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
         if(pixelsMoved > 0){
             //Moved rightward
             //Paint background on left side
-            G8RTOS_WaitSemaphore(&USING_SPI);
+            //G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(prevPlayerIn->Center - PADDLE_LEN_D2 - PRINT_OFFSET, outPlayer->currentCenter - PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, BACK_COLOR);
-            G8RTOS_SignalSemaphore(&USING_SPI);
+            //G8RTOS_SignalSemaphore(&USING_SPI);
             //Paint color on right side
-            G8RTOS_WaitSemaphore(&USING_SPI);
+            //G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(prevPlayerIn->Center + PADDLE_LEN_D2 - PRINT_OFFSET, outPlayer->currentCenter + PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
-            G8RTOS_SignalSemaphore(&USING_SPI);
+            //G8RTOS_SignalSemaphore(&USING_SPI);
 
             //If was close to wall, repaint white wall
             if(prevPlayerIn->Center <= ARENA_MIN_X + PADDLE_LEN_D2 + PRINT_OFFSET){
-                G8RTOS_WaitSemaphore(&USING_SPI);
+                //G8RTOS_WaitSemaphore(&USING_SPI);
                 LCD_DrawRectangle(ARENA_MIN_X - PRINT_OFFSET, ARENA_MIN_X, ARENA_MIN_Y, ARENA_MIN_Y + PADDLE_WID, LCD_WHITE);
-                G8RTOS_SignalSemaphore(&USING_SPI);
+                //G8RTOS_SignalSemaphore(&USING_SPI);
             }
 
             //If was close to wall, repaint white wall
             if(prevPlayerIn->Center <= ARENA_MIN_X + PADDLE_LEN_D2 + PRINT_OFFSET){
-                G8RTOS_WaitSemaphore(&USING_SPI);
+                //G8RTOS_WaitSemaphore(&USING_SPI);
                 LCD_DrawRectangle(ARENA_MIN_X - PRINT_OFFSET, ARENA_MIN_X,  ARENA_MIN_Y, ARENA_MIN_Y + PADDLE_WID + 1, LCD_WHITE);
-                G8RTOS_SignalSemaphore(&USING_SPI);
+                //G8RTOS_SignalSemaphore(&USING_SPI);
             }
         }
         else if(pixelsMoved < 0){
             //Moved leftward
             //Paint black on right
-            G8RTOS_WaitSemaphore(&USING_SPI);
+            //G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(outPlayer->currentCenter + PADDLE_LEN_D2, prevPlayerIn->Center + PADDLE_LEN_D2 + PRINT_OFFSET, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, BACK_COLOR);
-            G8RTOS_SignalSemaphore(&USING_SPI);
+            //G8RTOS_SignalSemaphore(&USING_SPI);
             //Paint color on left side
-            G8RTOS_WaitSemaphore(&USING_SPI);
+            //G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2 + PRINT_OFFSET, prevPlayerIn->Center - PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
-            G8RTOS_SignalSemaphore(&USING_SPI);
+            //G8RTOS_SignalSemaphore(&USING_SPI);
 
             //If was close to wall, repaint white wall
             if(prevPlayerIn->Center >= ARENA_MAX_X - PADDLE_LEN_D2 - PRINT_OFFSET){
-                G8RTOS_WaitSemaphore(&USING_SPI);
+                //G8RTOS_WaitSemaphore(&USING_SPI);
                 LCD_DrawRectangle(ARENA_MAX_X, ARENA_MAX_X + PRINT_OFFSET, ARENA_MIN_Y, ARENA_MIN_Y + PADDLE_WID + 1, LCD_WHITE);
-                G8RTOS_SignalSemaphore(&USING_SPI);
+                //G8RTOS_SignalSemaphore(&USING_SPI);
             }
 
         }
@@ -948,42 +949,42 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
         if(pixelsMoved > 0){
             //Moved rightward
             //Paint background on left side
-            G8RTOS_WaitSemaphore(&USING_SPI);
+            //G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(prevPlayerIn->Center - PADDLE_LEN_D2 - PRINT_OFFSET, outPlayer->currentCenter - PADDLE_LEN_D2, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, BACK_COLOR);
-            G8RTOS_SignalSemaphore(&USING_SPI);
+            //G8RTOS_SignalSemaphore(&USING_SPI);
             //Paint color on right side
-            G8RTOS_WaitSemaphore(&USING_SPI);
+            //G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(prevPlayerIn->Center + PADDLE_LEN_D2 - PRINT_OFFSET, outPlayer->currentCenter + PADDLE_LEN_D2, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, outPlayer->color);
-            G8RTOS_SignalSemaphore(&USING_SPI);
+            //G8RTOS_SignalSemaphore(&USING_SPI);
 
             //If was close to wall, repaint white wall
             if(prevPlayerIn->Center <= ARENA_MIN_X + PADDLE_LEN_D2 + PRINT_OFFSET){
-                G8RTOS_WaitSemaphore(&USING_SPI);
+                //G8RTOS_WaitSemaphore(&USING_SPI);
                 LCD_DrawRectangle(ARENA_MIN_X - PRINT_OFFSET, ARENA_MIN_X, ARENA_MAX_Y - PADDLE_WID - 1, ARENA_MAX_Y, LCD_WHITE);
-                G8RTOS_SignalSemaphore(&USING_SPI);
+                //G8RTOS_SignalSemaphore(&USING_SPI);
             }
         }
         else if(pixelsMoved < 0){
             //Moved leftward
             //Paint black on right
-            G8RTOS_WaitSemaphore(&USING_SPI);
+            //G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(outPlayer->currentCenter + PADDLE_LEN_D2, prevPlayerIn->Center + PADDLE_LEN_D2 + PRINT_OFFSET, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, BACK_COLOR);
-            G8RTOS_SignalSemaphore(&USING_SPI);
+            //G8RTOS_SignalSemaphore(&USING_SPI);
             //Paint color on left side
-            G8RTOS_WaitSemaphore(&USING_SPI);
+            //G8RTOS_WaitSemaphore(&USING_SPI);
             LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2, prevPlayerIn->Center + PADDLE_LEN_D2 - PRINT_OFFSET, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, outPlayer->color);
-            G8RTOS_SignalSemaphore(&USING_SPI);
+            //G8RTOS_SignalSemaphore(&USING_SPI);
 
             //If was close to wall, repaint white wall
             if(prevPlayerIn->Center >= ARENA_MAX_X - PADDLE_LEN_D2 - PRINT_OFFSET){
-                G8RTOS_WaitSemaphore(&USING_SPI);
+                //G8RTOS_WaitSemaphore(&USING_SPI);
                 LCD_DrawRectangle(ARENA_MAX_X, ARENA_MAX_X + PRINT_OFFSET, ARENA_MAX_Y - PADDLE_WID - 1, ARENA_MAX_Y, LCD_WHITE);
-                G8RTOS_SignalSemaphore(&USING_SPI);
+                //G8RTOS_SignalSemaphore(&USING_SPI);
             }
 
         }
     }
-
+    G8RTOS_SignalSemaphore(&USING_SPI);
 
 
 }
@@ -995,6 +996,7 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
  */
 inline void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall, uint16_t outColor){
     //If not new, look for previous location
+    G8RTOS_WaitSemaphore(&USING_SPI);
     int16_t prevX = previousBall->CenterX;
     int16_t prevY = previousBall->CenterY;
 
@@ -1004,9 +1006,9 @@ inline void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall,
 
     }
     else{
-        G8RTOS_WaitSemaphore(&USING_SPI);
+        //G8RTOS_WaitSemaphore(&USING_SPI);
         LCD_DrawRectangle(prevX- BALL_SIZE_D2, prevX + BALL_SIZE_D2, prevY - BALL_SIZE_D2, prevY + BALL_SIZE_D2, BACK_COLOR);
-        G8RTOS_SignalSemaphore(&USING_SPI);
+        //G8RTOS_SignalSemaphore(&USING_SPI);
     }
 
 
@@ -1016,11 +1018,11 @@ inline void UpdateBallOnScreen(PrevBall_t * previousBall, balls_t * currentBall,
         //Out of bounds, Do not draw
     }
     else{
-        G8RTOS_WaitSemaphore(&USING_SPI);
+        //G8RTOS_WaitSemaphore(&USING_SPI);
         LCD_DrawRectangle(currentBall->xPos - BALL_SIZE_D2, currentBall-> xPos + BALL_SIZE_D2, currentBall->yPos - BALL_SIZE_D2, currentBall->yPos + BALL_SIZE_D2, outColor);
-        G8RTOS_SignalSemaphore(&USING_SPI);
+        //G8RTOS_SignalSemaphore(&USING_SPI);
     }
-
+    G8RTOS_SignalSemaphore(&USING_SPI);
 }
 
 /*
