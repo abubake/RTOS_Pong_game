@@ -100,8 +100,8 @@ void JoinGame(){
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
     //G8RTOS_AddThread(IdleThread, 250, "idle");
-    DelayMs(1);
 	G8RTOS_KillSelf();
+	DelayMs(1);
 }
 
 /*
@@ -327,8 +327,8 @@ void CreateGame(){
     G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     //G8RTOS_AddThread(IdleThread, 250, "idle");
-    DelayMs(1);
 	G8RTOS_KillSelf();
+	DelayMs(1);
 }
 
 /*
