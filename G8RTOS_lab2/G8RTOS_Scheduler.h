@@ -57,10 +57,6 @@ int32_t G8RTOS_AddPeriodic(void (*periodicToAdd)(void), uint32_t period);
 
 sched_ErrCode_t G8RTOS_AddAPeriodicEvent(void (*AthreadToAdd)(void),uint8_t priority,IRQn_Type IRQn);
 
-//sched_ErrCode_t G8RTOS_AddAPeriodicEvent(void (*AthreadToAdd)(void), uint16_t priority, IRQn_Type IRQn);
-
-
-/* Returns the currently running thread's thread ID */
 threadId_t G8RTOS_GetThreadId();
 
 sched_ErrCode_t G8RTOS_KillThread(threadId_t threadId);
