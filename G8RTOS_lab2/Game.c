@@ -281,22 +281,22 @@ void CreateGame(){
     /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 
 	int retval = -1;
-    clientToHostInfo.acknowledge = false;
+ //   clientToHostInfo.acknowledge = false;
     //waiting for a client to connect
 	    //Not Received  OR  not Acknowledged
-    while(retval < 0 || !clientToHostInfo.acknowledge){
-        retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
-    }
+   // while(retval < 0 || !clientToHostInfo.acknowledge){
+     //   retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+    //}
 
     //Send acknowledge to client allowing to connect
-    clientToHostInfo.acknowledge = true;
-    SendData((uint8_t *)&clientToHostInfo, clientToHostInfo.IP_address, sizeof(clientToHostInfo));
-    clientToHostInfo.acknowledge = false;
+   // clientToHostInfo.acknowledge = true;
+    //SendData((uint8_t *)&clientToHostInfo, clientToHostInfo.IP_address, sizeof(clientToHostInfo));
+    //clientToHostInfo.acknowledge = false;
 
     //wait until the client says it has joined
-    while(retval < 0 || !clientToHostInfo.acknowledge){
-        retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
-    }
+    //while(retval < 0 || !clientToHostInfo.acknowledge){
+      //  retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
+    //}
 
     BITBAND_PERI(P2->DIR, 0) = 1;
     BITBAND_PERI(P2->OUT, 0) = 1;
@@ -304,13 +304,13 @@ void CreateGame(){
 	InitBoardState();
 
 	/* Add these threads. (Need better priority definitions) */
-    //G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
-    G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
+    G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
+    //G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
-    G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
+    //G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
-    //G8RTOS_AddThread(IdleThread, 250, "idle");
+    G8RTOS_AddThread(IdleThread, 250, "idle");
 	G8RTOS_KillSelf();
 	DelayMs(1);
 }
@@ -602,7 +602,7 @@ void MoveBall(){
 		}
 		else{
 	        //Save position as the now previous position
-		    prevBallLocs[ind].CenterY = curGame.balls[ind].xPos;
+		    prevBallLocs[ind].CenterX = curGame.balls[ind].xPos;
 	        prevBallLocs[ind].CenterY = curGame.balls[ind].yPos;
 
 	        //Update current location of the ball
@@ -782,7 +782,7 @@ void DrawObjects(){
 	            }
 	            else{
 	                //If not a new ball, update its location
-	                UpdateBallOnScreen(prevBallLocs[i], &curGame.balls[i], curGame.balls[i].color);
+	                UpdateBallOnScreen(&prevBallLocs[i], &curGame.balls[i], curGame.balls[i].color);
 	            }
 	        }
 	    }
