@@ -78,7 +78,7 @@ void JoinGame(){
 	int retval = -1;
 
 	//pinging
-	while(retval < 0 && !clientToHostInfo.acknowledge == true){
+	while(retval < 0 || !clientToHostInfo.acknowledge){
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
 	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 	}
@@ -143,7 +143,6 @@ void SendDataToHost(){
 		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
         int retval = -1;
-        uint8_t read_ack = 255;
 
         SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
         G8RTOS_SignalSemaphore(&USING_WIFI);
@@ -285,7 +284,7 @@ void CreateGame(){
     //G8RTOS_WaitSemaphore(&USING_WIFI);
 
     //waiting for a client to connect
-    while(retval < 0 && !clientToHostInfo.acknowledge == true){
+    while(retval < 0 || !clientToHostInfo.acknowledge){
         retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
     }
 
@@ -295,7 +294,7 @@ void CreateGame(){
     clientToHostInfo.acknowledge = false;
 
     //wait until the client says it has joined
-    while(retval < 0 && clientToHostInfo.acknowledge != true){
+    while(retval < 0 || !clientToHostInfo.acknowledge){
         retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
     }
 
