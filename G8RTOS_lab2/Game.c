@@ -331,7 +331,7 @@ void SendDataToClient(){
         G8RTOS_SignalSemaphore(&USING_WIFI);
 
         if(curGame.gameDone == true){
-			G8RTOS_AddThread(EndOfGameHost, 0, "desolation"); //The end is approaching
+			G8RTOS_AddThread(EndOfGameHost, 1, "desolation"); //The end is approaching
 		}
 
 		sleep(5);
@@ -704,7 +704,7 @@ inline void resetGameExScores(){
     curGame.LEDScores[1] = 0;
 
     //Clear each ball
-    for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
+    for(int i = 0; i < MAX_NUM_OF_BALLS; i++){
         curGame.balls[i].alive = false;
         curGame.balls[i].color = LCD_WHITE;
         curGame.balls[i].newBall = true;
@@ -758,7 +758,7 @@ void DrawObjects(){
 	    //      and scoring/ball suicide working.
 
 	    //Update Ball Locations
-	    for(uint8_t i = 0; i < MAX_NUM_OF_BALLS; i++){
+	    for(int i = 0; i < MAX_NUM_OF_BALLS; i++){
 	        //Check if ball is alive
 	        if(curGame.balls[i].alive){
 	            if(curGame.balls[i].newBall){
@@ -777,7 +777,7 @@ void DrawObjects(){
 	            else{
 	                //If not a new ball, update its location
 	                UpdateBallOnScreen(&prevBallLocs[i], &curGame.balls[i], curGame.balls[i].color);
-                    for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
+                    for(int i = 0; i < MAX_NUM_OF_BALLS; i++){
                         //Save ball locations as previous balls
                         prevBallLocs[i].CenterX = curGame.balls[i].xPos;
                         prevBallLocs[i].CenterY = curGame.balls[i].yPos;
@@ -834,7 +834,7 @@ void MoveLEDs(){
 inline uint16_t numToLitLEDS(uint8_t playerScore){
     uint16_t toSend = 0;
     //Convert score to set that number of LEDs
-    for(uint16_t i = 0; i < playerScore; i++){
+    for(int i = 0; i < playerScore; i++){
         toSend = toSend*2 + 1;
     }
     return toSend;
