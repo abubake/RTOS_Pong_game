@@ -303,13 +303,13 @@ void CreateGame(){
 	InitBoardState();
 
 	/* Add these threads. (Need better priority definitions) */
-    //G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
-    G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
-    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
+    G8RTOS_AddThread(GenerateBall, 6, "GenerateBall");
+    G8RTOS_AddThread(ReceiveDataFromClient, 4, "ReceiveDataFromClient");
+    G8RTOS_AddThread(DrawObjects, 7, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
-    G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
+    G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
-    //G8RTOS_AddThread(IdleThread, 250, "idle");
+    G8RTOS_AddThread(IdleThread, 250, "idle");
 	G8RTOS_KillSelf();
 	DelayMs(1);
 }
@@ -351,21 +351,13 @@ void ReceiveDataFromClient(){
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
         G8RTOS_WaitSemaphore(&USING_WIFI);
-
-        int retval = -1;
-        retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
-
-
+        ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
         G8RTOS_SignalSemaphore(&USING_WIFI);
-
 		sleep(1);
 		/*
 		• Update the player’s current center with the displacement received from the client
-		• Sleep for 2ms (again found experimentally)
 		*/
-		//Update player's position with displacement from client
-		curGame.players[1].currentCenter = clientToHostInfo.displacement;
-
+		curGame.players[1].currentCenter += clientToHostInfo.displacement;
 		sleep(2);
 	}
 }
