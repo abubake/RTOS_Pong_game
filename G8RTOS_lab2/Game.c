@@ -78,7 +78,7 @@ void JoinGame(){
 	int retval = -1;
 
 	//pinging
-	while(retval < 0 && !clientToHostInfo.acknowledge = true){
+	while(retval < 0 && !clientToHostInfo.acknowledge == true){
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
 	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 	}
@@ -296,12 +296,12 @@ void CreateGame(){
     clientToHostInfo.acknowledge = false;
 
 	int retval = -1;
-    uint8_t read_ack = 255;
+    //uint8_t read_ack = 255;
     //G8RTOS_WaitSemaphore(&USING_WIFI);
 
     //waiting for a client to connect
-    while(retval < 0 && !clientToHostInfo = true){
-        retval = ReceiveData(&clientToHostInfo, sizeof(clientToHostInfo));
+    while(retval < 0 && !clientToHostInfo.acknowledge == true){
+        retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
     }
 
     //Send acknowledge to client allowing to connect
@@ -310,8 +310,8 @@ void CreateGame(){
     clientToHostInfo.acknowledge = false;
 
     //wait until the client says it has joined
-    while(retval < 0 && clientToHostInfo != true){
-        retval = ReceiveData(&clientToHostInfo, sizeof(clientToHostInfo));
+    while(retval < 0 && clientToHostInfo.acknowledge != true){
+        retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
     }
 
     BITBAND_PERI(P2->DIR, 0) = 1;
