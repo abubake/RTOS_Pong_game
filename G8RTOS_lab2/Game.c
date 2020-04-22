@@ -314,7 +314,7 @@ void CreateGame(){
     G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
     G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
-    //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 250, "idle");
 	G8RTOS_KillSelf();
 	DelayMs(1);
@@ -850,6 +850,7 @@ void MoveLEDs(){
             G8RTOS_SignalSemaphore(&USING_LED_I2C);
 
 	    //}
+            sleep(500);
 
 	}
 }
