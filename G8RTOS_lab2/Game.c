@@ -354,7 +354,7 @@ void SendDataToClient(){
  */
 void ReceiveDataFromClient(){
     //Before receiving new client location update previous location
-    prevClientLoc.Center = curGame.players[1].currentCenter;
+    //prevClientLoc.Center = curGame.players[1].currentCenter;
 	while(1){
 		/*
 		• Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
@@ -806,11 +806,9 @@ void DrawObjects(){
 	                //If not a new ball, update its location
 	                //G8RTOS_WaitSemaphore(&USING_WIFI);
 	                UpdateBallOnScreen(&prevBallLocs[i], &curGame.balls[i], curGame.balls[i].color);
-                    for(int i = 0; i < MAX_NUM_OF_BALLS; i++){
-                        //Save ball locations as previous balls
-                        prevBallLocs[i].CenterX = curGame.balls[i].xPos;
-                        prevBallLocs[i].CenterY = curGame.balls[i].yPos;
-                    }
+                    prevBallLocs[i].CenterX = curGame.balls[i].xPos;
+                    prevBallLocs[i].CenterY = curGame.balls[i].yPos;
+
                     //G8RTOS_SignalSemaphore(&USING_WIFI);
 	            }
 	        }
@@ -821,6 +819,8 @@ void DrawObjects(){
 	    UpdatePlayerOnScreen(&prevHostLoc, &curGame.players[0]);
 	    //Update Client Location
 	    UpdatePlayerOnScreen(&prevClientLoc, &curGame.players[1]);
+
+	    prevClientLoc.Center = curGame.players[1].currentCenter;
 
 	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
 		sleep(20);
