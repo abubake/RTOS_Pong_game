@@ -76,19 +76,17 @@ void JoinGame(){
 
 	/* Sends the Client's IP address to the host */
 	int retval = -1;
-	uint8_t read_ack = 255;
 
-
-	while(retval < 0 || read_ack != H2C_ack){
-	    SendData((uint8_t *)&C2H_ack, HOST_IP_ADDR, sizeof(C2H_ack));
+	//pinging
+	while(retval < 0 && !clientToHostInfo.acknowledge = true){
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
-	    sleep(50);
-		retval = ReceiveData(&read_ack, sizeof(read_ack)); //Recieves the GameState from Host
-        retval = ReceiveData((uint8_t*)&curGame, sizeof(curGame)); //Recieves the GameState from Host
-		sleep(50);
+	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 	}
 
-	sleep(50);
+	//tell the host that I am ready to join
+    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+
+
 
 	/* Connection established, launch RTOS */
 	BITBAND_PERI(P2->DIR, 0) = 1;
@@ -295,20 +293,26 @@ void CreateGame(){
 	*/
     /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 
+    clientToHostInfo.acknowledge = false;
+
 	int retval = -1;
     uint8_t read_ack = 255;
     //G8RTOS_WaitSemaphore(&USING_WIFI);
-	while(retval < 0 || read_ack != C2H_ack){//RECIEVING THE IP ADDRESS
-        retval = ReceiveData(&read_ack, sizeof(read_ack));
-        sleep(5);
-	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
-	    sleep(50);
-		SendData((uint8_t *)&H2C_ack, clientToHostInfo.IP_address, sizeof(H2C_ack)); //Sends gameState to client
-        sleep(5);
-		SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame)); //Sends gameState to client
-	    sleep(50);
-	}
-    //G8RTOS_SignalSemaphore(&USING_WIFI);
+
+    //waiting for a client to connect
+    while(retval < 0 && !clientToHostInfo = true){
+        retval = ReceiveData(&clientToHostInfo, sizeof(clientToHostInfo));
+    }
+
+    //Send acknowledge to client allowing to connect
+    clientToHostInfo.acknowledge = true;
+    SendData((uint8_t *)&clientToHostInfo, clientToHostInfo.IP_address, sizeof(clientToHostInfo));
+    clientToHostInfo.acknowledge = false;
+
+    //wait until the client says it has joined
+    while(retval < 0 && clientToHostInfo != true){
+        retval = ReceiveData(&clientToHostInfo, sizeof(clientToHostInfo));
+    }
 
     BITBAND_PERI(P2->DIR, 0) = 1;
     BITBAND_PERI(P2->OUT, 0) = 1;
