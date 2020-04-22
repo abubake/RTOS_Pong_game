@@ -99,7 +99,7 @@ void JoinGame(){
 	InitBoardState(); // The stuff
 
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient"); //3
-    G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");//2
+    G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");//2
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");//3
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");//3
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs");//4
@@ -311,8 +311,8 @@ void CreateGame(){
 	InitBoardState();
 
 	/* Add these threads. (Need better priority definitions) */
-    G8RTOS_AddThread(GenerateBall, 3, "GenerateBall");
-    G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
+    G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
+    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
     G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
@@ -965,7 +965,8 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
             //G8RTOS_SignalSemaphore(&USING_SPI);
             //Paint color on left side
             //G8RTOS_WaitSemaphore(&USING_SPI);
-            LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2 - PRINT_OFFSET, prevPlayerIn->Center - PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
+            LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2, prevPlayerIn->Center - PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
+
             //G8RTOS_SignalSemaphore(&USING_SPI);
 
             //If was close to wall, repaint white wall
