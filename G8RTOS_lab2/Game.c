@@ -98,8 +98,8 @@ void JoinGame(){
 
 	InitBoardState(); // The stuff
 
-    G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient"); //3
     G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");//2
+    G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient"); //3
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");//3
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");//3
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs");//4
@@ -255,11 +255,12 @@ void EndOfGameClient(){
     G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
     G8RTOS_InitSemaphore(&USING_SPI, 1);
     G8RTOS_InitSemaphore(&USING_WIFI, 1);
+
     /* Add back client threads */
+    G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");//2
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");//2
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
-    G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");//2
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 5, "Idle");
 
@@ -697,14 +698,13 @@ void EndOfGameHost(){
     InitBoardState();
 
     /* Add these threads. (Need better priority definitions) */
-    G8RTOS_AddThread(GenerateBall, 3, "GenerateBall"); //3
-    G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
+    G8RTOS_AddThread(GenerateBall, 2, "GenerateBall"); //3
+    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects"); //3
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost"); //5
     G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 5, "Idle");
-
 
     //Reinitialize semaphores
     G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
