@@ -245,6 +245,9 @@ void EndOfGameClient(){
     //Reset game variables for sending
     clientToHostInfo.displacement = PADDLE_X_CENTER;
 
+    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
+    G8RTOS_InitSemaphore(&USING_SPI, 1);
+    G8RTOS_InitSemaphore(&USING_WIFI, 1);
     /* Add back client threads */
     G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
@@ -253,12 +256,9 @@ void EndOfGameClient(){
     G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 254, "Idle");
 
-    G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
-    G8RTOS_InitSemaphore(&USING_SPI, 1);
-    G8RTOS_InitSemaphore(&USING_WIFI, 1);
-
     //Kill self
     G8RTOS_KillSelf();
+    DelayMs(1);
 }
 
 /*********************************************** Client Threads *********************************************************************/
@@ -689,8 +689,7 @@ void EndOfGameHost(){
 
 
     G8RTOS_KillSelf();
-
-    while(1);
+    DelayMs(1);
 
 }
 
