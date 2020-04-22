@@ -151,7 +151,7 @@ void SendDataToHost(){
 	        G8RTOS_WaitSemaphore(&USING_WIFI);
 	        SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
 	        G8RTOS_SignalSemaphore(&USING_WIFI);
-	        sleep(15); //2
+	        sleep(2); //2
 	    }
 
 }
@@ -341,7 +341,7 @@ void SendDataToClient(){
 	        if(curGame.gameDone == true){
 	            G8RTOS_AddThread(EndOfGameHost, 1, "desolation"); //The end is approaching
 	        }
-		sleep(15); //5
+		sleep(5); //5
 
 	    }
 }
@@ -373,7 +373,7 @@ void ReceiveDataFromClient(){
 			curGame.players[1].currentCenter = clientToHostInfo.displacement;
 		}
 		//G8RTOS_SignalSemaphore(&USING_WIFI);
-		sleep(10);
+		sleep(2);
 	}
 }
 
