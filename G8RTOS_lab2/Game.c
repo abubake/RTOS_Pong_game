@@ -79,9 +79,9 @@ void JoinGame(){
 
 	//pinging
 	while(retval < 0 || !clientToHostInfo.acknowledge){
-	    clientToHost.acknowledge = true;
+	    clientToHostInfo.acknowledge = true;
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
-        clientToHost.acknowledge = false;
+        clientToHostInfo.acknowledge = false;
 	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 	}
 
@@ -101,7 +101,7 @@ void JoinGame(){
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
-    //G8RTOS_AddThread(IdleThread, 250, "idle");
+    G8RTOS_AddThread(IdleThread, 250, "idle");
 	G8RTOS_KillSelf();
 	DelayMs(1);
 }
@@ -110,15 +110,15 @@ void JoinGame(){
  * Thread that receives game state packets from host
  */
 void ReceiveDataFromHost(){
-    //Before receiving new host location, update the previous location of host
-    prevHostLoc.Center = curGame.players[0].currentCenter;
-
 	while(1){
 		/*
 		• Continually receive data until a return value greater than zero is returned (meaning valid data has been read)
 		o Note: Remember to release and take the semaphore again so you’re still able to send data
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
+	    //Before receiving new host location, update the previous location of host
+	    prevHostLoc.Center = curGame.players[0].currentCenter;
+
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
         int retval = -1;
         retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame));
