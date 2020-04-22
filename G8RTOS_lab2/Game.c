@@ -608,7 +608,7 @@ void MoveBall(){
 		if(passedBoundary){
 		    if(curGame.gameDone == true){
                 //If this was the final point, add ending thread
-                G8RTOS_AddThread(EndOfGameHost, 1, "EndOfGame");
+                //G8RTOS_AddThread(EndOfGameHost, 1, "EndOfGame");
 		    }
 		    else{
                 //Kill this MoveBall
