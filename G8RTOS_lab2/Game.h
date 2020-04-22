@@ -44,7 +44,7 @@ semaphore_t USING_WIFI;
 #define PADDLE_LEN_D2                (PADDLE_LEN >> 1)
 #define PADDLE_WID                   4
 #define PADDLE_WID_D2                (PADDLE_WID >> 1)
-#define BALL_SIZE                    3
+#define BALL_SIZE                    5
 #define BALL_SIZE_D2                 (BALL_SIZE >> 1)
 
 /* Centers for paddles at the center of the sides */
