@@ -119,6 +119,11 @@ void ReceiveDataFromHost(){
 		*/
 	    //Before receiving new host location, update the previous location of host
 	    prevHostLoc.Center = curGame.players[0].currentCenter;
+	    for(uint16_t i = 0; i < MAX_NUM_OF_BALLS; i++){
+	        //Save ball locations as previous balls
+	        prevBallLocs[i].CenterX = curGame.balls[i].xPos;
+	        prevBallLocs[i].CenterY = curGame.balls[i].yPos;
+	    }
 
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
         ReceiveData((uint8_t *)&curGame, sizeof(curGame));
