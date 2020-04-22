@@ -830,7 +830,7 @@ void DrawObjects(){
 	    prevClientLoc.Center = curGame.players[1].currentCenter;
 
 	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
-		sleep(25);
+		sleep(35);
 	}
 }
 
