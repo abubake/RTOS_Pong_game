@@ -120,11 +120,13 @@ void ReceiveDataFromHost(){
 		*/
 	    //Before receiving new host location, update the previous location of host
 	    prevHostLoc.Center = curGame.players[0].currentCenter;
-
-
-	    G8RTOS_WaitSemaphore(&USING_WIFI);
+        G8RTOS_WaitSemaphore(&USING_WIFI);
+	    G8RTOS_WaitSemaphore(&USING_SPI);
         ReceiveData((uint8_t *)&curGame, sizeof(curGame));
-		G8RTOS_SignalSemaphore(&USING_WIFI);
+        G8RTOS_SignalSemaphore(&USING_WIFI);
+        G8RTOS_SignalSemaphore(&USING_SPI);
+
+
 		sleep(1);
 		/*
 		• Empty the received packet
@@ -357,8 +359,11 @@ void ReceiveDataFromClient(){
 		o Sleeping here for 1ms would avoid a deadlock
 		*/
         G8RTOS_WaitSemaphore(&USING_WIFI);
+        G8RTOS_WaitSemaphore(&USING_SPI);
         ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
         G8RTOS_SignalSemaphore(&USING_WIFI);
+        G8RTOS_SignalSemaphore(&USING_SPI);
+
 		sleep(1);
 		/*
 		• Update the player’s current center with the displacement received from the client
@@ -368,7 +373,7 @@ void ReceiveDataFromClient(){
 			curGame.players[1].currentCenter = clientToHostInfo.displacement;
 		}
 		//G8RTOS_SignalSemaphore(&USING_WIFI);
-		sleep(2);
+		sleep(10);
 	}
 }
 
