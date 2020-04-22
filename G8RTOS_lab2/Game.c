@@ -97,12 +97,12 @@ void JoinGame(){
 
 	InitBoardState(); // The stuff
 
-    G8RTOS_AddThread(ReadJoystickClient, 4, "ReadJoystickClient");
-    G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");
+    G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
+    G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
-    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");
-    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
-    G8RTOS_AddThread(IdleThread, 250, "idle");
+    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
+    G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs");
+    G8RTOS_AddThread(IdleThread, 5, "idle");
 	G8RTOS_KillSelf();
 	DelayMs(1);
 }
@@ -850,7 +850,7 @@ void MoveLEDs(){
             G8RTOS_SignalSemaphore(&USING_LED_I2C);
 
 	    //}
-
+            sleep(500);
 	}
 }
 
