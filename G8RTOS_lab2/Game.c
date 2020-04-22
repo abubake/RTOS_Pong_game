@@ -212,6 +212,7 @@ void EndOfGameClient(){
     //Now has both semaphores, kill all other threads
     G8RTOS_KillAllOthers();
 
+
     if(curGame.LEDScores[0] > curGame.LEDScores[1]){
         //Player 0 won, make screen their color
         LCD_Clear(curGame.players[0].color);
@@ -354,7 +355,7 @@ void ReceiveDataFromClient(){
 		/*
 		• Update the player’s current center with the displacement received from the client
 		*/
-		if(clientToHostInfo.displacement > ARENA_MIN_X + PADDLE_LEN_D2 && clientToHostInfo.displacement < ARENA_MAX_X - PADDLE_LEN_D2){
+		if((clientToHostInfo.displacement > ARENA_MIN_X + PADDLE_LEN_D2) && (clientToHostInfo.displacement < ARENA_MAX_X - PADDLE_LEN_D2)){
 			curGame.players[1].currentCenter = clientToHostInfo.displacement;
 		}
 		sleep(2);
@@ -394,12 +395,12 @@ void ReadJoystickHost(){
 		GetJoystickCoordinates(&host_X_coord, &host_Y_coord); //must wait for its semaphore!
 
 		if(host_X_coord > 2000){ //FIXME: Adjust this so it will work at different speeds
-			//writeFIFO(JOYSTICKFIFO, RIGHT);
+
 		    difference = -1;
 		    direction = RIGHT; //For testing purposes
 		}
 		else if(host_X_coord < -2000){
-			//writeFIFO(JOYSTICKFIFO, LEFT);
+
 		    difference = 1;
 		    direction = LEFT;
 		}
@@ -420,6 +421,8 @@ void ReadJoystickHost(){
         else if(curGame.players[0].currentCenter  > HORIZ_CENTER_MAX_PL){
             curGame.players[0].currentCenter  = HORIZ_CENTER_MAX_PL;
         }
+
+        sleep(10); //Sleep at the end, maybe we don't need it, may help
 	}
 }
 
