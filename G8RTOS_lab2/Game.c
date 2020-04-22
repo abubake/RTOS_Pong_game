@@ -98,8 +98,8 @@ void JoinGame(){
 
 	InitBoardState(); // The stuff
 
+    G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");//2
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient"); //3
-    G8RTOS_AddThread(ReceiveDataFromHost, 2, "ReceiveDataFromHost");//2
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");//3
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");//3
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs");//4
@@ -146,15 +146,12 @@ void SendDataToHost(){
     //uint16_t count = 0;
 	while(1){
 		//send data to host and sleep (need to fill in parameters of function (from cc3100_usage.h))
-	    //if(count == 5){
 	        G8RTOS_WaitSemaphore(&USING_WIFI);
 	        SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
 	        G8RTOS_SignalSemaphore(&USING_WIFI);
-	        //count = 0;
 	        sleep(15); //2
 	    }
-	    //count++;
-	//}
+
 }
 
 /*
@@ -254,11 +251,12 @@ void EndOfGameClient(){
     G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
     G8RTOS_InitSemaphore(&USING_SPI, 1);
     G8RTOS_InitSemaphore(&USING_WIFI, 1);
+
     /* Add back client threads */
+    G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");//2
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");//2
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
-    G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");//2
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 5, "Idle");
 
@@ -310,8 +308,8 @@ void CreateGame(){
 	InitBoardState();
 
 	/* Add these threads. (Need better priority definitions) */
-    G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
-    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
+    G8RTOS_AddThread(GenerateBall, 3, "GenerateBall");
+    G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
     G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
@@ -334,7 +332,6 @@ void SendDataToClient(){
 		o If done, Add EndOfGameHost thread with highest priority
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
-	    //if(count == 2){
 	        G8RTOS_WaitSemaphore(&USING_WIFI);
 	        SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
 	        G8RTOS_SignalSemaphore(&USING_WIFI);
@@ -342,12 +339,9 @@ void SendDataToClient(){
 	        if(curGame.gameDone == true){
 	            G8RTOS_AddThread(EndOfGameHost, 1, "desolation"); //The end is approaching
 	        }
-	        //count = 0;
-	    //}
-	    //count++;
 		sleep(15); //5
 
-	}
+	    }
 }
 
 /*
@@ -704,7 +698,6 @@ void EndOfGameHost(){
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 5, "Idle");
 
-
     //Reinitialize semaphores
     G8RTOS_InitSemaphore(&USING_LED_I2C, 1);
     G8RTOS_InitSemaphore(&USING_SPI, 1);
@@ -824,7 +817,7 @@ void DrawObjects(){
 	    prevClientLoc.Center = curGame.players[1].currentCenter;
 
 	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
-		sleep(20);
+		sleep(10);
 	}
 }
 
