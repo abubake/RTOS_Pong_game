@@ -309,13 +309,13 @@ void CreateGame(){
 	InitBoardState();
 
 	/* Add these threads. (Need better priority definitions) */
-    G8RTOS_AddThread(GenerateBall, 6, "GenerateBall");
-    G8RTOS_AddThread(ReceiveDataFromClient, 4, "ReceiveDataFromClient");
-    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");
+    G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
+    G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
+    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
-    G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
-    //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
-    G8RTOS_AddThread(IdleThread, 250, "idle");
+    G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
+    G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs"); //lower priority
+    G8RTOS_AddThread(IdleThread, 5, "idle");
 	G8RTOS_KillSelf();
 	DelayMs(1);
 }
@@ -389,7 +389,7 @@ void GenerateBall(){
 	        //G8RTOS_WaitSemaphore(&USING_WIFI);
 	        curGame.numberOfBalls++;
 	        //G8RTOS_SignalSemaphore(&USING_WIFI);
-	        G8RTOS_AddThread(MoveBall, 5, "MoveBall");
+	        G8RTOS_AddThread(MoveBall, 3, "MoveBall");
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
 	    sleep(curGame.numberOfBalls*2500);
