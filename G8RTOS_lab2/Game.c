@@ -67,6 +67,7 @@ void JoinGame(){
 		*/
 
 	/* NEED TO SET ALL THESE WITH REAL VALUES */
+    isClient = true;
 	clientToHostInfo.IP_address = getLocalIP();
 	clientToHostInfo.acknowledge = true;
 	clientToHostInfo.displacement = MAX_SCREEN_X/2;
@@ -285,6 +286,7 @@ void CreateGame(){
 	*/
     /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
 
+    isClient = false;
 	int retval = -1;
     clientToHostInfo.acknowledge = false;
     //waiting for a client to connect
@@ -838,21 +840,21 @@ void MoveLEDs(){
 		*/
 
 	    //Print both scores for debugging purposes- uncomment if/else for normal function
-	    //if(!isClient){
+	    if(!isClient){
 	        //Update Host (Red/Bottom)
 	        valToWrite = numToLitLEDS(curGame.LEDScores[0]);
 	        G8RTOS_WaitSemaphore(&USING_LED_I2C);
 	        LP3943_DataDisplay(RED, ON, valToWrite);
 	        G8RTOS_SignalSemaphore(&USING_LED_I2C);
-	    //}
-	    //else{
+	    }
+	    else{
 	        //Update Client (Blue/Top)
             valToWrite = numToLitLEDS(curGame.LEDScores[1]);
             G8RTOS_WaitSemaphore(&USING_LED_I2C);
             LP3943_DataDisplay(BLUE, ON, valToWrite);
             G8RTOS_SignalSemaphore(&USING_LED_I2C);
 
-	    //}
+	    }
             sleep(500);
 	}
 }
