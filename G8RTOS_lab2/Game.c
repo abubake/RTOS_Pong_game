@@ -79,9 +79,9 @@ void JoinGame(){
 
 	//pinging
 	while(retval < 0 || !clientToHostInfo.acknowledge){
-	    clientToHost.acknowledge = true;
+	    clientToHostInfo.acknowledge = true;
 	    SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
-        clientToHost.acknowledge = false;
+        clientToHostInfo.acknowledge = false;
 	    retval = ReceiveData((uint8_t *)&clientToHostInfo, sizeof(clientToHostInfo));
 	}
 
@@ -97,11 +97,11 @@ void JoinGame(){
 	InitBoardState(); // The stuff
 
     G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
-    G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");
+    G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
-    //G8RTOS_AddThread(IdleThread, 250, "idle");
+    G8RTOS_AddThread(IdleThread, 250, "idle");
 	G8RTOS_KillSelf();
 	DelayMs(1);
 }
