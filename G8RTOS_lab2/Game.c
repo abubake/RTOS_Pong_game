@@ -304,7 +304,7 @@ void CreateGame(){
 	/* Add these threads. (Need better priority definitions) */
     G8RTOS_AddThread(GenerateBall, 6, "GenerateBall");
     G8RTOS_AddThread(ReceiveDataFromClient, 4, "ReceiveDataFromClient");
-    G8RTOS_AddThread(DrawObjects, 7, "DrawObjects");
+    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
     G8RTOS_AddThread(SendDataToClient, 5, "SendDataToClient");
     //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
