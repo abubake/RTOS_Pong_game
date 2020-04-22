@@ -24,6 +24,7 @@ int displayVal = 1; //No so that first LED comes on correctly
 //Previous Locations of Players for updating drawings
 PrevPlayer_t prevHostLoc;
 PrevPlayer_t prevClientLoc;
+PrevBall_t prevBallLocs[MAX_NUM_OF_BALLS];
 
 int direction = 0; //Direction of the paddle for testing
 
@@ -174,7 +175,7 @@ void ReadJoystickClient(){
 	    }
 
 	    //Set previous location as old location
-	    prevClientLoc.Center = clientToHostInfo.displacement;
+	    //prevClientLoc.Center = clientToHostInfo.displacement; //Should only be updated on receipt of new data from host
 
 	    //Update current location in struct
 		clientToHostInfo.displacement += clientDifference;
@@ -477,8 +478,8 @@ void MoveBall(){
             curGame.balls[i].alive = true;
 
             //Set previous location as this location
-            curGame.balls[i].prevLoc.CenterX = curGame.balls[i].xPos;
-            curGame.balls[i].prevLoc.CenterY = curGame.balls[i].yPos;
+            prevBallLocs[i].CenterX = curGame.balls[i].xPos;
+            prevBallLocs[i].CenterY = curGame.balls[i].yPos;
             curGame.balls[i].newBall = true;
 
             ind = i;
@@ -592,12 +593,11 @@ void MoveBall(){
                 curGame.balls[ind].alive = false;
                 G8RTOS_KillSelf();
 		    }
-
 		}
 		else{
 	        //Save position as the now previous position
-	        curGame.balls[ind].prevLoc.CenterX = curGame.balls[ind].xPos;
-	        curGame.balls[ind].prevLoc.CenterY = curGame.balls[ind].yPos;
+		    prevBallLocs[ind].CenterY = curGame.balls[ind].xPos;
+	        prevBallLocs[ind].CenterY = curGame.balls[ind].yPos;
 
 	        //Update current location of the ball
 	        curGame.balls[ind].xPos = curGame.balls[ind].xPos + curGame.balls[ind].xVel;
@@ -776,7 +776,7 @@ void DrawObjects(){
 	            }
 	            else{
 	                //If not a new ball, update its location
-	                UpdateBallOnScreen(&curGame.balls[i].prevLoc, &curGame.balls[i], curGame.balls[i].color);
+	                UpdateBallOnScreen(&prevBallLocs[i], &curGame.balls[i], curGame.balls[i].color);
 	            }
 	        }
 	    }

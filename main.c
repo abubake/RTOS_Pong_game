@@ -5,6 +5,7 @@
 #include "LCD.h"
 #include "time.h"
 #include "stdlib.h"
+
 #include "cc3100_usage.h"
 #include "sl_common.h"
 #include "Game.h"
@@ -57,7 +58,7 @@ void main(void){
 
     playerType gameRole = GetPlayerRole();
     LCD_Text(150, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
-    initCC3100(gameRole);
+    //initCC3100(gameRole);
 
 	/* For the color randomness */
 	srand(time(NULL));
