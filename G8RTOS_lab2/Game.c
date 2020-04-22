@@ -316,6 +316,7 @@ void CreateGame(){
     G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
     G8RTOS_AddThread(MoveLEDs, 4, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 5, "idle");
+
 	G8RTOS_KillSelf();
 	DelayMs(1);
 }
