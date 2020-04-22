@@ -233,15 +233,16 @@ void EndOfGameClient(){
         LCD_Text(90, 75, "Wait for Host Push", curGame.players[0].color);
     }
 
-    //TODO Wait for host to restart game
+    //Wait for host to restart game
+    int retval = -1;
     while(NewGame == false){
         /* Sets up a semaphore for indicating if the LED resource and the sensor resource are available */
-        ReceiveData((uint8_t *)&curGame , sizeof(curGame));
-        if(curGame.gameDone != false){
-            //I think this should work as long as curGame has been updated with a new game status
+        retval = ReceiveData((uint8_t *)&curGame , sizeof(curGame));
+        if(retval >= 0 && curGame.gameDone == false){
             NewGame = true;
         }
     }
+    NewGame = false;    //have to set it back to what it was initially
 
     //Host has pressed
 
@@ -680,17 +681,13 @@ void EndOfGameHost(){
         LCD_Text(95, 75, "Host Press Button", curGame.players[0].color);
     }
 
-    //4.5
+    //Sending curGame packet
     readyForGame = false;
-    G8RTOS_AddAPeriodicEvent(HOST_TAP, 4, PORT4_IRQn);
-    while(!readyForGame){
-        //Send data showing game is over
-        SendData((uint8_t*)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
-    }
+    G8RTOS_AddAPeriodicEvent(HOST_TAP, 2, PORT4_IRQn);
 
+    while(!readyForGame);
 
-    //When ready, notify client, reinitialize game, add threads back, kill self
-    //Notify client
+    curGame.gameDone = false;       //game isnt done because we have now requested to start a new game
     SendData((uint8_t*)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
 
     //Reinitialize game with new scores
