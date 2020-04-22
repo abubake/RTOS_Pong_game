@@ -60,6 +60,14 @@ void main(void){
     LCD_Text(150, (MAX_SCREEN_Y >> 1) - 10, "Connecting", LCD_WHITE);
     initCC3100(gameRole);
 
+    /* Interrupt for Host reseting the game */
+    P4DIR &= ~BIT5;
+    P4IFG &= ~BIT5; // clear interrupt flag bit
+    P4IE |= BIT5; // enable interrupt on pin 4
+    P4IES |= BIT5; //enables low to high transition
+    P4REN |= BIT5; // pull up resistor
+    P4OUT |= BIT5; // sets resistor to pull up
+
 	/* For the color randomness */
 	srand(time(NULL));
 
