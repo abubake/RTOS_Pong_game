@@ -97,11 +97,11 @@ void JoinGame(){
 
 	InitBoardState(); // The stuff
 
-    G8RTOS_AddThread(ReadJoystickClient, 3, "ReadJoystickClient");
+    G8RTOS_AddThread(ReadJoystickClient, 4, "ReadJoystickClient");
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
-    //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
+    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
     G8RTOS_AddThread(IdleThread, 250, "idle");
 	G8RTOS_KillSelf();
 	DelayMs(1);
@@ -307,9 +307,9 @@ void CreateGame(){
     G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
     //G8RTOS_AddThread(ReceiveDataFromClient, 3, "ReceiveDataFromClient");
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
-    G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
+    G8RTOS_AddThread(ReadJoystickHost, 4, "ReadJoystickHost");
     //G8RTOS_AddThread(SendDataToClient, 3, "SendDataToClient");
-    //G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
+    G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs"); //lower priority
     G8RTOS_AddThread(IdleThread, 250, "idle");
 	G8RTOS_KillSelf();
 	DelayMs(1);
@@ -908,7 +908,7 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
             G8RTOS_SignalSemaphore(&USING_SPI);
             //Paint color on right side
             G8RTOS_WaitSemaphore(&USING_SPI);
-            LCD_DrawRectangle(prevPlayerIn->Center + PADDLE_LEN_D2, outPlayer->currentCenter + PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
+            LCD_DrawRectangle(prevPlayerIn->Center + PADDLE_LEN_D2 - PRINT_OFFSET, outPlayer->currentCenter + PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
             G8RTOS_SignalSemaphore(&USING_SPI);
 
             //If was close to wall, repaint white wall
@@ -933,7 +933,7 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
             G8RTOS_SignalSemaphore(&USING_SPI);
             //Paint color on left side
             G8RTOS_WaitSemaphore(&USING_SPI);
-            LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2, prevPlayerIn->Center - PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
+            LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2 + PRINT_OFFSET, prevPlayerIn->Center - PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
             G8RTOS_SignalSemaphore(&USING_SPI);
 
             //If was close to wall, repaint white wall
@@ -954,7 +954,7 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
             G8RTOS_SignalSemaphore(&USING_SPI);
             //Paint color on right side
             G8RTOS_WaitSemaphore(&USING_SPI);
-            LCD_DrawRectangle(prevPlayerIn->Center + PADDLE_LEN_D2, outPlayer->currentCenter + PADDLE_LEN_D2, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, outPlayer->color);
+            LCD_DrawRectangle(prevPlayerIn->Center + PADDLE_LEN_D2 - PRINT_OFFSET, outPlayer->currentCenter + PADDLE_LEN_D2, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, outPlayer->color);
             G8RTOS_SignalSemaphore(&USING_SPI);
 
             //If was close to wall, repaint white wall
@@ -972,7 +972,7 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
             G8RTOS_SignalSemaphore(&USING_SPI);
             //Paint color on left side
             G8RTOS_WaitSemaphore(&USING_SPI);
-            LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2, prevPlayerIn->Center - PADDLE_LEN_D2, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, outPlayer->color);
+            LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2, prevPlayerIn->Center + PADDLE_LEN_D2 - PRINT_OFFSET, BOTTOM_PADDLE_EDGE-1, BOTTOM_PADDLE_EDGE + PADDLE_WID, outPlayer->color);
             G8RTOS_SignalSemaphore(&USING_SPI);
 
             //If was close to wall, repaint white wall
