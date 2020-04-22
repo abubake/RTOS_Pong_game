@@ -100,7 +100,7 @@ void JoinGame(){
     G8RTOS_AddThread(ReadJoystickClient, 4, "ReadJoystickClient");
     G8RTOS_AddThread(ReceiveDataFromHost, 3, "ReceiveDataFromHost");
     G8RTOS_AddThread(SendDataToHost, 3, "SendDataToHost");
-    G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
+    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");
     G8RTOS_AddThread(MoveLEDs, 250, "MoveLEDs");
     G8RTOS_AddThread(IdleThread, 250, "idle");
 	G8RTOS_KillSelf();
@@ -142,11 +142,17 @@ void ReceiveDataFromHost(){
  * Thread that sends UDP packets to host
  */
 void SendDataToHost(){
+    uint16_t count = 0;
 	while(1){
 		//send data to host and sleep (need to fill in parameters of function (from cc3100_usage.h))
-	    G8RTOS_WaitSemaphore(&USING_WIFI);
-        SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
-        G8RTOS_SignalSemaphore(&USING_WIFI);
+	    if(count == 5){
+	        G8RTOS_WaitSemaphore(&USING_WIFI);
+	        SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
+	        G8RTOS_SignalSemaphore(&USING_WIFI);
+	        count = 0;
+	    }
+	    count++;
+
 		sleep(2);
 	}
 }
@@ -318,6 +324,7 @@ void CreateGame(){
  * Thread that sends game state to client
  */
 void SendDataToClient(){
+    uint16_t count = 0;
 	while(1){
 		/*
 		• Fill packet for client
@@ -326,13 +333,17 @@ void SendDataToClient(){
 		o If done, Add EndOfGameHost thread with highest priority
 		• Sleep for 5ms (found experimentally to be a good amount of time for synchronization)
 		*/
-        G8RTOS_WaitSemaphore(&USING_WIFI);
-        SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
-        G8RTOS_SignalSemaphore(&USING_WIFI);
+	    if(count == 5){
+	        G8RTOS_WaitSemaphore(&USING_WIFI);
+	        SendData((uint8_t *)&curGame, clientToHostInfo.IP_address, sizeof(curGame));
+	        G8RTOS_SignalSemaphore(&USING_WIFI);
 
-        if(curGame.gameDone == true){
-			G8RTOS_AddThread(EndOfGameHost, 0, "desolation"); //The end is approaching
-		}
+	        if(curGame.gameDone == true){
+	            G8RTOS_AddThread(EndOfGameHost, 0, "desolation"); //The end is approaching
+	        }
+	        count = 0;
+	    }
+	    count++;
 
 		sleep(5);
 	}
