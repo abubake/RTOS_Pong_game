@@ -120,8 +120,7 @@ void ReceiveDataFromHost(){
 	    prevHostLoc.Center = curGame.players[0].currentCenter;
 
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
-        int retval = -1;
-        retval = ReceiveData((uint8_t *)&curGame, sizeof(curGame));
+        ReceiveData((uint8_t *)&curGame, sizeof(curGame));
 		G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(1);
 		/*
@@ -144,8 +143,6 @@ void SendDataToHost(){
 	while(1){
 		//send data to host and sleep (need to fill in paramters of function (from cc3100_usage.h))
 	    G8RTOS_WaitSemaphore(&USING_WIFI);
-        int retval = -1;
-
         SendData((uint8_t *)&clientToHostInfo, HOST_IP_ADDR, sizeof(clientToHostInfo));
         G8RTOS_SignalSemaphore(&USING_WIFI);
 		sleep(2);
@@ -357,7 +354,9 @@ void ReceiveDataFromClient(){
 		/*
 		• Update the player’s current center with the displacement received from the client
 		*/
-		curGame.players[1].currentCenter += clientToHostInfo.displacement;
+		if(clientToHostInfo.displacement > ARENA_MIN_X + PADDLE_LEN_D2 && clientToHostInfo.displacement < ARENA_MAX_X - PADDLE_LEN_D2){
+			curGame.players[1].currentCenter = clientToHostInfo.displacement;
+		}
 		sleep(2);
 	}
 }
