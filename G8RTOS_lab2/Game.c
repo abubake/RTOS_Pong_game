@@ -965,7 +965,7 @@ inline void UpdatePlayerOnScreen(PrevPlayer_t * prevPlayerIn, GeneralPlayerInfo_
             //G8RTOS_SignalSemaphore(&USING_SPI);
             //Paint color on left side
             //G8RTOS_WaitSemaphore(&USING_SPI);
-            LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2 + PRINT_OFFSET, prevPlayerIn->Center - PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
+            LCD_DrawRectangle(outPlayer->currentCenter - PADDLE_LEN_D2 - PRINT_OFFSET, prevPlayerIn->Center - PADDLE_LEN_D2, TOP_PADDLE_EDGE - PADDLE_WID, TOP_PADDLE_EDGE, outPlayer->color);
             //G8RTOS_SignalSemaphore(&USING_SPI);
 
             //If was close to wall, repaint white wall
