@@ -485,7 +485,6 @@ void MoveBall(){
             curGame.balls[i].alive = true;
 
             //Set previous location as this location
-            G8R
             prevBallLocs[i].CenterX = curGame.balls[i].xPos;
             prevBallLocs[i].CenterY = curGame.balls[i].yPos;
             curGame.balls[i].newBall = true;
