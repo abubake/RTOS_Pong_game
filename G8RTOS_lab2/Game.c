@@ -524,10 +524,10 @@ void MoveBall(){
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
 			if(curGame.balls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4){
-	            curGame.balls[ind].xPos = ARENA_MAX_X - BALL_SIZE -8);
+	            curGame.balls[ind].xPos = ARENA_MAX_X - BALL_SIZE -8;
 			}
 			else if(curGame.balls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4){
-			    curGame.balls[ind].xPos = ARENA_MIN_X + BALL_SIZE + 8);
+			    curGame.balls[ind].xPos = ARENA_MIN_X + BALL_SIZE + 8;
 			}
 
 		} //Checks if low enough on y-axis and between paddle left and right bounds to see if a collision occurs
