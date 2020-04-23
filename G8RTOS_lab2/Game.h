@@ -44,7 +44,7 @@ semaphore_t USING_WIFI;
 #define PADDLE_LEN_D2                (PADDLE_LEN >> 1)
 #define PADDLE_WID                   4
 #define PADDLE_WID_D2                (PADDLE_WID >> 1)
-#define BALL_SIZE                    7
+#define BALL_SIZE                    3
 #define BALL_SIZE_D2                 (BALL_SIZE >> 1)
 
 /* Centers for paddles at the center of the sides */
@@ -85,7 +85,7 @@ semaphore_t USING_WIFI;
 #define BACK_COLOR                   LCD_BLACK
 
 /* Offset for printing player to avoid blips from left behind ball */
-#define PRINT_OFFSET                10
+#define PRINT_OFFSET                25
 
 /* Used as status LEDs for Wi-Fi */
 #define BLUE_LED BIT2
