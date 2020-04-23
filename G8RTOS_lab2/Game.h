@@ -196,7 +196,7 @@ typedef struct balls_t
  */
 typedef struct
 {
-    SpecificPlayerInfo_t player;
+    //SpecificPlayerInfo_t player;
     GeneralPlayerInfo_t players[MAX_NUM_OF_PLAYERS];
     balls_t balls[MAX_NUM_OF_BALLS];                     //Nick changed Ball_t to balls_t
     uint16_t numberOfBalls;
