@@ -311,13 +311,9 @@ void CreateGame(){
 	InitBoardState();
 
 	/* Add these threads. (Need better priority definitions) */
-<<<<<<< HEAD
-    G8RTOS_AddThread(GenerateBall, 2, "GenerateBall");
-    G8RTOS_AddThread(DrawObjects, 2, "DrawObjects");
-=======
+
     G8RTOS_AddThread(GenerateBall, 3, "GenerateBall");
     G8RTOS_AddThread(DrawObjects, 3, "DrawObjects");
->>>>>>> 92de513d4d0df6781773c894d231a6881702475b
     G8RTOS_AddThread(ReadJoystickHost, 3, "ReadJoystickHost");
     G8RTOS_AddThread(SendDataToClient, 2, "SendDataToClient");
     G8RTOS_AddThread(ReceiveDataFromClient, 2, "ReceiveDataFromClient");
@@ -528,12 +524,13 @@ void MoveBall(){
 		if((curGame.balls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4) || (curGame.balls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4)){ // subtracted 9 and added 9 from actual edges to prevent eroding wall effect
 			collision = true; //TODO: Handle case where this is within the paddle's range (x = 0 to 4)
 			wall = true;
-			if(curGame.balls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4){
-	            curGame.balls[ind].xPos = ARENA_MAX_X - BALL_SIZE -8;
-			}
-			else if(curGame.balls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4){
-			    curGame.balls[ind].xPos = ARENA_MIN_X + BALL_SIZE + 8;
-			}
+
+            if(curGame.balls[ind].xPos >= ARENA_MAX_X - BALL_SIZE - 4){
+                curGame.balls[ind].xPos = ARENA_MAX_X - BALL_SIZE -8;
+            }
+            else if(curGame.balls[ind].xPos <= ARENA_MIN_X + BALL_SIZE + 4){
+                curGame.balls[ind].xPos = ARENA_MIN_X + BALL_SIZE + 8;
+            }
 
 		} //Checks if low enough on y-axis and between paddle left and right bounds to see if a collision occurs
 		else if((curGame.balls[ind].yPos >= 232)&&(curGame.balls[ind].xPos > curGame.players[0].currentCenter - PADDLE_LEN_D2 - 2)&&(curGame.balls[ind].xPos < curGame.players[0].currentCenter + PADDLE_LEN_D2 + 2)){
@@ -836,7 +833,9 @@ void DrawObjects(){
 	    prevClientLoc.Center = curGame.players[1].currentCenter;
 
 	    iterated = false; // After objects are redrawn, we are now able to update LEDs again for points
-		sleep(35);
+
+		sleep(25);
+
 	}
 }
 
