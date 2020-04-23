@@ -390,7 +390,7 @@ void GenerateBall(){
 	        //G8RTOS_WaitSemaphore(&USING_WIFI);
 	        curGame.numberOfBalls++;
 	        //G8RTOS_SignalSemaphore(&USING_WIFI);
-	        G8RTOS_AddThread(MoveBall, 4, "MoveBall");
+	        G8RTOS_AddThread(MoveBall, 3, "MoveBall");
 	    }
 	    //TODO Adjust scalar for sleep based on experiments to see what makes the game fun
 	    sleep(curGame.numberOfBalls*500);
