@@ -1,4 +1,4 @@
-#include "cc3100_usage.h"
+#include <hyperloop-iot/CC3100SupportPackage/cc3100_usage/cc3100_usage.h>
 
 
 /****** GLOBAL VARIABLES ******/

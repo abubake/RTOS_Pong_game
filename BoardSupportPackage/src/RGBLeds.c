@@ -1,4 +1,4 @@
-#include <RGBLeds.h>
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/RGBLeds.h>
 
 void init_RGB_LEDS(){
 

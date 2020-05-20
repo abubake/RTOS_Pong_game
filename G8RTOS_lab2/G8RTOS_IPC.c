@@ -5,8 +5,8 @@
  *      Author: nicks
  */
 
-#include "G8RTOS_IPC.h"
-#include "G8RTOS_Semaphores.h"
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS_IPC.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS_Semaphores.h>
 #include <stdint.h>
 #include "msp.h"
 

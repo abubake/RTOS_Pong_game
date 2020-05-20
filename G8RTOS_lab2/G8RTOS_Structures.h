@@ -8,8 +8,8 @@
 #ifndef G8RTOS_STRUCTURES_H_
 #define G8RTOS_STRUCTURES_H_
 
-#include <pong-lab/G8RTOS_lab2/G8RTOS.h>
-#include <pong-lab/G8RTOS_lab2/G8RTOS_Semaphores.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS_Semaphores.h>
 #include <stdbool.h>
 
 /*

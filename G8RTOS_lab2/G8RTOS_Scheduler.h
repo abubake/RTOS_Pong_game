@@ -4,7 +4,7 @@
 
 #ifndef G8RTOS_SCHEDULER_H_
 #define G8RTOS_SCHEDULER_H_
-#include <pong-lab/G8RTOS_lab2/G8RTOS_Structures.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS_Structures.h>
 #include "msp.h"
 
 #define _ICSR (*((volatile unsigned int*)(0xe000ed04)))

@@ -8,7 +8,7 @@
 #ifndef RGB_I2C_DRIVER_H_
 #define RGB_I2C_DRIVER_H_
 
-#include <driverlib.h>
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/driverlib.h>
 
 enum device
 {

@@ -4,10 +4,10 @@
 
 /*********************************************** Dependencies and Externs *************************************************************/
 
-#include <pong-lab/G8RTOS_lab2/G8RTOS_CriticalSection.h>
-#include <pong-lab/G8RTOS_lab2/G8RTOS_Scheduler.h>
-#include <pong-lab/G8RTOS_lab2/G8RTOS_Semaphores.h>
-#include <pong-lab/G8RTOS_lab2/G8RTOS_Structures.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS_CriticalSection.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS_Scheduler.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS_Semaphores.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS_Structures.h>
 #include "msp.h"
 
 /*********************************************** Dependencies and Externs *************************************************************/

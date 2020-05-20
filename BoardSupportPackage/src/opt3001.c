@@ -39,13 +39,13 @@
  *                                          Includes
  * ------------------------------------------------------------------------------------------------
  */
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/driverlib.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/i2c_driver.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/opt3001.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
 #include "msp432.h"
-#include "driverlib.h"
-#include "i2c_driver.h"
-#include "opt3001.h"
 
 /* ------------------------------------------------------------------------------------------------
  *                                           Constants

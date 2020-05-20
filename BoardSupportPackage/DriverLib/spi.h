@@ -58,7 +58,7 @@ extern "C"
 #include <stdbool.h>
 #include <stdint.h>
 #include <msp.h>
-#include "eusci.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/eusci.h>
 
 /* Configuration Defines */
 #define EUSCI_SPI_CLOCKSOURCE_ACLK    EUSCI_B_CTLW0_SSEL__ACLK

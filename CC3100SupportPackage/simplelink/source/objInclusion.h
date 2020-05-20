@@ -34,7 +34,7 @@
  *
 */
 
-#include <simplelink.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/simplelink.h>
 
 #ifndef OBJINCLUSION_H_
 #define OBJINCLUSION_H_

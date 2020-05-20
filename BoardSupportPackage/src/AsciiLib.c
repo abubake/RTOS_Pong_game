@@ -20,7 +20,7 @@
 ********************************************************************************************************/
 
 /* Includes ------------------------------------------------------------------*/
-#include "AsciiLib.h"
+#include <hyperloop-iot/BoardSupportPackage/inc/AsciiLib.h>
 
 #ifdef ASCII_8X16_MS_Gothic
 static unsigned char const AsciiLib[95][16] = {

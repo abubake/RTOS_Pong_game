@@ -9,8 +9,8 @@
 #define CC3100_USAGE_H_
 
 /********************** Includes *********************/
-#include "simplelink.h"
-#include "sl_common.h"
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/simplelink.h>
+#include <hyperloop-iot/CC3100SupportPackage/SL_Common/sl_common.h>
 /********************** Includes *********************/
 
 /*

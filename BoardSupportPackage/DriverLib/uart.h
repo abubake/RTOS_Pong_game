@@ -59,7 +59,7 @@ extern "C"
 #include <stdbool.h>
 
 #include <msp.h>
-#include "eusci.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/eusci.h>
 
 #define DEFAULT_SYNC                                    0x00
 #define EUSCI_A_UART_AUTOMATICBAUDRATE_SYNC             0x55

@@ -39,9 +39,9 @@
 /*****************************************************************************/
 /* Include files                                                             */
 /*****************************************************************************/
-#include "simplelink.h"
-#include "protocol.h"
-#include "driver.h"
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/simplelink.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/source/driver.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/source/protocol.h>
 
 /*****************************************************************************/
 /* sl_NetCfgSet */

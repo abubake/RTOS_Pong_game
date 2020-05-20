@@ -5,9 +5,9 @@
  *      Author: Raz Aloni
  */
 
-#include <driverlib.h>
-#include "BSP.h"
-#include "i2c_driver.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/driverlib.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/BSP.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/i2c_driver.h>
 
 
 /* Initializes the entire board */

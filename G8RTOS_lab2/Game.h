@@ -9,11 +9,11 @@
 #define GAME_H_
 
 /*********************************************** Includes ********************************************************************/
+#include <hyperloop-iot/BoardSupportPackage/inc/LCD.h>
+#include <hyperloop-iot/CC3100SupportPackage/cc3100_usage/cc3100_usage.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include "G8RTOS.h"
-#include "cc3100_usage.h"
-#include "LCD.h"
 /*********************************************** Includes ********************************************************************/
 
 /*********************************************** Externs ********************************************************************/

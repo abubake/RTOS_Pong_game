@@ -5,10 +5,10 @@
  *      Author: Danny
  */
 
-#include "LCD.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/driverlib.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/AsciiLib.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/LCD.h>
 #include "msp.h"
-#include "driverlib.h"
-#include "AsciiLib.h"
 
 /************************************  Private Functions  *******************************************/
 

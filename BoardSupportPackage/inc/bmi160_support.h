@@ -59,7 +59,7 @@
 #ifndef __BMI160_SUPPORT_H__
 #define __BMI160_SUPPORT_H__
 
-#include "bmi160.h"
+#include <hyperloop-iot/BoardSupportPackage/inc/bmi160.h>
 
 /*!
  * @brief struct used for assign the value for

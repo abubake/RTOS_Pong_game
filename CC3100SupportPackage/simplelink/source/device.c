@@ -39,10 +39,10 @@
 /*****************************************************************************/
 /* Include files                                                             */
 /*****************************************************************************/
-#include "simplelink.h"
-#include "protocol.h"
-#include "flowcont.h"
-#include "driver.h"
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/simplelink.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/source/driver.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/source/flowcont.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/source/protocol.h>
 
 
 /*****************************************************************************/

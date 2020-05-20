@@ -41,7 +41,7 @@
 /* Include files                                                             */
 /*****************************************************************************/
 
-#include "simplelink.h"
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/simplelink.h>
 
 #ifdef __cplusplus
 extern "C" {

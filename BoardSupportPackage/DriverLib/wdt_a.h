@@ -57,7 +57,7 @@ extern "C"
 
 #include <msp.h>
 #include <stdint.h>
-#include "sysctl.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/sysctl.h>
 
 #define WDT_A_HARD_RESET SYSCTL_HARD_RESET
 #define WDT_A_SOFT_RESET SYSCTL_SOFT_RESET

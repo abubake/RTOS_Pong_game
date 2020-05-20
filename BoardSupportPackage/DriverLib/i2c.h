@@ -58,7 +58,7 @@ extern "C"
 #include <stdint.h>
 #include <stdbool.h>
 #include <msp.h>
-#include "eusci.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/eusci.h>
 
 #define EUSCI_B_I2C_NO_AUTO_STOP                           EUSCI_B_CTLW1_ASTP_0
 #define EUSCI_B_I2C_SET_BYTECOUNT_THRESHOLD_FLAG           EUSCI_B_CTLW1_ASTP_1

@@ -1,19 +1,18 @@
 #include "msp.h"
-#include <driverlib.h>
 #include "core_cm4.h"
-#include "G8RTOS.h"
-#include "LCD.h"
 #include "time.h"
 #include "stdlib.h"
 
-#include "cc3100_usage.h"
-#include "sl_common.h"
-#include "Game.h"
-#include "G8RTOS_Scheduler.h"
-#include "demo_sysctl.h"
-
 #include <DriverLib.h>
-#include "BSP.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/driverlib.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/BSP.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/demo_sysctl.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/LCD.h>
+#include <hyperloop-iot/CC3100SupportPackage/cc3100_usage/cc3100_usage.h>
+#include <hyperloop-iot/CC3100SupportPackage/SL_Common/sl_common.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS_Scheduler.h>
+#include <hyperloop-iot/G8RTOS_lab2/Game.h>
 
 #define MAIN_LAB5
 #ifdef Test_LAB5

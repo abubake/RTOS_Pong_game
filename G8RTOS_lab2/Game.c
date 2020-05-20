@@ -1,12 +1,12 @@
-#include "Game.h"
-#include "Joystick.h"
-#include "G8RTOS.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/RGBLeds.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/demo_sysctl.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/Joystick.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/LCD.h>
+#include <hyperloop-iot/CC3100SupportPackage/cc3100_usage/cc3100_usage.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS_Scheduler.h>
+#include <hyperloop-iot/G8RTOS_lab2/Game.h>
 #include <stdlib.h>
-#include "LCD.h"
-#include "RGBLeds.h"
-#include "cc3100_usage.h"
-#include "demo_sysctl.h"
-#include "G8RTOS_Scheduler.h"
 
 /* Joystick Info */
 int16_t X_coord;

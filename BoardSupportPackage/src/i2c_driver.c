@@ -31,11 +31,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //****************************************************************************
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/driverlib.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/i2c_driver.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include "msp432.h"
-#include "i2c_driver.h"
-#include "driverlib.h"
 
 //*****************************************************************************
 //

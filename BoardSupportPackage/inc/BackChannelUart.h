@@ -12,7 +12,7 @@
 #ifndef BACKCHANNELUART_H_
 #define BACKCHANNELUART_H_
 
-#include "BSP.h"
+#include <hyperloop-iot/BoardSupportPackage/inc/BSP.h>
 
 typedef enum
 {

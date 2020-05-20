@@ -5,10 +5,10 @@
  *      Author: Danny
  */
 /*********************************************** Dependencies and Externs *************************************************************/
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/driverlib.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/Joystick.h>
 #include <stdint.h>
 #include "msp.h"
-#include "Joystick.h"
-#include "driverlib.h"
 /*********************************************** Dependencies and Externs *************************************************************/
 
 

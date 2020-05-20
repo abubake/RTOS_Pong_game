@@ -1,8 +1,8 @@
 
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/driverlib.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/demo_sysctl.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <driverlib.h>
-#include "demo_sysctl.h"
 
 //*****************************************************************************
 //

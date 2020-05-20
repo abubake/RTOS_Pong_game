@@ -66,7 +66,7 @@
 #ifndef __BME280_SUPPORT_H__
 #define __BME280_SUPPORT_H__
 
-#include "bme280.h"
+#include <hyperloop-iot/BoardSupportPackage/inc/bme280.h>
 
 /*******************************************/
 /**\name	CONSTANTS        */

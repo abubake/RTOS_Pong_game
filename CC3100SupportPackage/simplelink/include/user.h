@@ -68,12 +68,12 @@ extern "C" {
 
 #include <string.h>
 #include "msp432.h"
-#include "board.h"
+#include <hyperloop-iot/CC3100SupportPackage/board/board.h>
 
 #ifndef SL_IF_TYPE_UART
-#include "spi_cc3100.h"
+#include <hyperloop-iot/CC3100SupportPackage/spi_cc3100/spi_cc3100.h>
 #else
-#include "uart.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/uart.h>
 #endif
 
 typedef P_EVENT_HANDLER                         SL_P_EVENT_HANDLER;

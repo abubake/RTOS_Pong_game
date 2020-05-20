@@ -49,11 +49,11 @@
 * No license is granted by implication or otherwise under any patent or
 * patent rights of the copyright holder.
 **************************************************************************/
-#include "bmi160_support.h"
-#include "bmi160.h"
-#include "driverlib.h"
-#include "i2c_driver.h"
-#include "demo_sysctl.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/driverlib.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/bmi160.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/bmi160_support.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/demo_sysctl.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/i2c_driver.h>
 /* Mapping the structure*/
 struct bmi160_t s_bmi160;
 /* Read the sensor data of accel, gyro and mag*/

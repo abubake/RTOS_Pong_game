@@ -36,7 +36,7 @@
  
 
 
-#include "simplelink.h"
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/simplelink.h>
 
 #ifndef __SIMPLELINK_TRACE_H__
 #define __SIMPLELINK_TRACE_H__

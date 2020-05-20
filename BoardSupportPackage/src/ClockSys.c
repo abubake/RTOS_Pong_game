@@ -7,9 +7,9 @@
  *      Author: Raz Aloni
  */
 
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/driverlib.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/ClockSys.h>
 #include <stdint.h>
-#include <driverlib.h>
-
 #include "ClockSys.h"
 
 /********************************** Public Functions **************************************/

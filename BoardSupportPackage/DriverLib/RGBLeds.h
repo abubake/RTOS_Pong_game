@@ -1,7 +1,7 @@
 #ifndef BOARDSUPPORTPACKAGE_DRIVERLIB_RGBLEDS_H_
 #define BOARDSUPPORTPACKAGE_DRIVERLIB_RGBLEDS_H_
 
-#include "RGB_I2C_Driver.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/RGB_I2C_Driver.h>
 
 /*
  * Initialize control of board RGB LEDs

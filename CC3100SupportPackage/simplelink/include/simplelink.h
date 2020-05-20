@@ -216,7 +216,7 @@
 #ifndef __SIMPLELINK_H__
 #define    __SIMPLELINK_H__
 
-#include "user.h"
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/user.h>
 
 #define __SL__
 
@@ -369,9 +369,9 @@ typedef _i16   _SlReturnVal_t;
 /*****************************************************************************/
 
 #ifdef SL_PLATFORM_MULTI_THREADED
-    #include "../source/spawn.h"
+    #include <hyperloop-iot/CC3100SupportPackage/simplelink/source/spawn.h>
 #else
-    #include "../source/nonos.h"
+    #include <hyperloop-iot/CC3100SupportPackage/simplelink/source/nonos.h>
 #endif
 
 
@@ -380,15 +380,15 @@ typedef _i16   _SlReturnVal_t;
    objInclusion.h must be the last arrangement just before including the API header files 
    since it based on the other configurations to decide which object should be included 
 */
-#include "../source/objInclusion.h"
-#include "trace.h"
-#include "fs.h"
-#include "socket.h"
-#include "netapp.h"
-#include "wlan.h"
-#include "device.h"
-#include "netcfg.h"
-#include "wlan_rx_filters.h"
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/source/objInclusion.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/trace.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/fs.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/socket.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/netapp.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/wlan.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/device.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/netcfg.h>
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/wlan_rx_filters.h>
 
 
 

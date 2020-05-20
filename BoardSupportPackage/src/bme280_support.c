@@ -52,11 +52,11 @@
 /*---------------------------------------------------------------------------*/
 /* Includes*/
 /*---------------------------------------------------------------------------*/
-#include "bme280.h"
-#include "driverlib.h"
-#include "i2c_driver.h"
-#include "bme280_support.h"
-#include "demo_sysctl.h"
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/driverlib.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/bme280.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/bme280_support.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/demo_sysctl.h>
+#include <hyperloop-iot/BoardSupportPackage/inc/i2c_driver.h>
 
 #define BME280_API
 

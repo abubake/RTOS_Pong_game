@@ -4,7 +4,7 @@
  *  Created on: Jan 21, 2020
  *      Author: steve
  */
-#include <RGB_I2C_Driver.h>
+#include <hyperloop-iot/BoardSupportPackage/DriverLib/RGB_I2C_Driver.h>
 
 //send data via
 void LED_write(uint8_t reg, uint8_t data){

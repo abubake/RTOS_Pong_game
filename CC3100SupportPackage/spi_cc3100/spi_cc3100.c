@@ -37,9 +37,9 @@
 #ifndef SL_IF_TYPE_UART
 #include <msp432.h>
 
-#include "simplelink.h"
-#include "spi_cc3100.h"
-#include "board.h"
+#include <hyperloop-iot/CC3100SupportPackage/simplelink/include/simplelink.h>
+#include <hyperloop-iot/CC3100SupportPackage/spi_cc3100/spi_cc3100.h>
+#include <hyperloop-iot/CC3100SupportPackage/board/board.h>
 
 //MSP430F5529
 //#define ASSERT_CS()          (P2OUT &= ~BIT2)

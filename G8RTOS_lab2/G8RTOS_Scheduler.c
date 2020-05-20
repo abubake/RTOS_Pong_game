@@ -3,11 +3,11 @@
  */
 
 /*********************************************** Dependencies and Externs *************************************************************/
+#include <hyperloop-iot/BoardSupportPackage/inc/BSP.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS.h>
+#include <hyperloop-iot/G8RTOS_lab2/G8RTOS_Structures.h>
 #include <stdint.h>
 #include "msp.h"
-#include <BSP.h>
-#include <pong-lab/G8RTOS_lab2/G8RTOS.h>
-#include <pong-lab/G8RTOS_lab2/G8RTOS_Structures.h>
 
 extern void PendSV_Handler();
 extern int32_t StartCriticalSection();
